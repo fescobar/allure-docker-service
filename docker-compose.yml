@@ -1,0 +1,15 @@
+version: '3'
+
+volumes:
+  allure-docker-service:
+    driver: local
+
+services:
+  allure-docker-service:
+    build:
+      context: ../allure-docker-service
+      dockerfile: Dockerfile
+    ports:
+      - "4040:4040"
+    volumes:
+    - ./.data/allure-docker-service/allure-results:/app/allure-results
