@@ -112,11 +112,11 @@ All previous examples started the container using port 4040. Simply open your br
 
 http://localhost:4040
 
-[![](images/allure1.png)](images/allure1.png)
+[![](images/allure01.png)](images/allure1.png)
 
-[![](images/allure2.png)](images/allure2.png)
+[![](images/allure02.png)](images/allure2.png)
 
-[![](images/allure3.png)](images/allure3.png)
+[![](images/allure03.png)](images/allure3.png)
 
 Now we can run other tests without be worried about Allure server. You don't need to restart or execute any Allure command.
 
@@ -127,9 +127,9 @@ mvn test -Dtest=SecondTestNGAllureTest
 ```
 When that test finished, refresh your browser and you will see there is a new report including last results tests.
 
-[![](images/allure4.png)](images/allure4.png)
+[![](images/allure04.png)](images/allure4.png)
 
-[![](images/allure5.png)](images/allure5.png)
+[![](images/allure05.png)](images/allure5.png)
 
 
 You can change the port docker options. For example using docker-compose I can use port 8484, it would be something like this:
