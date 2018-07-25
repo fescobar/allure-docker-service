@@ -196,3 +196,14 @@ docker push frankescobar/allure-docker-service
 ```sh
 docker run -d -p 4040:4040 frankescobar/allure-docker-service:latest
 ```
+
+### Issue - bad interpreter: No such file or directory
+When you run the container (depending of your OS) it could appears this error:
+```sh
+./runAllure.sh: /app/generateAllureReport.sh: /bin/bash^M: bad interpreter: No such file or directory
+```
+
+Just run next command to fix it:
+```sh
+sed -i -e 's/\r$//' runAllure.sh checkAllureResultsFiles.sh generateAllureReport.sh
+```
