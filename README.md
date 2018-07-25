@@ -7,7 +7,7 @@
 Allure Framework provides you beautiful reports for testing.
 For using this tool is necessary to have a server. You can have this server running on Jenkins or when you want to see the report locally you have to install the server on your machine or you have to run extra commands. This work results tedious, at least for me :)
 
-For that reason this docker container allows you to see the reports updated simply mountaining your 'allure-results' directory in the container. Each time that appears new results (generated for your tests), Allure Docker Service will detect those new results files and will generate automatically a new report, what you can see refreshing your browser.
+For that reason this docker container allows you to see the reports updated simply mounting your 'allure-results' directory in the container. Each time that appears new results (generated for your tests), Allure Docker Service will detect those new results files and will generate automatically a new report, what you can see refreshing your browser.
 
 It's useful even for developers who wants to run your tests locally and want to see what were the problems during regressions.
 
@@ -54,7 +54,7 @@ java.lang.AssertionError: ERROR DURING THE TEST
 
 There are 2 tests, one of them failed. Now you can see the 'allure-results' diretory was created inside of [allure-docker-java-example](allure-docker-java-example) project.
 
-Just it has left 1 step more. You have to mountain your 'allure-results' directory to the container.
+Just it has left 1 step more. You have to mount your 'allure-results' directory to the container.
 
 NOTE: You can have this directory in anywhere. The important is your project must generate results in that directory.
 
@@ -112,11 +112,11 @@ All previous examples started the container using port 4040. Simply open your br
 
 http://localhost:4040
 
-[![](images/allure01.png)](images/allure1.png)
+[![](images/allure01.png)](images/allure01.png)
 
-[![](images/allure02.png)](images/allure2.png)
+[![](images/allure02.png)](images/allure02.png)
 
-[![](images/allure03.png)](images/allure3.png)
+[![](images/allure03.png)](images/allure03.png)
 
 Now we can run other tests without be worried about Allure server. You don't need to restart or execute any Allure command.
 
@@ -127,9 +127,9 @@ mvn test -Dtest=SecondTestNGAllureTest
 ```
 When that test finished, refresh your browser and you will see there is a new report including last results tests.
 
-[![](images/allure04.png)](images/allure4.png)
+[![](images/allure04.png)](images/allure04.png)
 
-[![](images/allure05.png)](images/allure5.png)
+[![](images/allure05.png)](images/allure05.png)
 
 
 You can change the port docker options. For example using docker-compose I can use port 8484, it would be something like this:
