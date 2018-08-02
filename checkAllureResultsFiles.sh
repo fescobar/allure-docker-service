@@ -1,7 +1,7 @@
 #!/bin/bash
 while :
 do
-	FILES="$(ls $RESULTS_DIRECTORY)"
+	FILES="$(ls $RESULTS_DIRECTORY -l --time-style=full-iso)"
 	if [ "$FILES" != "$PREV_FILES" ]; then
 		echo "Detecting new results..."
 		/app/generateAllureReport.sh

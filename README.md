@@ -67,7 +67,7 @@ docker run -p 4040:4040 -v ${PWD}/allure-docker-java-example/allure-results:/app
 ```
 
 #### Windows PoweShell
-Go to allure-results directory () and execute this:
+Go to allure-results directory and execute this:
 ```sh
 $ALLURE_RESULTS_DIRECTORY = $PWD -replace "\\", "/" -replace "C", "c"
 ```
@@ -82,6 +82,7 @@ docker run -p 4040:4040 -v ${ALLURE_RESULTS_DIRECTORY}:/app/allure-results frank
 
 ### Docker Compose
 Using docker-compose is the best way to manage containers
+`docker-compose.yml`
 ```sh
 version: '3'
 
