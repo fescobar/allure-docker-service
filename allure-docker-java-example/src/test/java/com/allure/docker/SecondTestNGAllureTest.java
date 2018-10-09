@@ -2,13 +2,10 @@ package com.allure.docker;
 
 import org.testng.annotations.Test;
 
-import java.net.URL;
-
 public class SecondTestNGAllureTest {
-    private URL pathFile = SecondTestNGAllureTest.class.getResource("/files/");
 
     @Test
-    public void test3() throws Exception{
+    public void test3() {
         System.out.println("test1");
     }
 

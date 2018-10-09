@@ -9,9 +9,7 @@ import org.testng.annotations.Test;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.util.function.Supplier;
 
 public class FirstTestNGAllureTest {
     private URL pathFile = FirstTestNGAllureTest.class.getResource("/files/");
@@ -25,20 +23,10 @@ public class FirstTestNGAllureTest {
     }
 
     @Test
-    public void test2(){
+    public void test2() throws IOException {
         System.out.println("test2");
         File file = new File(pathFile.getPath() +"/"+ "google.mp4");
-        Allure.addStreamAttachmentAsync("Some video", "video/mp4", new Supplier<InputStream>() {
-            @Override
-            public InputStream get() {
-                try {
-                    return Files.asByteSource(file).openStream();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-        });
+        Allure.addAttachment("Some video", "video/mp4", Files.asByteSource(file).openStream(),"mp4");
         Assert.fail("ERROR DURING THE TEST");
     }
 }

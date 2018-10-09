@@ -1,3 +1,4 @@
 allure-docker-java-example/target
 allure-docker-java-example/allure-results
+allure-docker-java-example/.idea
 .data/
