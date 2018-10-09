@@ -9,7 +9,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <java.version>10</java.version>
+        <java.version>1.8</java.version>
         <maven.version>3.5.3</maven.version>
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
         <maven-surefire-plugin>2.21.0</maven-surefire-plugin>
@@ -58,7 +58,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <release>${java.version}</release>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                 </configuration>

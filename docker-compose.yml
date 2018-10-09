@@ -9,6 +9,8 @@ services:
     build:
       context: ../allure-docker-service
       dockerfile: Dockerfile
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 1
     ports:
       - "4040:4040"
     volumes:
