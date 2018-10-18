@@ -54,7 +54,7 @@ java.lang.AssertionError: ERROR DURING THE TEST
 
 There are 2 tests, one of them failed. Now you can see the `allure-results` diretory was created inside of [allure-docker-java-example](allure-docker-java-example) project.
 
-Just it has left 1 step more. You have to mount your 'allure-results' directory to the container.
+Just it has left 1 step more. You have to mount your `allure-results` directory to the container.
 
 NOTE: You can have this directory anywhere. The important is your project must generate results in that directory.
 
@@ -62,18 +62,20 @@ NOTE: You can have this directory anywhere. The important is your project must g
 Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
 
 #### Unix/Mac
+From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
 ```sh
-docker run -p 4040:4040 -v ${PWD}/allure-docker-java-example/allure-results:/app/allure-results frankescobar/allure-docker-service
+docker run -p 4040:4040 -e CHECK_RESULTS_EVERY_SECONDS=3 -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
 ```
 
 #### Windows (Git Bash)
+From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
 ```sh
-docker run -p 4040:4040 -v "/$(pwd)/allure-docker-java-example/allure-results:/app/allure-results" frankescobar/allure-docker-service
+docker run -p 4040:4040 -e CHECK_RESULTS_EVERY_SECONDS=3 -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
 ```
 
 ### Docker Compose
-Using docker-compose is the best way to manage containers
-`docker-compose.yml`
+Using docker-compose is the best way to manage containers: [allure-docker-java-example/docker-compose.yml](allure-docker-java-example/docker-compose.yml)
+
 ```sh
 version: '3'
 
@@ -86,8 +88,24 @@ version: '3'
     volumes:
       - "${PWD}/allure-results:/app/allure-results"
 ```
-Example:
-[allure-docker-java-example/docker-compose.yml](allure-docker-java-example/docker-compose.yml)
+
+From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
+
+```sh
+docker-compose up allure
+```
+
+If you want to run in background:
+
+```sh
+docker-compose up -d allure
+```
+
+You can see the logs:
+
+```sh
+docker-compose logs -f allure
+```
 
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
