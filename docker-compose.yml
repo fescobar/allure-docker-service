@@ -13,5 +13,6 @@ services:
       CHECK_RESULTS_EVERY_SECONDS: 1
     ports:
       - "4040:4040"
+      - "5050:5050"
     volumes:
     - ./.data/allure-docker-service/allure-results:/app/allure-results
