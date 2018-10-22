@@ -7,7 +7,7 @@
 Allure Framework provides you beautiful reports for testing.
 For using this tool is necessary to have a server. You can have this server running on Jenkins or when you want to see the report locally you have to install the server on your machine or you have to run extra commands. This work results tedious, at least for me :)
 
-For that reason this docker container allows you to see the reports updated simply mounting your `allure-results` directory in the container. Each time that appears new results (generated for your tests), Allure Docker Service will detect those new results files and will generate automatically a new report, what you can see refreshing your browser.
+For that reason this docker container allows you to see the reports updated simply mounting your `allure-results` directory in the container. Each time that appears new results (generated for your tests), Allure Docker Service will detect those new results files and will generate automatically a new report (optional: generate report on demand), what you can see refreshing your browser.
 
 It's useful even for developers who wants to run your tests locally and want to see what were the problems during regressions.
 
@@ -64,13 +64,13 @@ Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
 #### Unix/Mac
 From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
 ```sh
-docker run -p 4040:4040 -e CHECK_RESULTS_EVERY_SECONDS=3 -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
+docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
 ```
 
 #### Windows (Git Bash)
 From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
 ```sh
-docker run -p 4040:4040 -e CHECK_RESULTS_EVERY_SECONDS=3 -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
+docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
 ```
 
 ### Docker Compose
@@ -85,6 +85,7 @@ version: '3'
       CHECK_RESULTS_EVERY_SECONDS: 1
     ports:
       - "4040:4040"
+      - "5050:5050"
     volumes:
       - "${PWD}/allure-results:/app/allure-results"
 ```
@@ -116,12 +117,18 @@ Overriding configuration
 Checking Allure Results each 1 second/s
 Detecting new results...
 Generating report
+ * Serving Flask app "app" (lazy loading)
+ * Environment: production
+   WARNING: Do not use the development server in a production environment.
+   Use a production WSGI server instead.
+ * Debug mode: off
+ * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
 Report successfully generated to allure-report
 Report successfully generated to allure-report
 Starting web server...
-2018-10-09 09:45:52.019:INFO::main: Logging initialized @773ms to org.eclipse.jetty.util.log.StdErrLog
+2018-10-22 15:10:14.037:INFO::main: Logging initialized @1786ms to org.eclipse.jetty.util.log.StdErrLog
 Can not open browser because this capability is not supported on your platform. You can use the link below to open the report manually.
-Server started at <http://172.25.0.2:4040/>. Press <Ctrl+C> to exit
+Server started at <http://172.28.0.2:4040/>. Press <Ctrl+C> to exit
 ```
 
 All previous examples started the container using port 4040. Simply open your browser and access to: 
@@ -148,17 +155,67 @@ When that test finished, refresh your browser and you will see there is a new re
 [![](images/allure05.png)](images/allure05.png)
 
 ### Extra options
+
+#### Allure Generate Report API
+This endpoint is useful to force to generate a new report on demand
+Request:
+```sh
+curl -X GET http://localhost:5050/generate-report -ik
+```
+Response:
+```sh
+{
+    "data": {
+        "allure_results_files": [
+            "240dbfaa-de15-4c48-addc-31c2c5861c3f-container.json",
+            "314127b2-ff70-433c-9db7-534c31b773a9-result.json",
+            "4f90ba22-b6b5-4979-8d4e-e36a80a4c725-result.json",
+            "6d2270f8-6961-4ad5-9b81-af59b6a57116-container.json",
+            "9b0d11a5-8c23-402f-be52-2818ae1db765-attachment",
+            "baee6435-a109-4f1d-bc94-8c3132111c92-attachment.mp4",
+            "d4e54580-5d61-4aa9-b5e9-af76d1c42a2f-container.json",
+            "d79cb78e-287e-457f-8a03-5eb1482d2073-container.json",
+            "ddaf6d54-910b-4895-8f9a-4029a952d3c8-container.json",
+            "e183e26b-cbbf-459b-91fa-d0648036cc8c-result.json",
+            "fd53d71d-3551-4ea2-90fd-639e507aa59e-container.json",
+            "fd71f6e7-3d4a-4a14-be54-324bd519e408-result.json"
+        ]
+    },
+    "meta_data": {
+        "message": "Report generated successfully"
+    }
+}
+```
+
+Failed response:
+You are not allowed to execute this request more than 1 time consecutively. You will have to wait for this process to finish to execute this request again.
+```sh
+{
+    "meta_data": {
+        "message": "'Generating Report' process is running currently. Try later!"
+    }
+}
+```
+
 #### Changing port
-Exposing Allure report in port 8484. Docker Compose example:
+Inside of containers `Allure Report` use port `4040` and `Allure API` use port `5050`.
+You can change those ports according to your convenience. Docker Compose example:
 ```sh
     ports:
       - "8484:4040"
+      - "9292:5050"
 ```
 #### Updating seconds to check Allure Results
-Updating seconds to check `allure-results` directory to generate report updated. Docker Compose example:
+Updating seconds to check `allure-results` directory to generate a new report updated. Docker Compose example:
 ```sh
     environment:
       CHECK_RESULTS_EVERY_SECONDS: 5
+```
+Use `NONE` value to disable automatic checking results.
+If you use this option, the only way to generate a new report updated is using the API (#allure-generate-report-api), requesting on demand.
+```sh
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: NONE
 ```
 
 ## NOTE:
@@ -208,6 +265,15 @@ docker container rm $(docker container ls -a -q) -f
 ```sh
 docker image rm $(docker image ls -a -q)
 ```
+### Remove all stopped containers
+```sh
+docker ps -q -f status=exited | xargs docker rm
+```
+### Remove all dangling images
+```sh
+docker images -f dangling=true | xargs docker rmi
+```
+
 ### Register image (Example)
 ```sh
 docker login
