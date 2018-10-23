@@ -14,8 +14,9 @@ def generate_report():
         if proccount > 0:
             raise Exception("'Generating Report' process is running currently. Try later!")
 
+        results_directory='/app/allure-results'
+        files = os.listdir(results_directory)
         call([process])
-
     except Exception, ex:
         body = {
             'meta_data': {
@@ -25,8 +26,6 @@ def generate_report():
         resp = jsonify(body)
         resp.status_code = 400
     else:
-        results_directory='/app/allure-results'
-        files= os.listdir(results_directory)
         body = {
             'data': {
                 'allure_results_files': files
