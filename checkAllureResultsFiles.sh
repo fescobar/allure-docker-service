@@ -17,7 +17,7 @@ echo "Checking Allure Results each $SECONDS_TO_WAIT second/s"
 
 while :
 do
-	FILES="$(ls $RESULTS_DIRECTORY -l --time-style=full-iso)"
+	FILES="$(echo $(ls $RESULTS_DIRECTORY -l --time-style=full-iso) | md5sum)"
 	if [ "$FILES" != "$PREV_FILES" ]; then
 		export env PREV_FILES=$FILES
 		echo "Detecting new results..."
