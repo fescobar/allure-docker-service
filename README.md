@@ -157,7 +157,8 @@ When that test finished, refresh your browser and you will see there is a new re
 ### Extra options
 
 #### Allure Generate Report API
-This endpoint is useful to force to generate a new report on demand
+This endpoint is useful to force to generate a new report on demand.
+
 Request:
 ```sh
 curl -X GET http://localhost:5050/generate-report -ik

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$CHECK_RESULTS_EVERY_SECONDS" == "NONE" ] || [ "$CHECK_RESULTS_EVERY_SECONDS" == "none" ]; then
-	echo "No checking results automatically"
+	echo "Not checking results automatically"
 	while true ; do continue ; done
 fi
 
@@ -13,7 +13,7 @@ else
 	SECONDS_TO_WAIT=1
 fi
 
-echo "Checking Allure Results each $SECONDS_TO_WAIT second/s"
+echo "Checking Allure Results every $SECONDS_TO_WAIT second/s"
 
 while :
 do
