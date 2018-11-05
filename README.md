@@ -114,7 +114,7 @@ If everything was OK, you will see this:
 Generating default report
 Generating report
 Overriding configuration
-Checking Allure Results each 1 second/s
+Checking Allure Results every 1 second/s
 Detecting new results...
 Generating report
  * Serving Flask app "app" (lazy loading)
