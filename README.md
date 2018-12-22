@@ -5,11 +5,11 @@
 
 ## FEATURES
 Allure Framework provides you beautiful reports for testing.
-For using this tool is necessary to have a server. You can have this server running on Jenkins or when you want to see the report locally you have to install the server on your machine or you have to run extra commands. This work results tedious, at least for me :)
+For using this tool it's required to install a server. You could have this server running on Jenkins or if you want to see the reports locally you need run some commands on your machine. This work results tedious, at least for me :)
 
-For that reason this docker container allows you to see the reports updated simply mounting your `allure-results` directory in the container. Each time that appears new results (generated for your tests), Allure Docker Service will detect those new results files and will generate automatically a new report (optional: generate report on demand), what you can see refreshing your browser.
+For that reason this docker container allows you to see updated reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those new results files and it will generate a new report automatically (optional: generate report on demand), what you will see refreshing your browser.
 
-It's useful even for developers who wants to run your tests locally and want to see what were the problems during regressions.
+It's useful even for developers who wants to run tests locally and want to see what were the problems during regressions.
 
 ## USAGE
 ### Generate Allure Results
@@ -56,7 +56,9 @@ There are 2 tests, one of them failed. Now you can see the `allure-results` dire
 
 Just it has left 1 step more. You have to mount your `allure-results` directory to the container.
 
-NOTE: You can have this directory anywhere. The important is your project must generate results in that directory.
+NOTE:
+- The `${PWD}/allure-results` directory could be in anywhere on your machine. Your project must generate results in that directory.
+- The `/app/allure-results` directory is inside of the container. You must not change this directory, otherwise, the container won't detect the new changes.
 
 ### Docker
 Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
@@ -141,7 +143,7 @@ http://localhost:4040
 
 [![](images/allure03.png)](images/allure03.png)
 
-Now we can run other tests without be worried about Allure server. You don't need to restart or execute any Allure command.
+Now we can run other tests without being worried about Allure server. You don't need to restart or execute any Allure command.
 
 Just execute another suite test:
 
@@ -156,7 +158,7 @@ When that test finished, refresh your browser and you will see there is a new re
 
 ### Extra options
 
-#### Allure Generate Report API
+#### Allure Generate Report Endpoint
 This endpoint is useful to force to generate a new report on demand.
 
 Request:
@@ -199,7 +201,7 @@ You are not allowed to execute this request more than 1 time consecutively. You 
 ```
 
 #### Changing port
-Inside of containers `Allure Report` use port `4040` and `Allure API` use port `5050`.
+Inside of the container `Allure Report` use port `4040` and `Allure API` use port `5050`.
 You can change those ports according to your convenience. Docker Compose example:
 ```sh
     ports:
@@ -213,7 +215,7 @@ Updating seconds to check `allure-results` directory to generate a new report up
       CHECK_RESULTS_EVERY_SECONDS: 5
 ```
 Use `NONE` value to disable automatic checking results.
-If you use this option, the only way to generate a new report updated is using the API (#allure-generate-report-api), requesting on demand.
+If you use this option, the only way to generate a new report updated it's using the API [Allure Generate Report Endpoint](#allure-generate-report-endpoint), requesting on demand.
 ```sh
     environment:
       CHECK_RESULTS_EVERY_SECONDS: NONE
