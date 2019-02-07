@@ -1,7 +1,7 @@
 FROM openjdk:8-jdk-slim
 LABEL maintainer="fescobar.systems@gmail.com"
 
-ARG RELEASE=2.7.0
+ARG RELEASE=2.8.0
 ARG ALLURE_GITHUB=https://github.com/allure-framework/allure2/releases/download
 
 RUN apt-get update
