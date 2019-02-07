@@ -4,8 +4,8 @@
 # Allure Docker Service
 
 ## FEATURES
-Allure Framework provides you beautiful reports for testing.
-For using this tool it's required to install a server. You could have this server running on Jenkins or if you want to see the reports locally you need run some commands on your machine. This work results tedious, at least for me :)
+Allure Framework provides you good looking reports for automation testing.
+For using this tool it's required to install a server. You could have this server running on Jenkins or if you want to see reports locally you need run some commands on your machine. This work results tedious, at least for me :)
 
 For that reason this docker container allows you to see updated reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those new results files and it will generate a new report automatically (optional: generate report on demand), what you will see refreshing your browser.
 
@@ -13,11 +13,16 @@ It's useful even for developers who wants to run tests locally and want to see w
 
 ## USAGE
 ### Generate Allure Results
-First at all it's important to be clear. This container only generate reports based on results. You have to generate allure results according to the technology what are you using.
+First at all it's important to be clear. This container only generates reports based on results. You have to generate allure results according to the technology what are you using.
 
 In this case we are going to generate results using the project [allure-docker-java-example](allure-docker-java-example) of this repository.
 
-Go to directory [allure-docker-java-example](allure-docker-java-example) and execute:
+Go to directory [allure-docker-java-example](allure-docker-java-example) via command line:
+
+```sh
+cd allure-docker-java-example
+```
+Execute:
 
 ```sh
 mvn test -Dtest=FirstTestNGAllureTest
@@ -54,28 +59,24 @@ java.lang.AssertionError: ERROR DURING THE TEST
 
 There are 2 tests, one of them failed. Now you can see the `allure-results` diretory was created inside of [allure-docker-java-example](allure-docker-java-example) project.
 
-Just it has left 1 step more. You have to mount your `allure-results` directory to the container.
+Just it has left 1 step more. You have to run `allure-docker-service` mounting your `allure-results` directory.
 
-NOTE:
-- The `${PWD}/allure-results` directory could be in anywhere on your machine. Your project must generate results in that directory.
-- The `/app/allure-results` directory is inside of the container. You must not change this directory, otherwise, the container won't detect the new changes.
-
-### Docker
+### Allure Docker Service
 Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
 
-#### Unix/Mac
+#### Using Docker on Unix/Mac
 From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
 ```sh
 docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
 ```
 
-#### Windows (Git Bash)
+#### Using Docker on Windows (Git Bash)
 From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
 ```sh
 docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
 ```
 
-### Docker Compose
+#### Using Docker Compose
 Using docker-compose is the best way to manage containers: [allure-docker-java-example/docker-compose.yml](allure-docker-java-example/docker-compose.yml)
 
 ```sh
@@ -109,6 +110,10 @@ You can see the logs:
 ```sh
 docker-compose logs -f allure
 ```
+
+NOTE:
+- The `${PWD}/allure-results` directory could be in anywhere on your machine. Your project must generate results in that directory.
+- The `/app/allure-results` directory is inside of the container. You MUST NOT change this directory, otherwise, the container won't detect the new changes.
 
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
@@ -146,12 +151,16 @@ http://localhost:4040
 
 Now we can run other tests without being worried about Allure server. You don't need to restart or execute any Allure command.
 
-Just execute another suite test:
+Just go again to this directory [allure-docker-java-example](allure-docker-java-example) via command line:
+```sh
+cd allure-docker-java-example
+```
 
+And execute another suite test:
 ```sh
 mvn test -Dtest=SecondTestNGAllureTest
 ```
-When that test finished, refresh your browser and you will see there is a new report including last results tests.
+When this second test finished, refresh your browser and you will see there is a new report including last results tests.
 
 [![](images/allure04.png)](images/allure04.png)
 
@@ -210,7 +219,7 @@ You can change those ports according to your convenience. Docker Compose example
       - "9292:5050"
 ```
 #### Updating seconds to check Allure Results
-Updating seconds to check `allure-results` directory to generate a new report updated. Docker Compose example:
+Updating seconds to check `allure-results` directory to generate a new report up to date. Docker Compose example:
 ```sh
     environment:
       CHECK_RESULTS_EVERY_SECONDS: 5
@@ -222,12 +231,6 @@ If you use this option, the only way to generate a new report updated it's using
       CHECK_RESULTS_EVERY_SECONDS: NONE
 ```
 
-## NOTE:
-The script 
-[checkAllureResultsFiles.sh](checkAllureResultsFiles.sh) is a temporaly workaround to discover when there are new files in the `allure-results` directory. [inotify](https://www.systutorials.com/docs/linux/man/7-inotify/) would be the best way to implement this functionality, but at the moment is not exist a proper fixed to work with Docker/Windows https://github.com/docker/for-win/issues/56.
-
-
-
 ## DOCKER GENERATION (Usage for developers)
 ### Install Docker
 ```sh
@@ -237,9 +240,8 @@ sudo apt-get update
 sudo apt install -y docker.io
 ```
 If you want to use docker without sudo, read following links:
-https://docs.docker.com/engine/installation/linux/linux-postinstall/#manage-docker-as-a-non-root-user
-
-https://stackoverflow.com/questions/21871479/docker-cant-connect-to-docker-daemon
+- https://docs.docker.com/engine/installation/linux/linux-postinstall/#manage-docker-as-a-non-root-user
+- https://stackoverflow.com/questions/21871479/docker-cant-connect-to-docker-daemon
 
 ### Build image
 ```sh
@@ -277,25 +279,21 @@ docker ps -q -f status=exited | xargs docker rm
 ```sh
 docker images -f dangling=true | xargs docker rmi
 ```
-
 ### Register tagged image (Example)
 ```sh
 docker login
 docker tag allure-release frankescobar/allure-docker-service:${PUBLIC_TAG}
 docker push frankescobar/allure-docker-service
 ```
-
 ### Register latest image (Example)
 ```sh
 docker tag allure-release frankescobar/allure-docker-service:latest
 docker push frankescobar/allure-docker-service
 ```
-
 ### Download latest image registered (Example)
 ```sh
 docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
-
 ### Download specific tagged image registered (Example)
 ```sh
 docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.8.0
