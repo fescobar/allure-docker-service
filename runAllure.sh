@@ -1,4 +1,6 @@
 #!/bin/bash
+allure --version
+
 if [ -e $REPORT_DIRECTORY/"index.html" ]; then
 		echo "Opening existing report"
 else

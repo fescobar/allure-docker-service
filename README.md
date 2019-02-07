@@ -113,24 +113,25 @@ docker-compose logs -f allure
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
 ```sh
-Generating default report
-Generating report
 Overriding configuration
 Checking Allure Results every 1 second/s
 Detecting new results...
 Generating report
- * Serving Flask app "app" (lazy loading)
- * Environment: production
-   WARNING: Do not use the development server in a production environment.
-   Use a production WSGI server instead.
- * Debug mode: off
- * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
+  * Serving Flask app "app" (lazy loading)
+  * Environment: production
+    WARNING: Do not use the development server in a production environment.
+    Use a production WSGI server instead.
+  * Debug mode: off
+  * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
+2.8.0
+Generating default report
+Generating report
 Report successfully generated to allure-report
 Report successfully generated to allure-report
 Starting web server...
-2018-10-22 15:10:14.037:INFO::main: Logging initialized @1786ms to org.eclipse.jetty.util.log.StdErrLog
+2019-02-07 12:22:23.820:INFO::main: Logging initialized @204ms to org.eclipse.jetty.util.log.StdErrLog
 Can not open browser because this capability is not supported on your platform. You can use the link below to open the report manually.
-Server started at <http://172.28.0.2:4040/>. Press <Ctrl+C> to exit
+Server started at <http://172.22.0.2:4040/>. Press <Ctrl+C> to exit
 ```
 
 All previous examples started the container using port 4040. Simply open your browser and access to: 
@@ -242,11 +243,11 @@ https://stackoverflow.com/questions/21871479/docker-cant-connect-to-docker-daemo
 
 ### Build image
 ```sh
-docker build -t 2.7.0-allure .
+docker build -t allure-release .
 ```
 ### Run container
 ```sh
-docker run -d -p 4040:4040 2.7.0-allure
+docker run -d -p 4040:4040 -p 5050:5050 allure-release
 ```
 ### See active containers
 ```sh
@@ -277,24 +278,25 @@ docker ps -q -f status=exited | xargs docker rm
 docker images -f dangling=true | xargs docker rmi
 ```
 
-### Register image (Example)
+### Register tagged image (Example)
 ```sh
 docker login
-docker tag 2.7.0-allure frankescobar/allure-docker-service
+docker tag allure-release frankescobar/allure-docker-service:${PUBLIC_TAG}
 docker push frankescobar/allure-docker-service
 ```
-### Download image registered (Example)
+
+### Register latest image (Example)
 ```sh
-docker run -d -p 4040:4040 frankescobar/allure-docker-service
+docker tag allure-release frankescobar/allure-docker-service:latest
+docker push frankescobar/allure-docker-service
 ```
 
-### Issue - bad interpreter: No such file or directory
-When you run the container (depending of your OS) it could appears this error:
+### Download latest image registered (Example)
 ```sh
-./runAllure.sh: /app/generateAllureReport.sh: /bin/bash^M: bad interpreter: No such file or directory
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 
-Just run next command to fix it:
+### Download specific tagged image registered (Example)
 ```sh
-sed -i -e 's/\r$//' runAllure.sh checkAllureResultsFiles.sh generateAllureReport.sh
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.8.0
 ```
