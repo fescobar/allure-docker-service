@@ -1,8 +1,8 @@
 FROM openjdk:8-jdk-slim
 LABEL maintainer="fescobar.systems@gmail.com"
 
-ARG RELEASE=2.8.0
-ARG ALLURE_GITHUB=https://github.com/allure-framework/allure2/releases/download
+ARG RELEASE=2.10.0
+ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
 
 RUN apt-get update
 RUN apt-get install curl -y
@@ -15,7 +15,7 @@ RUN apt-get install wget
 RUN rm /etc/java-8-openjdk/accessibility.properties
 RUN touch /etc/java-8-openjdk/accessibility.properties
 
-RUN wget --no-verbose -O /tmp/allure-$RELEASE.zip $ALLURE_GITHUB/$RELEASE/allure-$RELEASE.zip \
+RUN wget --no-verbose -O /tmp/allure-$RELEASE.zip $ALLURE_REPO/$RELEASE/allure-commandline-$RELEASE.zip \
   && unzip /tmp/allure-$RELEASE.zip -d / \
   && rm -rf /tmp/*
 

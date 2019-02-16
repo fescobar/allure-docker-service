@@ -128,7 +128,7 @@ Generating report
     Use a production WSGI server instead.
   * Debug mode: off
   * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
-2.8.0
+2.10.0
 Generating default report
 Generating report
 Report successfully generated to allure-report
@@ -296,5 +296,5 @@ docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.8.0
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.10.0
 ```
