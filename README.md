@@ -1,7 +1,22 @@
 [![](images/allure.png)](http://allure.qatools.ru/)
 [![](images/docker.png)](https://docs.docker.com/)
 
-# Allure Docker Service
+# ALLURE DOCKER SERVICE
+Table of contents
+=================
+   * [FEATURES](#FEATURES)
+   * [USAGE](#USAGE)
+      * [Generate Allure Results](#generate-allure-results)
+      * [Allure Docker Service](#allure-docker-service-1)
+          * [Using Docker on Unix/Mac](#using-docker-on-unixmac)
+          * [Using Docker on Windows (Git Bash)](#using-docker-on-windows-git-bash)
+          * [Using Docker Compose](#using-docker-compose)
+      * [Opening & Refreshing Report](#opening--refreshing-report)
+      * [Extra options](#extra-options)
+          * [Allure Generate Report Endpoint](#allure-generate-report-endpoint)
+          * [Changing port](#changing-port)
+          * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
+   * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
 
 ## FEATURES
 Allure Framework provides you good looking reports for automation testing.
@@ -65,13 +80,13 @@ Just it has left 1 step more. You have to run `allure-docker-service` mounting y
 Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
 
 #### Using Docker on Unix/Mac
-From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
+From this directory [allure-docker-java-example](allure-docker-java-example) execute next command:
 ```sh
 docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
 ```
 
 #### Using Docker on Windows (Git Bash)
-From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
+From this directory [allure-docker-java-example](allure-docker-java-example) execute next command:
 ```sh
 docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
 ```
@@ -93,7 +108,7 @@ version: '3'
       - "${PWD}/allure-results:/app/allure-results"
 ```
 
-From this directory: [allure-docker-java-example](allure-docker-java-example) execute next command:
+From this directory [allure-docker-java-example](allure-docker-java-example) execute next command:
 
 ```sh
 docker-compose up allure
