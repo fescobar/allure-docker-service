@@ -1,5 +1,5 @@
-const { After } = require('cucumber')
-const FileUtils = require('@utils/file-utils')
+import { After } from "cucumber"
+import { FileUtils } from "@utils/file-utils"
 
 After({}, async function () {
     let img = FileUtils.readFile('./resources/fescobar.png')

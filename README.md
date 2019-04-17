@@ -30,9 +30,10 @@ It's useful even for developers who wants to run tests locally and want to see w
 ### Generate Allure Results
 First at all it's important to be clear. This container only generates reports based on results. You have to generate allure results according to the technology what are you using.
 
-We have 2 examples projects:
+We have some examples projects:
 - [allure-docker-java-example](allure-docker-java-example)
 - [allure-docker-nodejs-example](allure-docker-nodejs-example)
+- [allure-docker-nodejs-typescript-example](allure-docker-nodejs-typescript-example)
 
 In this case we are going to generate results using the java project [allure-docker-java-example](allure-docker-java-example) of this repository.
 

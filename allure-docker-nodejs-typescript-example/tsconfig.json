@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "commonjs",
+        "outDir": "dist",
+        "sourceMap": true,
+        "strict": true,
+        "allowJs": true,
+        "baseUrl": ".",
+        "paths": {
+            "@utils/*": ["utils/*"]
+        }
+    }
+}
