@@ -13,4 +13,4 @@ Feature: Demo Allure
         Examples:
             | data          |
             | "something"   |
-            | "something2"   |
+            | "something2"  |

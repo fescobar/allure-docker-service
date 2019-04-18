@@ -11,4 +11,9 @@ allure-docker-nodejs-typescript-example/node_modules
 allure-docker-nodejs-typescript-example/package-lock.json
 allure-docker-nodejs-typescript-example/cucumber_report.json
 allure-docker-nodejs-typescript-example/allure-results
+AllureDockerCSharpExample/allure-results
+AllureDockerCSharpExample/.vs
+AllureDockerCSharpExample/packages
+AllureDockerCSharpExample/AllureDockerCSharpExample/bin
+AllureDockerCSharpExample/AllureDockerCSharpExample/obj
 .data/
