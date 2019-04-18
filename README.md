@@ -34,6 +34,7 @@ We have some examples projects:
 - [allure-docker-java-example](allure-docker-java-example)
 - [allure-docker-nodejs-example](allure-docker-nodejs-example)
 - [allure-docker-nodejs-typescript-example](allure-docker-nodejs-typescript-example)
+- [AllureDockerCSharpExample](AllureDockerCSharpExample)
 
 In this case we are going to generate results using the java project [allure-docker-java-example](allure-docker-java-example) of this repository.
 
