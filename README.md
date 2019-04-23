@@ -31,17 +31,17 @@ It's useful even for developers who wants to run tests locally and want to see w
 First at all it's important to be clear. This container only generates reports based on results. You have to generate allure results according to the technology what are you using.
 
 We have some examples projects:
-- [allure-docker-java-example](allure-docker-java-example)
+- [allure-docker-java-testng-example](allure-docker-java-testng-example)
 - [allure-docker-nodejs-example](allure-docker-nodejs-example)
 - [allure-docker-nodejs-typescript-example](allure-docker-nodejs-typescript-example)
 - [AllureDockerCSharpExample](AllureDockerCSharpExample)
 
-In this case we are going to generate results using the java project [allure-docker-java-example](allure-docker-java-example) of this repository.
+In this case we are going to generate results using the java project [allure-docker-java-testng-example](allure-docker-java-testng-example) of this repository.
 
-Go to directory [allure-docker-java-example](allure-docker-java-example) via command line:
+Go to directory [allure-docker-java-testng-example](allure-docker-java-testng-example) via command line:
 
 ```sh
-cd allure-docker-java-example
+cd allure-docker-java-testng-example
 ```
 Execute:
 
@@ -78,7 +78,7 @@ java.lang.AssertionError: ERROR DURING THE TEST
 [INFO] ------------------------------------------------------------------------
 ```
 
-There are 2 tests, one of them failed. Now you can see the `allure-results` diretory was created inside of [allure-docker-java-example](allure-docker-java-example) project.
+There are 2 tests, one of them failed. Now you can see the `allure-results` diretory was created inside of [allure-docker-java-testng-example](allure-docker-java-testng-example) project.
 
 Just it has left 1 step more. You have to run `allure-docker-service` mounting your `allure-results` directory.
 
@@ -86,19 +86,19 @@ Just it has left 1 step more. You have to run `allure-docker-service` mounting y
 Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
 
 #### Using Docker on Unix/Mac
-From this directory [allure-docker-java-example](allure-docker-java-example) execute next command:
+From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 ```sh
 docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
 ```
 
 #### Using Docker on Windows (Git Bash)
-From this directory [allure-docker-java-example](allure-docker-java-example) execute next command:
+From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 ```sh
 docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
 ```
 
 #### Using Docker Compose
-Using docker-compose is the best way to manage containers: [allure-docker-java-example/docker-compose.yml](allure-docker-java-example/docker-compose.yml)
+Using docker-compose is the best way to manage containers: [allure-docker-java-testng-example/docker-compose.yml](allure-docker-java-testng-example/docker-compose.yml)
 
 ```sh
 version: '3'
@@ -114,7 +114,7 @@ version: '3'
       - "${PWD}/allure-results:/app/allure-results"
 ```
 
-From this directory [allure-docker-java-example](allure-docker-java-example) execute next command:
+From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 
 ```sh
 docker-compose up allure
@@ -172,9 +172,9 @@ http://localhost:4040
 
 Now we can run other tests without being worried about Allure server. You don't need to restart or execute any Allure command.
 
-Just go again to this directory [allure-docker-java-example](allure-docker-java-example) via command line:
+Just go again to this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) via command line:
 ```sh
-cd allure-docker-java-example
+cd allure-docker-java-testng-example
 ```
 
 And execute another suite test:

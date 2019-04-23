@@ -1,4 +1,4 @@
-# JAVA DEMO PROJECT USING ALLURE
+# JAVA TESTNG DEMO PROJECT USING ALLURE
 
 ## INSTALLATION
 ### JDK8
@@ -19,3 +19,23 @@ java -version
 ```sh
 mvn --version
 ```
+
+## USAGE
+Execute Allure Docker Service from this directory
+```sh
+docker-compose up -d allure
+```
+- Verify is Allure report is working. 
+- Go to -> http://localhost:4040
+
+Each time you run tests, the Allure report will be updated.
+Execute tests:
+```sh
+mvn test -Dtest=FirstTestNGAllureTest
+ ```
+
+ ```sh
+mvn test -Dtest=SecondTestNGAllureTest
+ ```
+
+See documentation here: https://github.com/fescobar/allure-docker-service
