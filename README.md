@@ -32,6 +32,7 @@ First at all it's important to be clear. This container only generates reports b
 
 We have some examples projects:
 - [allure-docker-java-testng-example](allure-docker-java-testng-example)
+- [allure-docker-java-cucumber-jvm-example](allure-docker-java-cucumber-jvm-example)
 - [allure-docker-nodejs-example](allure-docker-nodejs-example)
 - [allure-docker-nodejs-typescript-example](allure-docker-nodejs-typescript-example)
 - [AllureDockerCSharpExample](AllureDockerCSharpExample)
