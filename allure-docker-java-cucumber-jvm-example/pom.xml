@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.allure.docker</groupId>
-    <artifactId>allure-docker-java-example</artifactId>
+    <artifactId>allure-docker-java-cucumber-jvm-example</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -14,40 +14,27 @@
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
         <maven-surefire-plugin>2.21.0</maven-surefire-plugin>
 
+        <allure-cucumber-jvm.version>2.7.0</allure-cucumber-jvm.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
     
     <dependencies>
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>6.14.3</version>
-        </dependency>
-        <dependency>
             <groupId>io.qameta.allure</groupId>
-            <artifactId>allure-testng</artifactId>
-            <version>2.6.0</version>
+            <artifactId>allure-cucumber-jvm</artifactId>
+            <version>${allure-cucumber-jvm.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-            <version>2.3.0</version>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.6</version>
         </dependency>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>activation</artifactId>
-            <version>1.1.1</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>23.0</version>
         </dependency>
     </dependencies>
 
@@ -62,22 +49,10 @@
                     <target>${java.version}</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin}</version>
-            </plugin>
-
-            <!--https://github.com/allure-framework/allure-maven-->
-            <plugin>
-                <groupId>io.qameta.allure</groupId>
-                <artifactId>allure-maven</artifactId>
-                <version>2.9</version>
-                <configuration>
-                    <reportVersion>2.7.0</reportVersion>
-                    <buildDirectory>.</buildDirectory>
-                </configuration>
             </plugin>
         </plugins>
     </build>
