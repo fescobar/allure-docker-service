@@ -5,6 +5,8 @@
 Table of contents
 =================
    * [FEATURES](#FEATURES)
+      * [Docker Hub](#docker-hub)
+      * [Docker Versions](#docker-versions)
    * [USAGE](#USAGE)
       * [Generate Allure Results](#generate-allure-results)
       * [Allure Docker Service](#allure-docker-service-1)
@@ -14,7 +16,8 @@ Table of contents
       * [Opening & Refreshing Report](#opening--refreshing-report)
       * [Extra options](#extra-options)
           * [Allure Generate Report Endpoint](#allure-generate-report-endpoint)
-          * [Changing port](#changing-port)
+          * [Switching version](#switching-version)
+          * [Switching port](#switching-port)
           * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
 
@@ -25,6 +28,13 @@ For using this tool it's required to install a server. You could have this serve
 For that reason this docker container allows you to see updated reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those new results files and it will generate a new report automatically (optional: generate report on demand via API), what you will see refreshing your browser.
 
 It's useful even for developers who wants to run tests locally and want to see what were the problems during regressions.
+
+### Docker Hub
+- Repository: https://hub.docker.com/r/frankescobar/allure-docker-service/
+
+### Docker Versions
+Docker container versions are based on binary Allure releases: https://github.com/allure-framework/allure2/releases/
+- Tags: https://hub.docker.com/r/frankescobar/allure-docker-service/tags
 
 ## USAGE
 ### Generate Allure Results
@@ -150,7 +160,7 @@ Generating report
     Use a production WSGI server instead.
   * Debug mode: off
   * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
-2.10.0
+2.11.0
 Generating default report
 Generating report
 Report successfully generated to allure-report
@@ -232,9 +242,17 @@ You are not allowed to execute this request more than 1 time consecutively. You 
 }
 ```
 
-#### Changing port
+#### Switching version
+You can swith the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`. Docker Compose example:
+```sh
+  allure:
+    image: "frankescobar/allure-docker-service:2.11.0"
+```
+By default it will take last version: https://hub.docker.com/r/frankescobar/allure-docker-service/tags
+
+#### Switching port
 Inside of the container `Allure Report` use port `4040` and `Allure API` use port `5050`.
-You can change those ports according to your convenience. Docker Compose example:
+You can switch those ports according to your convenience. Docker Compose example:
 ```sh
     ports:
       - "8484:4040"
@@ -318,5 +336,5 @@ docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.10.0
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.11.0
 ```
