@@ -1,7 +1,7 @@
 FROM openjdk:8-jdk-slim
 LABEL maintainer="fescobar.systems@gmail.com"
 
-ARG RELEASE=2.11.0
+ARG RELEASE=2.12.0
 ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
 
 RUN apt-get update

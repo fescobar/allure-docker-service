@@ -160,7 +160,7 @@ Generating report
     Use a production WSGI server instead.
   * Debug mode: off
   * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
-2.11.0
+2.12.0
 Generating default report
 Generating report
 Report successfully generated to allure-report
@@ -246,7 +246,7 @@ You are not allowed to execute this request more than 1 time consecutively. You 
 You can swith the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`. Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.11.0"
+    image: "frankescobar/allure-docker-service:2.12.0"
 ```
 By default it will take last version: https://hub.docker.com/r/frankescobar/allure-docker-service/tags
 
@@ -336,5 +336,5 @@ docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.11.0
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.12.0
 ```
