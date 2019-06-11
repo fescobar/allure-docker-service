@@ -19,6 +19,7 @@ Table of contents
           * [Switching version](#switching-version)
           * [Switching port](#switching-port)
           * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
+          * [Using Allure Options](#using-allure-options)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
 
 ## FEATURES
