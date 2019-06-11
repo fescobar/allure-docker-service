@@ -243,23 +243,33 @@ You are not allowed to execute this request more than 1 time consecutively. You 
 ```
 
 #### Switching version
-You can swith the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`. Docker Compose example:
+You can swith the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
+Docker Compose example:
 ```sh
   allure:
     image: "frankescobar/allure-docker-service:2.12.0"
 ```
+or using latest version:
+
+```sh
+  allure:
+    image: "frankescobar/allure-docker-service:latest"
+```
+
 By default it will take last version: https://hub.docker.com/r/frankescobar/allure-docker-service/tags
 
 #### Switching port
 Inside of the container `Allure Report` use port `4040` and `Allure API` use port `5050`.
-You can switch those ports according to your convenience. Docker Compose example:
+You can switch those ports according to your convenience.
+Docker Compose example:
 ```sh
     ports:
       - "8484:4040"
       - "9292:5050"
 ```
 #### Updating seconds to check Allure Results
-Updating seconds to check `allure-results` directory to generate a new report up to date. Docker Compose example:
+Updating seconds to check `allure-results` directory to generate a new report up to date.
+Docker Compose example:
 ```sh
     environment:
       CHECK_RESULTS_EVERY_SECONDS: 5
@@ -270,6 +280,26 @@ If you use this option, the only way to generate a new report updated it's using
     environment:
       CHECK_RESULTS_EVERY_SECONDS: NONE
 ```
+#### Using Allure Options
+Some frameworks/adaptors don't support allure properties to set up links for `Tracker Management Systems` or `Issue/Bug Trackers`. In that case you need to set up `ALLURE_OPTS` environment variable:
+- For Allure1 (XML results)
+```sh
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 1
+      ALLURE_OPTS: "-Dallure.tests.management.pattern=https://example.org/tms/%s -Dallure.issues.tracker.pattern=https://example.org/issue/%s"
+```
+- For Allure2 (JSON results). Generally it's not necessary to do this because the properties are configured it in the adaptor/framework and stored in `allure-results` directory. The properties format is different:
+```sh
+allure.link.mylink.pattern=https://example.org/mylink/{}
+allure.link.issue.pattern=https://example.org/issue/{}
+allure.link.tms.pattern=https://example.org/tms/{}
+```
+Reference:
+- https://docs.qameta.io/allure/#_test_management_and_bug_tracking_systems_integrations
+- https://www.swtestacademy.com/allure-testng/
+- https://docs.qameta.io/allure/#_configuration
+- https://docs.qameta.io/allure/#_config_samples
+- https://docs.qameta.io/allure/#_job_dsl_plugin
 
 ## DOCKER GENERATION (Usage for developers)
 ### Install Docker
