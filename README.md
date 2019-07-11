@@ -114,7 +114,7 @@ Using docker-compose is the best way to manage containers: [allure-docker-java-t
 
 ```sh
 version: '3'
-
+services:
   allure:
     image: "frankescobar/allure-docker-service"
     environment:
@@ -123,7 +123,7 @@ version: '3'
       - "4040:4040"
       - "5050:5050"
     volumes:
-      - "${PWD}/allure-results:/app/allure-results"
+      - ${PWD}/allure-results:/app/allure-results
 ```
 
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
