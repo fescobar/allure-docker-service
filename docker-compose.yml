@@ -9,8 +9,11 @@ services:
     build:
       context: ../allure-docker-service
       dockerfile: Dockerfile
+      args:
+        RELEASE: "2.12.1"
     environment:
       CHECK_RESULTS_EVERY_SECONDS: 1
+      KEEP_HISTORY: "TRUE"
     ports:
       - "4040:4040"
       - "5050:5050"

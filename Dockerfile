@@ -29,20 +29,25 @@ ENV ALLURE_HOME=/allure-$RELEASE
 ENV PATH=$PATH:$ALLURE_HOME/bin
 ENV RESULTS_DIRECTORY=/app/allure-results
 ENV REPORT_DIRECTORY=/app/allure-report
-RUN allure --version
+ENV RESULTS_HISTORY=$RESULTS_DIRECTORY/history
+ENV REPORT_HISTORY=$REPORT_DIRECTORY/history
+ENV ALLURE_VERSION=/app/version
+
+RUN echo $(allure --version) > ${ALLURE_VERSION}
+RUN echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION})
 
 WORKDIR /app
-ADD runAllure.sh /app
-ADD generateAllureReport.sh /app
-ADD checkAllureResultsFiles.sh /app
-ADD runAllureAPI.sh /app
+ADD *.sh /app/
+RUN chmod +x /app/*.sh
 RUN mkdir $RESULTS_DIRECTORY
 RUN mkdir $REPORT_DIRECTORY
 
 VOLUME [ "$RESULTS_DIRECTORY" ]
 
 ENV PORT=4040
+ENV PORT_API=5050
+
 EXPOSE $PORT
-EXPOSE 5050
+EXPOSE $PORT_API
 
 CMD /app/runAllure.sh & /app/runAllureAPI.sh & /app/checkAllureResultsFiles.sh

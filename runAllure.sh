@@ -1,5 +1,5 @@
 #!/bin/bash
-allure --version
+echo "ALLURE_VERSION:" $(cat ${ALLURE_VERSION})
 
 if [ -e $REPORT_DIRECTORY/"index.html" ]; then
 		echo "Opening existing report"
