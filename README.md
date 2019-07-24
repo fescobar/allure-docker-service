@@ -161,7 +161,7 @@ Generating report
     Use a production WSGI server instead.
   * Debug mode: off
   * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
-2.12.0
+2.12.1
 Generating default report
 Generating report
 Report successfully generated to allure-report
@@ -244,11 +244,11 @@ You are not allowed to execute this request more than 1 time consecutively. You 
 ```
 
 #### Switching version
-You can swith the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
+You can switch the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.12.0"
+    image: "frankescobar/allure-docker-service:2.12.1"
 ```
 or using latest version:
 
@@ -316,7 +316,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release .
+docker build -t allure-release --build-arg RELEASE=2.12.1 .
 ```
 ### Run container
 ```sh
@@ -367,5 +367,5 @@ docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.12.0
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.12.1
 ```
