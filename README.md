@@ -15,10 +15,14 @@ Table of contents
           * [Using Docker Compose](#using-docker-compose)
       * [Opening & Refreshing Report](#opening--refreshing-report)
       * [Extra options](#extra-options)
-          * [Allure Generate Report Endpoint](#allure-generate-report-endpoint)
+          * [Allure API](#allure-api)
+            * [Get Version](#get-version)
+            * [Generate Report](#generate-report)
+            * [Clean History and Trend](#clean-history-and-trend)
           * [Switching version](#switching-version)
           * [Switching port](#switching-port)
           * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
+          * [Keep History and Trends](#keep-history-and-trends)
           * [Using Allure Options](#using-allure-options)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
 
@@ -100,13 +104,13 @@ Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
 #### Using Docker on Unix/Mac
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 ```sh
-docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
+docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
 ```
 
 #### Using Docker on Windows (Git Bash)
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 ```sh
-docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
+docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
 ```
 
 #### Using Docker Compose
@@ -119,6 +123,7 @@ services:
     image: "frankescobar/allure-docker-service"
     environment:
       CHECK_RESULTS_EVERY_SECONDS: 1
+      KEEP_HISTORY: "TRUE"
     ports:
       - "4040:4040"
       - "5050:5050"
@@ -151,25 +156,23 @@ NOTE:
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
 ```sh
-Overriding configuration
-Checking Allure Results every 1 second/s
-Detecting new results...
-Generating report
-  * Serving Flask app "app" (lazy loading)
-  * Environment: production
-    WARNING: Do not use the development server in a production environment.
-    Use a production WSGI server instead.
-  * Debug mode: off
-  * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
-2.12.0
-Generating default report
-Generating report
-Report successfully generated to allure-report
-Report successfully generated to allure-report
-Starting web server...
-2019-02-07 12:22:23.820:INFO::main: Logging initialized @204ms to org.eclipse.jetty.util.log.StdErrLog
-Can not open browser because this capability is not supported on your platform. You can use the link below to open the report manually.
-Server started at <http://172.22.0.2:4040/>. Press <Ctrl+C> to exit
+allure_1  | Overriding configuration
+allure_1  | Checking Allure Results every 1 second/s
+allure_1  | Generating report
+allure_1  | Detecting new results...
+allure_1  | Generating report
+allure_1  |  * Serving Flask app "app" (lazy loading)
+allure_1  |  * Environment: production
+allure_1  |    WARNING: This is a development server. Do not use it in a production deployment.
+allure_1  |    Use a production WSGI server instead.
+allure_1  |  * Debug mode: off
+allure_1  |  * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
+allure_1  | Report successfully generated to allure-report
+allure_1  | Report successfully generated to allure-report
+allure_1  | Starting web server...
+allure_1  | 2019-07-24 16:23:34.667:INFO::main: Logging initialized @224ms to org.eclipse.jetty.util.log.StdErrLog
+allure_1  | Can not open browser because this capability is not supported on your platform. You can use the link below to open the report manually.
+allure_1  | Server started at <http://192.168.224.2:4040/>. Press <Ctrl+C> to exit
 ```
 
 All previous examples started the container using port 4040. Simply open your browser and access to: 
@@ -201,7 +204,28 @@ When this second test finished, refresh your browser and you will see there is a
 
 ### Extra options
 
-#### Allure Generate Report Endpoint
+#### Allure API
+
+##### Get Version
+`Available from Allure Docker Service version 2.12.1`
+
+Request:
+```sh
+curl -X GET http://allure:5050/version -ik
+```
+Response:
+```sh
+{
+   "data":{
+      "version":"any-version"
+   },
+   "meta_data":{
+      "message":"Version successfully obtained"
+   }
+}
+```
+
+##### Generate Report
 This endpoint is useful to force to generate a new report on demand.
 
 Request:
@@ -243,12 +267,36 @@ You are not allowed to execute this request more than 1 time consecutively. You 
 }
 ```
 
+##### Clean History and Trend
+`Available from Allure Docker Service version 2.12.1`
+
+Request:
+```sh
+curl -X GET http://allure:5050/clean-history -ik
+```
+Response:
+```sh
+{
+   "meta_data":{
+      "message":"History successfully cleaned"
+   }
+}
+```
+Failed Response:
+```sh
+{
+   "meta_data":{
+      "message":"'Clean History' process is running currently. Try later!"
+   }
+}
+```
+
 #### Switching version
-You can swith the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
+You can switch the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.12.0"
+    image: "frankescobar/allure-docker-service:2.12.1"
 ```
 or using latest version:
 
@@ -276,11 +324,25 @@ Docker Compose example:
       CHECK_RESULTS_EVERY_SECONDS: 5
 ```
 Use `NONE` value to disable automatic checking results.
-If you use this option, the only way to generate a new report updated it's using the API [Allure Generate Report Endpoint](#allure-generate-report-endpoint), requesting on demand.
+If you use this option, the only way to generate a new report uo to date it's using the API [Generate Report](#generate-report), requesting on demand.
 ```sh
     environment:
       CHECK_RESULTS_EVERY_SECONDS: NONE
 ```
+
+#### Keep History and Trends
+`Available from Allure Docker Service version 2.12.1`
+
+Enable `KEEP_HISTORY` environment variable to work with history & trends
+
+Docker Compose example:
+```sh
+    environment:
+      KEEP_HISTORY: "TRUE"
+```
+If you want to clean the history use the API [Clean History and Trend](#clean-history-and-trend).
+
+
 #### Using Allure Options
 Some frameworks/adaptors don't support allure properties to set up links for `Tracker Management Systems` or `Issue/Bug Trackers`. In that case you need to set up `ALLURE_OPTS` environment variable:
 - For Allure1 (XML results)
@@ -316,7 +378,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release .
+docker build -t allure-release --build-arg RELEASE=2.12.1 .
 ```
 ### Run container
 ```sh
@@ -367,5 +429,5 @@ docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.12.0
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.12.1
 ```

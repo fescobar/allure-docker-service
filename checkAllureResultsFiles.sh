@@ -15,12 +15,17 @@ fi
 
 echo "Checking Allure Results every $SECONDS_TO_WAIT second/s"
 
+detect_changes() {
+	FILES="$(echo $(ls $RESULTS_DIRECTORY -Ihistory -l --time-style=full-iso) | md5sum)"
+}
+
 while :
 do
-	FILES="$(echo $(ls $RESULTS_DIRECTORY -l --time-style=full-iso) | md5sum)"
+	detect_changes
 	if [ "$FILES" != "$PREV_FILES" ]; then
-		export env PREV_FILES=$FILES
 		echo "Detecting new results..."
+		export env PREV_FILES=$FILES
+		/app/keepAllureHistory.sh
 		/app/generateAllureReport.sh
 	fi
 	sleep $SECONDS_TO_WAIT
