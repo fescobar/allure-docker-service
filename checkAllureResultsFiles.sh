@@ -2,7 +2,9 @@
 
 if [ "$CHECK_RESULTS_EVERY_SECONDS" == "NONE" ] || [ "$CHECK_RESULTS_EVERY_SECONDS" == "none" ]; then
 	echo "Not checking results automatically"
-	while true ; do continue ; done
+	while true ; do
+		sleep 3600
+	done
 fi
 
 if echo $CHECK_RESULTS_EVERY_SECONDS | egrep -q '^[0-9]+$'; then
