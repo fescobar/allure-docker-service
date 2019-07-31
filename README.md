@@ -211,7 +211,7 @@ When this second test finished, refresh your browser and you will see there is a
 
 Request:
 ```sh
-curl -X GET http://allure:5050/version -ik
+curl -X GET http://localhost:5050/version -ik
 ```
 Response:
 ```sh
