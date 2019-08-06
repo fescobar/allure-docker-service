@@ -1,0 +1,204 @@
+<html>
+
+<head>
+    <title>Emailable Report - Allure Docker Service</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ css }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon') }}">
+</head>
+
+<body>
+    <div class="container jumbotron">
+        <div class="display-4 lead">Emailable Report</div>
+        <div class="lead">Allure Docker Service</div>
+        <br>
+        <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Tests Cases
+                <span class="badge badge-primary badge-pill">{{ testCases|length }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Server Link
+                <span class="badge badge-light badge-pill">
+                    <a href="{{serverUrl}}" target="_blank">{{serverUrl}}</a>
+                </span>
+            </li>
+        </ul>
+
+        <hr class="my-4">
+
+        {% for testCase in testCases %}
+        <div
+            class="card border-secondary mb-3 {% if testCase.status=='passed' %} border-success{% elif testCase.status=='failed'%} border-danger{% elif testCase.status=='broken'%} border-warning{% elif testCase.status=='skipped'%} border-light{% elif testCase.status=='unknown'%} border-dark{% endif %}">
+
+            <div class="card-header">
+                {{testCase.name}} <span
+                    class="badge badge-pill {% if testCase.status=='passed' %} badge-success{% elif testCase.status=='failed'%} badge-danger{% elif testCase.status=='broken'%} badge-warning{% elif testCase.status=='skipped'%} badge-light{% elif testCase.status=='unknown'%} badge-dark{% endif %}">{{testCase.status}}</span>
+            </div>
+
+            <div class="card-body">
+                <!-- CARD TEXT -->
+                <p class="card-text">
+                    <b>description:</b> {{testCase.description}}
+                    <br>
+
+                    {% if testCase.time is defined and testCase.time.duration is defined %}
+                    <b>duration:</b> {{testCase.time.duration/1000}} s
+                    <br>
+                    {% endif %}
+
+                    {% if testCase.extra is defined and testCase.extra.severity is defined %}
+                    <b>severity:</b> {{testCase.extra.severity}}
+                    <br>
+                    {% endif %}
+
+                    {% for label in testCase.labels %}
+
+                    {% if label.name == 'feature' or label.name == 'tag' or label.name == 'package' or label.name == 'suite' or label.name == 'testClass' or label.name == 'testMethod' %}
+                    <b>{{label.name}}:</b> {{label.value}}
+                    <br>
+                    {% endif %}
+
+                    {% endfor %}
+
+                    {% if testCase.testStage is defined and testCase.testStage.statusMessage is defined %}
+                    <b>Status Message: </b>
+                    {{testCase.testStage.statusMessage}}
+                    {% endif %}
+                    <br>
+                    {% if testCase.testStage is defined and testCase.testStage.statusTrace is defined %}
+                    <b>Status Trace: </b>
+                    {{testCase.testStage.statusTrace}}
+                    {% endif %}
+                </p>
+
+                <!-- TABLE -->
+                {% if testCase.testStage is defined and testCase.testStage.stepsCount is defined and testCase.testStage.stepsCount > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Steps</th>
+                                <th scope="col">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- TABLE - BEFORE STAGES -->
+                            {% if testCase.beforeStages is defined %}
+                            {% for beforeStage in testCase.beforeStages %}
+                            {% for step in beforeStage.steps %}
+                            <tr
+                                class="{% if step.status=='passed' %} table-success{% elif step.status=='failed' %} table-danger {% elif step.status=='broken' %} table-warning {% elif step.status=='skipped' %} table-light {% elif step.status=='unknown' %} table-dark{% endif %}">
+                                <td>{{step.name}}</td>
+                                {% if step.time is defined and step.time.duration is defined %}
+                                <td>{{step.time.duration/1000}} s</td>
+                                {% else %}
+                                <td>0 s</td>
+                                {% endif %}
+                            </tr>
+                            {% if step.statusMessage is defined %}
+                            <tr class="table-danger">
+                                <td style="padding-left:3em">
+                                    <h6>{{step.statusMessage}}</h6>
+                                </td>
+                                <td></td>
+                            </tr>
+                            {% endif %}
+
+                            {% if step.statusTrace is defined %}
+                            <tr class="table-danger">
+                                <td style="padding-left:3em">
+                                    <h6>{{step.statusTrace}}</h6>
+                                </td>
+                                <td></td>
+                            </tr>
+                            {% endif %}
+
+                            {% endfor %}
+                            {% endfor %}
+                            {% endif %}
+
+
+                            <!-- TABLE - TEST STAGES -->
+                            {% if testCase.testStage is defined %}
+
+                            {% for step in testCase.testStage.steps %}
+                            <tr
+                                class="{% if step.status=='passed' %} table-success{% elif step.status=='failed' %} table-danger {% elif step.status=='broken' %} table-warning {% elif step.status=='skipped' %} table-light {% elif step.status=='unknown' %} table-dark{% endif %}">
+                                <td>{{step.name}}</td>
+                                {% if step.time is defined and step.time.duration is defined %}
+                                <td>{{step.time.duration/1000}} s</td>
+                                {% else %}
+                                <td>0 s</td>
+                                {% endif %}
+                            </tr>
+
+                            {% if step.statusMessage is defined %}
+                            <tr class="table-danger">
+                                <td style="padding-left:3em">
+                                    <h6>{{step.statusMessage}}</h6>
+                                </td>
+                                <td></td>
+                            </tr>
+                            {% endif %}
+
+                            {% if step.statusTrace is defined %}
+                            <tr class="table-danger">
+                                <td style="padding-left:3em">
+                                    <h6>{{step.statusTrace}}</h6>
+                                </td>
+                                <td></td>
+                            </tr>
+                            {% endif %}
+
+                            {% endfor %}
+                            {% endif %}
+
+                            <!-- TABLE - AFTER STAGES -->
+                            {% if testCase.afterStages is defined %}
+                            {% for afterStage in testCase.afterStages %}
+                            {% for step in afterStage.steps %}
+                            <tr
+                                class="{% if step.status=='passed' %} table-success{% elif step.status=='failed' %} table-danger {% elif step.status=='broken' %} table-warning {% elif step.status=='skipped' %} table-light {% elif step.status=='unknown' %} table-dark{% endif %}">
+                                <td>{{step.name}}</td>
+                                {% if step.time is defined and step.time.duration is defined %}
+                                <td>{{step.time.duration/1000}} s</td>
+                                {% else %}
+                                <td>0 s</td>
+                                {% endif %}
+                            </tr>
+
+                            {% if step.statusMessage is defined %}
+                            <tr class="table-danger">
+                                <td style="padding-left:3em">
+                                    <h6>{{step.statusMessage}}</h6>
+                                </td>
+                                <td></td>
+                            </tr>
+                            {% endif %}
+
+                            {% if step.statusTrace is defined %}
+                            <tr class="table-danger">
+                                <td style="padding-left:3em">
+                                    <h6>{{step.statusTrace}}</h6>
+                                </td>
+                                <td></td>
+                            </tr>
+                            {% endif %}
+
+                            {% endfor %}
+                            {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>
