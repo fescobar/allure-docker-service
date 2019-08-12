@@ -1,0 +1,168 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "description": "Interact with Allure Docker container",
+        "version": "1.0.0",
+        "title": "Allure Docker Service API",
+        "contact": {
+            "email": "fescobar.systems@gmail.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        }
+    },
+    "tags": [
+        {
+            "name": "Actions",
+            "description": ""
+        }
+    ],
+    "paths": {
+        "/version": {
+            "get": {
+                "tags": [
+                    "Actions"
+                ],
+                "summary": "Get Allure version (from version 2.12.1)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    }
+                }
+            }
+        },
+        "/generate-report": {
+            "get": {
+                "tags": [
+                    "Actions"
+                ],
+                "summary": "Generate new report",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    }
+                }
+            }
+        },
+        "/clean-history": {
+            "get": {
+                "tags": [
+                    "Actions"
+                ],
+                "summary": "Clean Allure history & trends (from version 2.12.1)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    }
+                }
+            }
+        },
+        "/emailable-report/render": {
+            "get": {
+                "tags": [
+                    "Actions"
+                ],
+                "summary": "Render emailable Allure report (from version 2.12.1)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    }
+                }
+            }
+        },
+        "/emailable-report/export": {
+            "get": {
+                "tags": [
+                    "Actions"
+                ],
+                "summary": "Export emailable Allure report (from version 2.12.1)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "data": {
+                "properties": {
+                    "xxx": {
+                        "type": "object"
+                    }
+                }
+            },
+            "meta_data": {
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            },
+            "response": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/data"
+                        }
+                    },
+                    "meta_data": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/meta_data"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

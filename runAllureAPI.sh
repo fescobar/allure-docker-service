@@ -1,2 +1,2 @@
 #!/bin/bash
-python /app/allure-docker-api/app.py
+python $ROOT/allure-docker-api/app.py

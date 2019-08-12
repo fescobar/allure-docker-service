@@ -11,5 +11,6 @@ if [ -e $RESULTS_HISTORY ]; then
     fi
 fi
 
-/app/keepAllureHistory.sh
-/app/generateAllureReport.sh
+$ROOT/keepAllureHistory.sh
+$ROOT/generateAllureReport.sh
+$ROOT/renderEmailableReport.sh

@@ -16,13 +16,14 @@ Table of contents
       * [Opening & Refreshing Report](#opening--refreshing-report)
       * [Extra options](#extra-options)
           * [Allure API](#allure-api)
-            * [Get Version](#get-version)
-            * [Generate Report](#generate-report)
-            * [Clean History and Trend](#clean-history-and-trend)
           * [Switching version](#switching-version)
           * [Switching port](#switching-port)
           * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
           * [Keep History and Trends](#keep-history-and-trends)
+          * [Customize Emailable Report](#customize-emailable-report)
+              * [Override CSS](#override-css)
+              * [Override server link](#override-server-link)
+              * [Develop a new template](#develop-a-new-template)
           * [Using Allure Options](#using-allure-options)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
 
@@ -205,91 +206,9 @@ When this second test finished, refresh your browser and you will see there is a
 ### Extra options
 
 #### Allure API
+Access to http://localhost:5050 to see available endpoints
 
-##### Get Version
-`Available from Allure Docker Service version 2.12.1`
-
-Request:
-```sh
-curl -X GET http://localhost:5050/version -ik
-```
-Response:
-```sh
-{
-   "data":{
-      "version":"any-version"
-   },
-   "meta_data":{
-      "message":"Version successfully obtained"
-   }
-}
-```
-
-##### Generate Report
-This endpoint is useful to force to generate a new report on demand.
-
-Request:
-```sh
-curl -X GET http://localhost:5050/generate-report -ik
-```
-Response:
-```sh
-{
-    "data": {
-        "allure_results_files": [
-            "240dbfaa-de15-4c48-addc-31c2c5861c3f-container.json",
-            "314127b2-ff70-433c-9db7-534c31b773a9-result.json",
-            "4f90ba22-b6b5-4979-8d4e-e36a80a4c725-result.json",
-            "6d2270f8-6961-4ad5-9b81-af59b6a57116-container.json",
-            "9b0d11a5-8c23-402f-be52-2818ae1db765-attachment",
-            "baee6435-a109-4f1d-bc94-8c3132111c92-attachment.mp4",
-            "d4e54580-5d61-4aa9-b5e9-af76d1c42a2f-container.json",
-            "d79cb78e-287e-457f-8a03-5eb1482d2073-container.json",
-            "ddaf6d54-910b-4895-8f9a-4029a952d3c8-container.json",
-            "e183e26b-cbbf-459b-91fa-d0648036cc8c-result.json",
-            "fd53d71d-3551-4ea2-90fd-639e507aa59e-container.json",
-            "fd71f6e7-3d4a-4a14-be54-324bd519e408-result.json"
-        ]
-    },
-    "meta_data": {
-        "message": "Report generated successfully"
-    }
-}
-```
-
-Failed response:
-You are not allowed to execute this request more than 1 time consecutively. You will have to wait for this process to finish to execute this request again.
-```sh
-{
-    "meta_data": {
-        "message": "'Generating Report' process is running currently. Try later!"
-    }
-}
-```
-
-##### Clean History and Trend
-`Available from Allure Docker Service version 2.12.1`
-
-Request:
-```sh
-curl -X GET http://allure:5050/clean-history -ik
-```
-Response:
-```sh
-{
-   "meta_data":{
-      "message":"History successfully cleaned"
-   }
-}
-```
-Failed Response:
-```sh
-{
-   "meta_data":{
-      "message":"'Clean History' process is running currently. Try later!"
-   }
-}
-```
+[![](images/allure-api.png)](images/allure-api.png)
 
 #### Switching version
 You can switch the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
@@ -324,7 +243,7 @@ Docker Compose example:
       CHECK_RESULTS_EVERY_SECONDS: 5
 ```
 Use `NONE` value to disable automatic checking results.
-If you use this option, the only way to generate a new report uo to date it's using the API [Generate Report](#generate-report), requesting on demand.
+If you use this option, the only way to generate a new report up to date it's using the [Allure API](#allure-api).
 ```sh
     environment:
       CHECK_RESULTS_EVERY_SECONDS: NONE
@@ -340,7 +259,51 @@ Docker Compose example:
     environment:
       KEEP_HISTORY: "TRUE"
 ```
-If you want to clean the history use the API [Clean History and Trend](#clean-history-and-trend).
+If you want to clean the history use the [Allure API](#allure-api).
+
+
+#### Customize Emailable Report
+`Available from Allure Docker Service version 2.12.1`
+
+You can render and export the emailable report using the [Allure API](#allure-api).
+
+[![](images/emailable-report.png)](images/emailable-report.png)
+
+##### Override CSS
+By default this report template is using Bootstrap css. If you want to override the css, just you need to pass the enviroment variable `EMAILABLE_REPORT_CSS_CDN`. Docker Compose example:
+
+```sh
+    environment:
+      EMAILABLE_REPORT_CSS_CDN: "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/sketchy/bootstrap.css"
+```
+
+[![](images/emailable-report-custom.png)](images/emailable-report-custom.png)
+
+You can use all these themes: https://bootswatch.com/ or any other boostrap css like https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.css
+
+##### Override server link
+If you want the Emailable Report to redirect to your Allure server, just you need to pass the environment variable `SERVER_URL`.
+
+```sh
+    environment:
+      SERVER_URL: "http://allure-any-cloud.net/"
+```
+
+[![](images/emailable-report-server-link.png)](images/emailable-report-server-link.png)
+
+
+##### Develop a new template
+If you want to develop a new template, create a local directory (`my-template` as example) with a file named `default.html`. In that file you can create your own html template, you can use as guide this example: [allure-docker-api/templates/default.html](allure-docker-api/templates/default.html) using [Jinja](https://jinja.palletsprojects.com/en/2.10.x/templates/) syntax. Don't rename your local template, always the file must be named `default.html`.
+
+Mount that directory to the container like in the example and pass the environment variable `FLASK_DEBUG` with value `1`.
+This variable will allow you to use `hot reloading`, you can update the content of `default.html` locally and use the endpoint `emailable-report/render` ([Allure API](#allure-api)) to see your changes applied in the browser.
+
+```sh
+    environment:
+      FLASK_DEBUG: 1
+    volumes:
+    - ${PWD}/my-template:/app/allure-docker-api/templates
+```
 
 
 #### Using Allure Options

@@ -21,14 +21,17 @@ detect_changes() {
 	FILES="$(echo $(ls $RESULTS_DIRECTORY -Ihistory -l --time-style=full-iso) | md5sum)"
 }
 
+sleep 5
+
 while :
 do
 	detect_changes
 	if [ "$FILES" != "$PREV_FILES" ]; then
 		echo "Detecting new results..."
 		export env PREV_FILES=$FILES
-		/app/keepAllureHistory.sh
-		/app/generateAllureReport.sh
+		$ROOT/keepAllureHistory.sh
+		$ROOT/generateAllureReport.sh
+		$ROOT/renderEmailableReport.sh
 	fi
 	sleep $SECONDS_TO_WAIT
 done
