@@ -27,7 +27,7 @@ while :
 do
 	detect_changes
 	if [ "$FILES" != "$PREV_FILES" ]; then
-		echo "Detecting new results..."
+		echo "Detecting results changes..."
 		export env PREV_FILES=$FILES
 		$ROOT/keepAllureHistory.sh
 		$ROOT/generateAllureReport.sh
