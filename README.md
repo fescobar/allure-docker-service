@@ -208,6 +208,16 @@ When this second test finished, refresh your browser and you will see there is a
 #### Allure API
 Access to http://localhost:5050 to see available endpoints
 
+`'GET'    /version`
+
+`'GET'    /generate-report`
+
+`'GET'    /clean-history`
+
+`'GET'    /emailable-report/render`
+
+`'GET'    /emailable-report/export`
+
 [![](images/allure-api.png)](images/allure-api.png)
 
 #### Switching version
