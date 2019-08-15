@@ -8,7 +8,7 @@ RUN apt-get update
 RUN apt-get install curl -y
 RUN apt-get install vim -y
 RUN apt install python-pip -y
-RUN pip install Flask flask-swagger-ui
+RUN pip install Flask flask-swagger-ui requests
 RUN apt-get install --reinstall procps -y
 RUN apt-get install wget
 

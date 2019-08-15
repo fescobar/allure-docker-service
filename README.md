@@ -16,6 +16,7 @@ Table of contents
       * [Opening & Refreshing Report](#opening--refreshing-report)
       * [Extra options](#extra-options)
           * [Allure API](#allure-api)
+          * [Send results through API](#send-results-through-api)
           * [Switching version](#switching-version)
           * [Switching port](#switching-port)
           * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
@@ -31,7 +32,7 @@ Table of contents
 Allure Framework provides you good looking reports for automation testing.
 For using this tool it's required to install a server. You could have this server running on Jenkins or if you want to see reports locally you need run some commands on your machine. This work results tedious, at least for me :)
 
-For that reason this docker container allows you to see updated reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those new results files and it will generate a new report automatically (optional: generate report on demand via API), what you will see refreshing your browser.
+For that reason this docker container allows you to see up to date reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those changes and it will generate a new report automatically (optional: generate report on demand via API), what you will see refreshing your browser.
 
 It's useful even for developers who wants to run tests locally and want to see what were the problems during regressions.
 
@@ -157,23 +158,26 @@ NOTE:
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
 ```sh
+allure_1  | Opening existing report
 allure_1  | Overriding configuration
 allure_1  | Checking Allure Results every 1 second/s
-allure_1  | Generating report
-allure_1  | Detecting new results...
-allure_1  | Generating report
 allure_1  |  * Serving Flask app "app" (lazy loading)
 allure_1  |  * Environment: production
 allure_1  |    WARNING: This is a development server. Do not use it in a production deployment.
 allure_1  |    Use a production WSGI server instead.
 allure_1  |  * Debug mode: off
 allure_1  |  * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
-allure_1  | Report successfully generated to allure-report
-allure_1  | Report successfully generated to allure-report
 allure_1  | Starting web server...
-allure_1  | 2019-07-24 16:23:34.667:INFO::main: Logging initialized @224ms to org.eclipse.jetty.util.log.StdErrLog
+allure_1  | 2019-08-15 10:09:14.715:INFO::main: Logging initialized @219ms to org.eclipse.jetty.util.log.StdErrLog
 allure_1  | Can not open browser because this capability is not supported on your platform. You can use the link below to open the report manually.
 allure_1  | Server started at <http://192.168.224.2:4040/>. Press <Ctrl+C> to exit
+allure_1  | Detecting results changes...
+allure_1  | Creating history on results directory...
+allure_1  | Copying history from previous results...
+allure_1  | Generating report
+allure_1  | Report successfully generated to allure-report
+allure_1  | 127.0.0.1 - - [15/Aug/2019 10:09:20] "GET /emailable-report/render HTTP/1.1" 200 -
+allure_1  | Status: 200
 ```
 
 All previous examples started the container using port 4040. Simply open your browser and access to: 
@@ -206,11 +210,15 @@ When this second test finished, refresh your browser and you will see there is a
 ### Extra options
 
 #### Allure API
-Access to http://localhost:5050 to see available endpoints
+Available endpoints:
 
 `'GET'    /version`
 
+`'POST'   /send-results`
+
 `'GET'    /generate-report`
+
+`'GET'    /clean-results`
 
 `'GET'    /clean-history`
 
@@ -218,7 +226,23 @@ Access to http://localhost:5050 to see available endpoints
 
 `'GET'    /emailable-report/export`
 
+Access to http://localhost:5050 to see Swagger documentation with examples
+
 [![](images/allure-api.png)](images/allure-api.png)
+
+#### Send results through API
+`Available from Allure Docker Service version 2.12.1`
+
+After running your tests, you can execute any script to send the generated results from any server to the Allure container using the [Allure API](#allure-api). For that you can use the endpoint `/send-results`.
+
+Here a python script as example: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
+
+```sh
+python send_results.py
+```
+
+This script is sending these results as example [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
+
 
 #### Switching version
 You can switch the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.

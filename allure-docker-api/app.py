@@ -1,13 +1,14 @@
-from flask import Flask, jsonify, render_template, send_file
+from flask import Flask, jsonify, render_template, send_file, request
 from flask_swagger_ui import get_swaggerui_blueprint
 from subprocess import call
-import os, uuid, glob, json
+import os, uuid, glob, json, base64
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 GENERATE_REPORT_PROCESS = os.environ['ROOT'] + '/generateAllureReport.sh'
 KEEP_HISTORY_PROCESS = os.environ['ROOT'] + '/keepAllureHistory.sh'
 CLEAN_HISTORY_PROCESS = os.environ['ROOT'] + '/cleanAllureHistory.sh'
+CLEAN_RESULTS_PROCESS = os.environ['ROOT'] + '/cleanAllureResults.sh'
 RENDER_EMAIL_REPORT_PROCESS = os.environ['ROOT'] + '/renderEmailableReport.sh'
 RESULTS_DIRECTORY = os.environ['RESULTS_DIRECTORY']
 ALLURE_VERSION = os.environ['ALLURE_VERSION']
@@ -47,7 +48,7 @@ def version():
     try:
         f = open(ALLURE_VERSION, "r")
         version = f.read()
-    except Exception, ex:
+    except Exception as ex:
         body = {
             'meta_data': {
                 'message' : str(ex)
@@ -69,6 +70,103 @@ def version():
 
     return resp
 
+@app.route("/send-results", methods=['POST'])
+def send_results():
+    try:
+        if not request.is_json:
+            raise Exception("Header 'Content-Type' is not 'application/json'")
+
+        json = request.get_json()
+
+        if 'results' not in json:
+            raise Exception("'results' array is required in the body")
+
+        results = json['results']
+
+        if  isinstance(results, list) == False:
+            raise Exception("'results' should be an array")
+
+        if not results:
+            raise Exception("'results' array is empty")
+
+        map_results = {}
+        for result in results:
+            if 'file_name' not in result or not result['file_name'].strip():
+                raise Exception("'file_name' attribute is required for all results")
+            fileName = result.get('file_name')
+            map_results[fileName] = ''
+
+        if len(results) != len(map_results):
+            raise Exception("Duplicated file names in 'results'")
+
+        validatedResults = []
+        for result in results:
+            fileName = result.get('file_name')
+            validated_result = {}
+            validated_result['file_name'] = fileName
+
+            if 'content_base64' not in result or not result['content_base64'].strip():
+                raise Exception("'content_base64' attribute is required for '%s' file" % (fileName))
+            else:
+                contentBase64 = result.get('content_base64')
+                try:
+                    validated_result['content_base64'] = base64.b64decode(contentBase64)
+                except Exception:
+                    raise Exception("'content_base64' attribute content for '%s' file should be encoded to base64" % (fileName))
+
+            validatedResults.append(validated_result)
+
+        processedFiles = []
+        failedFiles = []
+        for result in validatedResults:
+            fileName = result.get('file_name')
+            content_base64 = result.get('content_base64')
+            try:
+                f = open("%s/%s" % (RESULTS_DIRECTORY, fileName), "wb")
+                f.write(content_base64)
+            except Exception as ex:
+                error = {}
+                error['message'] = str(ex)
+                error['file_name'] = fileName
+                failedFiles.append(error)
+            else:
+                processedFiles.append(fileName)
+            finally:
+                f.close()
+
+        files = os.listdir(RESULTS_DIRECTORY)
+
+        currentFilesCount = len(files)
+        sentFilesCount = len(validatedResults)
+        processedFilesCount = len(processedFiles)
+        failedFilesCount = len(failedFiles)
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+    else:
+        body = {
+            'data': {
+                'current_files': files,
+                'current_files_count': currentFilesCount,
+                'failed_files': failedFiles,
+                'failed_files_count': failedFilesCount,
+                'processed_files': processedFiles,
+                'processed_files_count': processedFilesCount,
+                'sent_files_count': sentFilesCount
+                },
+            'meta_data': {
+                'message' : "Results successfully sent"
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 200
+
+    return resp
 
 @app.route("/generate-report")
 def generate_report():
@@ -80,7 +178,7 @@ def generate_report():
         call([KEEP_HISTORY_PROCESS])
         call([GENERATE_REPORT_PROCESS])
         call([RENDER_EMAIL_REPORT_PROCESS])
-    except Exception, ex:
+    except Exception as ex:
         body = {
             'meta_data': {
                 'message' : str(ex)
@@ -108,7 +206,7 @@ def clean_history():
         check_process(CLEAN_HISTORY_PROCESS)
 
         call([CLEAN_HISTORY_PROCESS])
-    except Exception, ex:
+    except Exception as ex:
         body = {
             'meta_data': {
                 'message' : str(ex)
@@ -120,6 +218,32 @@ def clean_history():
         body = {
             'meta_data': {
                 'message' : "History successfully cleaned"
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 200
+
+    return resp
+
+@app.route("/clean-results")
+def clean_results():
+    try:
+        check_process(GENERATE_REPORT_PROCESS)
+        check_process(CLEAN_RESULTS_PROCESS)
+
+        call([CLEAN_RESULTS_PROCESS])
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+    else:
+        body = {
+            'meta_data': {
+                'message' : "Results successfully cleaned"
             }
         }
         resp = jsonify(body)
@@ -145,10 +269,12 @@ def emailable_report_render():
 
         report = render_template(DEFAULT_TEMPLATE, css=CSS, serverUrl=SERVER_URL, testCases=testCases)
 
-        f = open(EMAILABLE_REPORT_HTML, "w")
-        f.write(report)
-        f.close()
-    except Exception, ex:
+        try:
+            f = open(EMAILABLE_REPORT_HTML, "w")
+            f.write(report)
+        finally:
+            f.close()
+    except Exception as ex:
         body = {
             'meta_data': {
                 'message' : str(ex)
@@ -166,7 +292,7 @@ def emailable_report_export():
         check_process(GENERATE_REPORT_PROCESS)
 
         report = send_file(EMAILABLE_REPORT_HTML, as_attachment=True)
-    except Exception, ex:
+    except Exception as ex:
         message = str(ex)
 
         body = {
