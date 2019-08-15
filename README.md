@@ -243,6 +243,7 @@ python send_results.py
 
 This script is sending these results as example [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
 
+If you want to clean the results use the endpoint `/clean-results` ([Allure API](#allure-api)).
 
 #### Switching version
 You can switch the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
