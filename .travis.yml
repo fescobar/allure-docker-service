@@ -13,6 +13,7 @@ env:
     - QEMU_VERSION=v4.0.0
   matrix:
     - DOCKER_FILE=Dockerfile.slim ARCH=amd64 JDK=openjdk:11-jre-slim QEMU_ARCH=x86_64
+    - DOCKER_FILE=Dockerfile.slim ARCH=arm32v7 JDK=openjdk:11-jre-slim QEMU_ARCH=arm
 #    - DOCKER_FILE=Dockerfile.slim.slim   NODE_VERSION=10 OS=buster-slim QEMU_ARCH=arm ARCH=arm32v7 PYTHON_VERSION=0
 #    - DOCKER_FILE=Dockerfile.slim.alpine NODE_VERSION=10 OS=alpine QEMU_ARCH=aarch64 ARCH=arm64v8 PYTHON_VERSION=0
 

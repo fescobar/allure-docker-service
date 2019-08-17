@@ -28,9 +28,9 @@ RUN apt-get install \
       vim \
       python-pip \
       wget \
-      unzip -y \
-    && apt-get install --reinstall procps -y \
-    && pip install Flask flask-swagger-ui requests
+      unzip -y && \
+    apt-get install --reinstall procps -y && \
+    pip install Flask flask-swagger-ui requests
 
 #RUN rm /etc/java-8-openjdk/accessibility.properties
 #RUN touch /etc/java-8-openjdk/accessibility.properties
