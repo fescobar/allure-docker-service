@@ -23,7 +23,7 @@ RUN apt-get remove --auto-remove wget -y
 
 RUN chmod -R +x /allure-$RELEASE/bin
 
-COPY allure-docker-api /app/allure-docker-api
+COPY ../../allure-docker-api /app/allure-docker-api
 
 ENV ROOT=/app
 ENV ALLURE_HOME=/allure-$RELEASE

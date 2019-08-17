@@ -49,19 +49,19 @@ Allure Docker Service supports architectures amd64, arm32v7 and arm64v8.
 
 The following table shows the variation of provided images.
 
-|**Tag**         |**Base Image**           |**Arch** | **OS** |
-|----------------|-------------------------|---------|--------|
-| 0.20.7-amd64   | amd64/openjdk:11-slim   | amd64   | debian |
-| 0.20.7-arm32v7 | arm32v7/openjdk:11-slim | arm32v7 | debian |
-| 0.20.7-arm64v8 | arm64v8/openjdk:11-slim | arm64v8 | debian |
+|**Tag**         |**Base Image**                              |**Arch** | **OS** |
+|----------------|--------------------------------------------|---------|--------|
+| 0.20.7-amd64   | amd64/adoptopenjdk:11-jre-openj9-bionic    | amd64   | ubuntu |
+| 0.20.7-arm32v7 | arm32v7/adoptopenjdk:11-jdk-hotspot-bionic | arm32v7 | ubuntu |
+| 0.20.7-arm64v8 | arm64v8/adoptopenjdk:11-jre-hotspot-bionic | arm64v8 | ubuntu |
 
 The following table shows the provided Manifest Lists.
 
-| **Tag**                                | **Allure Base Image**         |
-|----------------------------------------|---------------------------------|
-| latest, 2.12.1                         | raymondmm/allure:2.12.1-amd64   |
-|                                        | raymondmm/allure:2.12.1-arm32v7 |
-|                                        | raymondmm/allure:2.12.1-arm64v8 |
+| **Tag**                                | **allure-docker-service Base Image**              |
+|----------------------------------------|---------------------------------------------------|
+| latest, 2.12.1                         | frankescobar/allure-docker-service:2.12.1-amd64   |
+|                                        | frankescobar/allure-docker-service:2.12.1-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.12.1-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results

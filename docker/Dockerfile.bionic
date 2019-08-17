@@ -1,5 +1,5 @@
 ARG ARCH=amd64
-ARG JDK=openjdk:11-slim
+ARG JDK=adoptopenjdk:11-jre-openj9-bionic
 
 FROM $ARCH/$JDK
 
@@ -20,7 +20,7 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.url="https://docs.qameta.io/allure/" \
     org.label-schema.vcs-ref=${BUILD_REF} \
     org.label-schema.vcs-type="Git" \
-    org.label-schema.vcs-url="https://github.com/raymondm/allure" \
+    org.label-schema.vcs-url="https://github.com/fescobar/allure-docker-service" \
     org.label-schema.arch=${ARCH} \
     authors="Frank Escobar <fescobar.systems@gmail.com>, Raymond Mouthaan <raymondmmouthaan@gmail.com>"
 
@@ -29,16 +29,17 @@ COPY tmp/qemu-$QEMU_ARCH-static /usr/bin/qemu-$QEMU_ARCH-static
 
 RUN apt-get update && \
     apt-get install \
-      curl \
-      vim \
+      nano \
+      python \
       python-pip \
-      unzip -y && \
-    apt-get install --reinstall procps -y && \
+      unzip -y --no-install-recommends && \
+    pip install setuptools wheel && \
     pip install Flask flask-swagger-ui requests && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
-    unzip /tmp/allure-commandline.zip -d / && \
+    unzip -q /tmp/allure-commandline.zip -d / && \
+    apt-get remove -y unzip && \
     rm -rf /tmp/* && \
-    apt-get remove -y unzip
+    rm -rf /var/lib/apt/lists/*
 
 RUN chmod -R +x /allure-$ALLURE_RELEASE/bin
 
@@ -68,10 +69,13 @@ RUN chmod +x $ROOT/*.sh && \
 
 VOLUME [ "$RESULTS_DIRECTORY" ]
 
-ENV PORT=4040
-ENV PORT_API=5050
+ENV PORT=4040 \
+    PORT_API=5050
 
 EXPOSE $PORT
 EXPOSE $PORT_API
+
+HEALTHCHECK --interval=10s --timeout=60s --retries=3 \
+      CMD curl -f http://localhost:$PORT || exit 1
 
 CMD $ROOT/runAllure.sh & $ROOT/runAllureAPI.sh & $ROOT/checkAllureResultsFiles.sh
