@@ -60,7 +60,7 @@ jobs:
 
         # Create and Push Docker Manifest Lists to Docker Hub
         - echo "Create manifest list for all docker images."
-        - ./.docker/docker.sh manifest-list
+        - ./docker/docker.sh manifest-list
 
         # Docker Logout
         - docker logout
