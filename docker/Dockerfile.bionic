@@ -1,0 +1,83 @@
+ARG ARCH=amd64
+ARG JDK=adoptopenjdk:11-jre-openj9-bionic
+
+FROM $ARCH/$JDK
+
+ARG BUILD_DATE
+ARG BUILD_VERSION
+ARG BUILD_REF
+ARG ARCH
+ARG ALLURE_RELEASE=NONE
+ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
+ARG QEMU_ARCH
+
+LABEL org.label-schema.build-date=${BUILD_DATE} \
+    org.label-schema.docker.dockerfile="docker/Dockerfile.bionic" \
+    org.label-schema.license="MIT" \
+    org.label-schema.name="Allure Framework" \
+    org.label-schema.version=${BUILD_VERSION} \
+    org.label-schema.description="Allure Framework is a flexible lightweight multi-language test report tool." \
+    org.label-schema.url="https://docs.qameta.io/allure/" \
+    org.label-schema.vcs-ref=${BUILD_REF} \
+    org.label-schema.vcs-type="Git" \
+    org.label-schema.vcs-url="https://github.com/fescobar/allure-docker-service" \
+    org.label-schema.arch=${ARCH} \
+    authors="Frank Escobar <fescobar.systems@gmail.com>, Raymond Mouthaan <raymondmmouthaan@gmail.com>"
+
+# QEMU - Quick Emulation
+COPY tmp/qemu-$QEMU_ARCH-static /usr/bin/qemu-$QEMU_ARCH-static
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      tzdata \
+      nano \
+      python3 \
+      python3-pip \
+      unzip && \
+    ln -s `which python3` /usr/bin/python && \
+    pip3 install --upgrade pip && \
+    pip install setuptools wheel && \
+    pip install Flask flask-swagger-ui requests && \
+    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
+        unzip -q /tmp/allure-commandline.zip -d / && \
+        apt-get remove -y unzip && \
+        rm -rf /tmp/* && \
+        rm -rf /var/lib/apt/lists/* && \
+        chmod -R +x /allure-$ALLURE_RELEASE/bin && \
+        mkdir -p /app
+
+ENV ROOT=/app
+ENV ALLURE_HOME=/allure-$ALLURE_RELEASE
+ENV PATH=$PATH:$ALLURE_HOME/bin
+ENV RESULTS_DIRECTORY=$ROOT/allure-results
+ENV REPORT_DIRECTORY=$ROOT/allure-report
+ENV RESULTS_HISTORY=$RESULTS_DIRECTORY/history
+ENV REPORT_HISTORY=$REPORT_DIRECTORY/history
+ENV ALLURE_VERSION=$ROOT/version
+ENV EMAILABLE_REPORT_DIRECTORY=$ROOT/emailable-report
+ENV EMAILABLE_REPORT_HTML=$EMAILABLE_REPORT_DIRECTORY/emailable-report-allure-docker-service.html
+
+RUN echo $(allure --version) > ${ALLURE_VERSION} && \
+    echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION})
+
+WORKDIR $ROOT
+COPY allure-docker-api $ROOT/allure-docker-api
+COPY allure-docker-scripts $ROOT/
+RUN chmod +x $ROOT/*.sh && \
+    mkdir $RESULTS_DIRECTORY && \
+    mkdir $REPORT_DIRECTORY && \
+    mkdir $EMAILABLE_REPORT_DIRECTORY && \
+    echo '<html><head><title>Allure Emailable Report</title></head><body><h3>Initializing Allure Emailable Report...</h3></body></html>' > ${EMAILABLE_REPORT_HTML}
+
+VOLUME [ "$RESULTS_DIRECTORY" ]
+
+ENV PORT=4040
+ENV PORT_API=5050
+
+EXPOSE $PORT
+EXPOSE $PORT_API
+
+HEALTHCHECK --interval=10s --timeout=60s --retries=3 \
+      CMD curl -f http://localhost:$PORT || exit 1
+
+CMD $ROOT/runAllure.sh & $ROOT/runAllureAPI.sh & $ROOT/checkAllureResultsFiles.sh
