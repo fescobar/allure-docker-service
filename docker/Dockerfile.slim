@@ -23,12 +23,14 @@ ARG QEMU_ARCH
 COPY tmp/qemu-$QEMU_ARCH-static /usr/bin/qemu-$QEMU_ARCH-static
 
 RUN apt-get update
-RUN apt-get install curl -y
-RUN apt-get install vim -y
-RUN apt install python-pip -y
-RUN pip install Flask flask-swagger-ui requests
-RUN apt-get install --reinstall procps -y
-RUN apt-get install wget -y
+RUN apt-get install \
+      curl \
+      vim \
+      python-pip \
+      wget \
+      unzip -y \
+    && apt-get install --reinstall procps -y \
+    && pip install Flask flask-swagger-ui requests
 
 #RUN rm /etc/java-8-openjdk/accessibility.properties
 #RUN touch /etc/java-8-openjdk/accessibility.properties
