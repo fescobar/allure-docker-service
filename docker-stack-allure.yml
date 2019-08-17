@@ -1,0 +1,31 @@
+################################################################################
+# Docker Allure Stack example
+################################################################################
+#$ docker stack deploy allure --compose-file docker-stack-allure.yml
+################################################################################
+version: "3.7"
+
+services:
+  allure:
+    image: frankescobar/allure-docker-service:latest
+    environment:
+      - TZ=Europe/Amsterdam
+      - CHECK_RESULTS_EVERY_SECONDS=1
+      - KEEP_HISTORY=TRUE
+    volumes:
+      - ./.data/allure-docker-service/allure-results:/app/allure-results
+    networks:
+      - allure-net
+    ports:
+      - "4040:4040"
+      - "5050:5050"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      replicas: 1
+
+networks:
+  allure-net:
+    driver: overlay

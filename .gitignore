@@ -21,3 +21,5 @@ AllureDockerCSharpExample/packages
 AllureDockerCSharpExample/AllureDockerCSharpExample/bin
 AllureDockerCSharpExample/AllureDockerCSharpExample/obj
 .data/
+/.idea/
+/docker/Dockerfile
