@@ -1,6 +1,15 @@
 ARG ARCH=amd64
 ARG JDK=openjdk:11-slim
+
 FROM $ARCH/$JDK
+
+ARG BUILD_DATE
+ARG BUILD_VERSION
+ARG BUILD_REF
+ARG ARCH
+ARG ALLURE_RELEASE=NONE
+ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
+ARG QEMU_ARCH
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.docker.dockerfile="docker/Dockerfile.slim" \
@@ -15,31 +24,21 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.arch=${ARCH} \
     authors="fescobar.systems@gmail.com, Raymond Mouthaan"
 
-ARG ALLURE_RELEASE=NONE
-ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
-ARG QEMU_ARCH
-
 # QEMU - Quick Emulation
 COPY tmp/qemu-$QEMU_ARCH-static /usr/bin/qemu-$QEMU_ARCH-static
 
 RUN apt-get update
-RUN apt-get install \
+RUN apt-get update && \
+    apt-get install \
       curl \
       vim \
       python-pip \
-      wget \
-      unzip -y && \
+      unzip -y --no-install-recommends && \
     apt-get install --reinstall procps -y && \
-    pip install Flask flask-swagger-ui requests
-
-#RUN rm /etc/java-8-openjdk/accessibility.properties
-#RUN touch /etc/java-8-openjdk/accessibility.properties
-
-RUN wget --no-verbose -O /tmp/allure-$ALLURE_RELEASE.zip $ALLURE_REPO/$ALLURE_RELEASE/allure-commandline-$ALLURE_RELEASE.zip \
-  && unzip /tmp/allure-$ALLURE_RELEASE.zip -d / \
-  && rm -rf /tmp/*
-
-RUN apt-get remove --auto-remove wget -y
+    pip install Flask flask-swagger-ui requests && \
+    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip \
+        && unzip /tmp/allure-commandline.zip -d / \
+        && rm -rf /tmp/*
 
 RUN chmod -R +x /allure-$ALLURE_RELEASE/bin
 
