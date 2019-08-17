@@ -37,11 +37,31 @@ For that reason this docker container allows you to see up to date reports simpl
 It's useful even for developers who wants to run tests locally and want to see what were the problems during regressions.
 
 ### Docker Hub
-- Repository: https://hub.docker.com/r/frankescobar/allure-docker-service/
+- Repository: [frankescobar/allure-docker-service](https://hub.docker.com/r/frankescobar/allure-docker-service/)
 
 ### Docker Versions
-Docker container versions are based on binary Allure releases: https://github.com/allure-framework/allure2/releases/
+Docker container versions are based on binary [Allure 2 releases](https://github.com/allure-framework/allure2/releases/)
+
+#### Image Variants
+Allure Docker Service supports architectures amd64, arm32v7 and arm64v8.
+
 - Tags: https://hub.docker.com/r/frankescobar/allure-docker-service/tags
+
+The following table shows the variation of provided images.
+
+|**Tag**         |**Base Image**           |**Arch** | **OS** |
+|----------------|-------------------------|---------|--------|
+| 0.20.7-amd64   | amd64/openjdk:11-slim   | amd64   | debian |
+| 0.20.7-arm32v7 | arm32v7/openjdk:11-slim | arm32v7 | debian |
+| 0.20.7-arm64v8 | arm64v8/openjdk:11-slim | arm64v8 | debian |
+
+The following table shows the provided Manifest Lists.
+
+| **Tag**                                | **Node-RED Base Image**         |
+|----------------------------------------|---------------------------------|
+| latest, 2.12.1                         | raymondmm/allure:2.12.1-amd64   |
+|                                        | raymondmm/allure:2.12.1-arm32v7 |
+|                                        | raymondmm/allure:2.12.1-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results

@@ -22,12 +22,11 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.vcs-type="Git" \
     org.label-schema.vcs-url="https://github.com/raymondm/allure" \
     org.label-schema.arch=${ARCH} \
-    authors="fescobar.systems@gmail.com, Raymond Mouthaan"
+    authors="Frank Escobar <fescobar.systems@gmail.com>, Raymond Mouthaan <raymondmmouthaan@gmail.com>"
 
 # QEMU - Quick Emulation
 COPY tmp/qemu-$QEMU_ARCH-static /usr/bin/qemu-$QEMU_ARCH-static
 
-RUN apt-get update
 RUN apt-get update && \
     apt-get install \
       curl \
@@ -36,9 +35,10 @@ RUN apt-get update && \
       unzip -y && \
     apt-get install --reinstall procps -y && \
     pip install Flask flask-swagger-ui requests && \
-    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip \
-        && unzip /tmp/allure-commandline.zip -d / \
-        && rm -rf /tmp/*
+    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
+    unzip /tmp/allure-commandline.zip -d / && \
+    rm -rf /tmp/* && \
+    apt-get remove -y unzip
 
 RUN chmod -R +x /allure-$ALLURE_RELEASE/bin
 
@@ -55,16 +55,16 @@ ENV ALLURE_VERSION=$ROOT/version
 ENV EMAILABLE_REPORT_DIRECTORY=$ROOT/emailable-report
 ENV EMAILABLE_REPORT_HTML=$EMAILABLE_REPORT_DIRECTORY/emailable-report-allure-docker-service.html
 
-RUN echo $(allure --version) > ${ALLURE_VERSION}
-RUN echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION})
+RUN echo $(allure --version) > ${ALLURE_VERSION} && \
+    echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION})
 
 WORKDIR $ROOT
 ADD *.sh $ROOT/
-RUN chmod +x $ROOT/*.sh
-RUN mkdir $RESULTS_DIRECTORY
-RUN mkdir $REPORT_DIRECTORY
-RUN mkdir $EMAILABLE_REPORT_DIRECTORY
-RUN echo '<html><head><title>Allure Emailable Report</title></head><body><h3>Initializing Allure Emailable Report...</h3></body></html>' > ${EMAILABLE_REPORT_HTML}
+RUN chmod +x $ROOT/*.sh && \
+    mkdir $RESULTS_DIRECTORY && \
+    mkdir $REPORT_DIRECTORY && \
+    mkdir $EMAILABLE_REPORT_DIRECTORY && \
+    echo '<html><head><title>Allure Emailable Report</title></head><body><h3>Initializing Allure Emailable Report...</h3></body></html>' > ${EMAILABLE_REPORT_HTML}
 
 VOLUME [ "$RESULTS_DIRECTORY" ]
 
