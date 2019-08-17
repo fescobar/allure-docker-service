@@ -92,11 +92,11 @@ docker_manifest_list() {
   echo "DOCKER MANIFEST: Create and Push docker manifest lists."
   docker_manifest_list_version
 
-  # Create manifest list testing or latest
+  # Create manifest list beta or latest
   case ${BUILD_VERSION} in
-    *"testing"*)
+    *"beta"*)
       echo "DOCKER MANIFEST: Create and Push docker manifest list TESTING."
-      docker_manifest_list_testing;;
+      docker_manifest_list_beta;;
     *)
       echo "DOCKER MANIFEST: Create and Push docker manifest list LATEST."
       docker_manifest_list_latest;;
@@ -137,20 +137,20 @@ docker_manifest_list_latest() {
   docker manifest push ${TARGET}:latest
 }
 
-docker_manifest_list_testing() {
-  # Manifest Create TESTING
-  echo "DOCKER MANIFEST: Create and Push docker manifest list - ${TARGET}:testing."
-  docker manifest create ${TARGET}:testing \
+docker_manifest_list_beta() {
+  # Manifest Create BETA
+  echo "DOCKER MANIFEST: Create and Push docker manifest list - ${TARGET}:beta."
+  docker manifest create ${TARGET}:beta \
       ${TARGET}:${BUILD_VERSION}-amd64 \
       ${TARGET}:${BUILD_VERSION}-arm32v7 \
       ${TARGET}:${BUILD_VERSION}-arm64v8
 
   # Manifest Annotate TESTING
-  docker manifest annotate ${TARGET}:testing ${TARGET}:${BUILD_VERSION}-arm32v7 --os=linux --arch=arm --variant=v7
-  docker manifest annotate ${TARGET}:testing ${TARGET}:${BUILD_VERSION}-arm64v8 --os=linux --arch=arm64 --variant=v8
+  docker manifest annotate ${TARGET}:beta ${TARGET}:${BUILD_VERSION}-arm32v7 --os=linux --arch=arm --variant=v7
+  docker manifest annotate ${TARGET}:beta ${TARGET}:${BUILD_VERSION}-arm64v8 --os=linux --arch=arm64 --variant=v8
 
   # Manifest Push TESTING
-  docker manifest push ${TARGET}:testing
+  docker manifest push ${TARGET}:beta
 }
 
 #docker_manifest_list_version_os_arch() {
