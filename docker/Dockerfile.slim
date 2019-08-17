@@ -33,7 +33,7 @@ RUN apt-get update && \
       curl \
       vim \
       python-pip \
-      unzip -y --no-install-recommends && \
+      unzip -y && \
     apt-get install --reinstall procps -y && \
     pip install Flask flask-swagger-ui requests && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip \
