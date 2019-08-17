@@ -51,12 +51,9 @@ script:
 jobs:
   include:
     - stage: manifest
-      # Only create and push manifest list to Docker Hub, when tag starts with a `v`, eg. v0.20.7
+      # Only create and push manifest list to Docker Hub, when tag starts with a `v`, eg. v2.12.1
       if: tag =~ ^v
       script:
-        # Update NODE_RED_VERSION from package.json
-        - ./.docker/update_version.sh
-
         # Create and push Docker manifest lists
         # Docker Login
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
