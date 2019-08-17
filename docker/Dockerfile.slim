@@ -30,8 +30,8 @@ RUN pip install Flask flask-swagger-ui requests
 RUN apt-get install --reinstall procps -y
 RUN apt-get install wget -y
 
-RUN rm /etc/java-8-openjdk/accessibility.properties
-RUN touch /etc/java-8-openjdk/accessibility.properties
+#RUN rm /etc/java-8-openjdk/accessibility.properties
+#RUN touch /etc/java-8-openjdk/accessibility.properties
 
 RUN wget --no-verbose -O /tmp/allure-$ALLURE_RELEASE.zip $ALLURE_REPO/$ALLURE_RELEASE/allure-commandline-$ALLURE_RELEASE.zip \
   && unzip /tmp/allure-$ALLURE_RELEASE.zip -d / \
