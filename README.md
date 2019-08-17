@@ -57,7 +57,7 @@ The following table shows the variation of provided images.
 
 The following table shows the provided Manifest Lists.
 
-| **Tag**                                | **Node-RED Base Image**         |
+| **Tag**                                | **Allure Base Image**         |
 |----------------------------------------|---------------------------------|
 | latest, 2.12.1                         | raymondmm/allure:2.12.1-amd64   |
 |                                        | raymondmm/allure:2.12.1-arm32v7 |
