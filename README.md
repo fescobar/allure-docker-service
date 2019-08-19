@@ -32,7 +32,7 @@ Table of contents
 Allure Framework provides you good looking reports for automation testing.
 For using this tool it's required to install a server. You could have this server running on Jenkins or if you want to see reports locally you need run some commands on your machine. This work results tedious, at least for me :)
 
-For that reason this docker container allows you to see up to date reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those changes and it will generate a new report automatically (optional: generate report on demand via API), what you will see refreshing your browser.
+For that reason this docker container allows you to see up to date reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those changes and it will generate a new report automatically (optional: send results / generate report through API), what you will see refreshing your browser.
 
 It's useful even for developers who wants to run tests locally and want to see what were the problems during regressions.
 
