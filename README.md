@@ -23,6 +23,7 @@ Table of contents
           * [Keep History and Trends](#keep-history-and-trends)
           * [Customize Emailable Report](#customize-emailable-report)
               * [Override CSS](#override-css)
+              * [Override title](#override-title)
               * [Override server link](#override-server-link)
               * [Develop a new template](#develop-a-new-template)
           * [Using Allure Options](#using-allure-options)
@@ -335,6 +336,16 @@ By default this report template is using Bootstrap css. If you want to override 
 [![](images/emailable-report-custom.png)](images/emailable-report-custom.png)
 
 You can use all these themes: https://bootswatch.com/ or any other boostrap css like https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.css
+
+##### Override title
+If you want override the title of the Emailable Report, just you need to pass the environment variable `EMAILABLE_REPORT_TITLE`.
+
+```sh
+    environment:
+      EMAILABLE_REPORT_TITLE: "My Title"
+```
+
+[![](images/emailable-report-title.png)](images/emailable-report-title.png)
 
 ##### Override server link
 If you want the Emailable Report to redirect to your Allure server, just you need to pass the environment variable `SERVER_URL`.

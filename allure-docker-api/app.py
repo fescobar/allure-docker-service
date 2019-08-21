@@ -17,10 +17,15 @@ EMAILABLE_REPORT_HTML = os.environ['EMAILABLE_REPORT_HTML']
 DEFAULT_TEMPLATE = 'default.html'
 CSS = "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstrap.css"
 SERVER_URL = "http://localhost:" + os.environ['PORT']
+TITLE = "Emailable Report"
 
 if "EMAILABLE_REPORT_CSS_CDN" in os.environ:
     app.logger.info('Overriding CSS')
     CSS = os.environ['EMAILABLE_REPORT_CSS_CDN']
+
+if "EMAILABLE_REPORT_TITLE" in os.environ:
+    app.logger.info('Overriding Title')
+    TITLE = os.environ['EMAILABLE_REPORT_TITLE']
 
 if "SERVER_URL" in os.environ:
     app.logger.info('Overriding Allure Server Url')
@@ -267,7 +272,7 @@ def emailable_report_render():
                 if testCase["hidden"] is False:
                     testCases.append(testCase)
 
-        report = render_template(DEFAULT_TEMPLATE, css=CSS, serverUrl=SERVER_URL, testCases=testCases)
+        report = render_template(DEFAULT_TEMPLATE, css=CSS, title=TITLE, serverUrl=SERVER_URL, testCases=testCases)
 
         try:
             f = open(EMAILABLE_REPORT_HTML, "w")
