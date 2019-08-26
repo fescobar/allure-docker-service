@@ -5,9 +5,18 @@ ARG RELEASE=NONE
 ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
 
 RUN apt-get update
+RUN apt-get install --no-install-recommends -y
+
+RUN apt-get install tzdata -y
+RUN apt-get install nano -y
 RUN apt-get install curl -y
 RUN apt-get install vim -y
-RUN apt install python-pip -y
+RUN apt-get install python3 -y
+RUN apt-get install python3-pip -y
+RUN apt-get install unzip -y
+RUN ln -s `which python3` /usr/bin/python
+RUN pip3 install --upgrade pip
+RUN pip install setuptools wheel
 RUN pip install Flask flask-swagger-ui requests
 RUN apt-get install --reinstall procps -y
 RUN apt-get install wget
@@ -40,7 +49,7 @@ RUN echo $(allure --version) > ${ALLURE_VERSION}
 RUN echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION})
 
 WORKDIR $ROOT
-ADD *.sh $ROOT/
+ADD allure-docker-scripts/*.sh $ROOT/
 RUN chmod +x $ROOT/*.sh
 RUN mkdir $RESULTS_DIRECTORY
 RUN mkdir $REPORT_DIRECTORY

@@ -265,7 +265,7 @@ def emailable_report_render():
         testCases = []
         for fileName in files:
             with open(fileName) as f:
-                jsonString = f.read().decode("ascii", "ignore")
+                jsonString = f.read()
                 app.logger.debug("----TestCase-JSON----")
                 app.logger.debug(jsonString)
                 testCase = json.loads(jsonString)
