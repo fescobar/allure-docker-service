@@ -4,15 +4,14 @@ ARG JDK=adoptopenjdk:11-jre-openj9-bionic
 FROM $ARCH/$JDK
 
 ARG BUILD_DATE
-ARG BUILD_VERSION
-ARG BUILD_REF
-ARG ARCH
-ARG ALLURE_RELEASE=NONE
+ARG BUILD_VERSION=2.12.1-custom
+ARG BUILD_REF=na
+ARG ARCH=amd64
+ARG ALLURE_RELEASE=2.12.1
 ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
-ARG QEMU_ARCH
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.docker.dockerfile="docker/Dockerfile.bionic" \
+    org.label-schema.docker.dockerfile="docker-custom/Dockerfile.bionic-custom" \
     org.label-schema.license="MIT" \
     org.label-schema.name="Allure Framework" \
     org.label-schema.version=${BUILD_VERSION} \
@@ -23,9 +22,6 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.vcs-url="https://github.com/fescobar/allure-docker-service" \
     org.label-schema.arch=${ARCH} \
     authors="Frank Escobar <fescobar.systems@gmail.com>, Raymond Mouthaan <raymondmmouthaan@gmail.com>"
-
-# QEMU - Quick Emulation
-COPY tmp/qemu-$QEMU_ARCH-static /usr/bin/qemu-$QEMU_ARCH-static
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
