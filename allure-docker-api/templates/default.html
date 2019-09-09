@@ -15,10 +15,6 @@
         <br>
         <ul class="list-group">
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                Tests Cases
-                <span class="badge badge-primary badge-pill">{{ testCases|length }}</span>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
                 Server Link
                 <span class="badge badge-light badge-pill">
                     <a href="{{serverUrl}}" target="_blank">{{serverUrl}}</a>
@@ -26,15 +22,82 @@
             </li>
         </ul>
 
+        {% set count = namespace(total=testCases|length,passed=0,failed=0,broken=0,skipped=0,unknown=0) %}
+        {% for testCase in testCases %}
+            {%  if testCase.status=='passed' %}
+                {% set count.passed = count.passed + 1 %}
+            {%  elif testCase.status=='failed' %}
+                {% set count.failed = count.failed + 1 %}
+            {%  elif testCase.status=='broken' %}
+                {% set count.broken = count.broken + 1 %}
+            {%  elif testCase.status=='skipped' %}
+                {% set count.skipped = count.skipped + 1 %}
+            {%  elif testCase.status=='unknown' %}
+                {% set count.unknown = count.unknown + 1 %}
+            {% endif %}
+        {% endfor %}
+
+        {% set percentage = namespace(passed=0,failed=0,broken=0,skipped=0,unknown=0) %}
+        {%  if testCases|length != 0 %}
+            {% set percentage.passed = (count.passed * 100)/testCases|length %}
+            {% set percentage.failed = (count.failed * 100)/testCases|length %}
+            {% set percentage.broken = (count.broken * 100)/testCases|length %}
+            {% set percentage.skipped = (count.skipped * 100)/testCases|length %}
+            {% set percentage.unknown = (count.unknown * 100)/testCases|length %}
+        {% endif %}
+        <br>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col" class="table-active text-center">Total</th>
+                        <th scope="col" class="table-success text-center">Passed</th>
+                        <th scope="col" class="table-danger text-center">Failed</th>
+                        <th scope="col" class="table-warning text-center">Broken</th>
+                        <th scope="col" class="table-light text-center">Skipped</th>
+                        <th scope="col" class="table-dark text-center">Unknown</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="col" class="text-center">{{ testCases|length }}</th>
+                        <th scope="col" class="text-center">{{ count.passed }} ({{'%0.2f'| format(percentage.passed)}}%)</th>
+                        <th scope="col" class="text-center">{{ count.failed }} ({{'%0.2f'| format(percentage.failed)}}%)</th>
+                        <th scope="col" class="text-center">{{ count.broken }} ({{'%0.2f'| format(percentage.broken)}}%)</th>
+                        <th scope="col" class="text-center">{{ count.skipped }} ({{'%0.2f'| format(percentage.skipped)}}%)</th>
+                        <th scope="col" class="text-center">{{ count.unknown }} ({{'%0.2f'| format(percentage.unknown)}}%)</th>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <hr class="my-4">
 
+        {% set css = namespace(border='', badge='') %}
         {% for testCase in testCases %}
-        <div
-            class="card border-secondary mb-3 {% if testCase.status=='passed' %} border-success{% elif testCase.status=='failed'%} border-danger{% elif testCase.status=='broken'%} border-warning{% elif testCase.status=='skipped'%} border-light{% elif testCase.status=='unknown'%} border-dark{% endif %}">
+            {%  if testCase.status=='passed' %}
+                {% set css.border = 'border-success' %}
+                {% set css.badge = 'badge-success' %}
+            {%  elif testCase.status=='failed' %}
+                {% set css.border = 'border-danger' %}
+                {% set css.badge = 'badge-danger' %}
+            {%  elif testCase.status=='broken' %}
+                {% set css.border = 'border-warning' %}
+                {% set css.badge = 'badge-warning' %}
+            {%  elif testCase.status=='skipped' %}
+                {% set css.border = 'border-light' %}
+                {% set css.badge = 'badge-light' %}
+            {%  elif testCase.status=='unknown' %}
+                {% set css.border = 'border-dark' %}
+                {% set css.badge = 'badge-dark' %}
+            {% endif %}
 
+        <div
+            class="card border-secondary mb-3 {{ css.border }}">
             <div class="card-header">
-                {{testCase.name}} <span
-                    class="badge badge-pill {% if testCase.status=='passed' %} badge-success{% elif testCase.status=='failed'%} badge-danger{% elif testCase.status=='broken'%} badge-warning{% elif testCase.status=='skipped'%} badge-light{% elif testCase.status=='unknown'%} badge-dark{% endif %}">{{testCase.status}}</span>
+                {{testCase.name}}
+                <span
+                    class="badge badge-pill {{css.badge}}">{{testCase.status}}</span>
             </div>
 
             <div class="card-body">
@@ -87,9 +150,21 @@
                             <!-- TABLE - BEFORE STAGES -->
                             {% if testCase.beforeStages is defined %}
                             {% for beforeStage in testCase.beforeStages %}
+                            {% set css = namespace(table='') %}
                             {% for step in beforeStage.steps %}
+                                {%  if step.status=='passed' %}
+                                    {% set css.table = 'table-success' %}
+                                {%  elif step.status=='failed' %}
+                                    {% set css.table = 'table-danger' %}
+                                {%  elif step.status=='broken' %}
+                                    {% set css.table = 'table-warning' %}
+                                {%  elif step.status=='skipped' %}
+                                    {% set css.table = 'table-light' %}
+                                {%  elif step.status=='unknown' %}
+                                    {% set css.table = 'table-dark' %}
+                                {% endif %}
                             <tr
-                                class="{% if step.status=='passed' %} table-success{% elif step.status=='failed' %} table-danger {% elif step.status=='broken' %} table-warning {% elif step.status=='skipped' %} table-light {% elif step.status=='unknown' %} table-dark{% endif %}">
+                                class="{{ css.table }}">
                                 <td>{{step.name}}</td>
                                 {% if step.time is defined and step.time.duration is defined %}
                                 <td>{{step.time.duration/1000}} s</td>
@@ -123,9 +198,21 @@
                             <!-- TABLE - TEST STAGES -->
                             {% if testCase.testStage is defined %}
 
+                            {% set css = namespace(table='') %}
                             {% for step in testCase.testStage.steps %}
+                                {%  if step.status=='passed' %}
+                                    {% set css.table = 'table-success' %}
+                                {%  elif step.status=='failed' %}
+                                    {% set css.table = 'table-danger' %}
+                                {%  elif step.status=='broken' %}
+                                    {% set css.table = 'table-warning' %}
+                                {%  elif step.status=='skipped' %}
+                                    {% set css.table = 'table-light' %}
+                                {%  elif step.status=='unknown' %}
+                                    {% set css.table = 'table-dark' %}
+                                {% endif %}
                             <tr
-                                class="{% if step.status=='passed' %} table-success{% elif step.status=='failed' %} table-danger {% elif step.status=='broken' %} table-warning {% elif step.status=='skipped' %} table-light {% elif step.status=='unknown' %} table-dark{% endif %}">
+                                class="{{ css.table }}">
                                 <td>{{step.name}}</td>
                                 {% if step.time is defined and step.time.duration is defined %}
                                 <td>{{step.time.duration/1000}} s</td>
@@ -158,9 +245,21 @@
                             <!-- TABLE - AFTER STAGES -->
                             {% if testCase.afterStages is defined %}
                             {% for afterStage in testCase.afterStages %}
+                            {% set css = namespace(table='') %}
                             {% for step in afterStage.steps %}
+                                {%  if step.status=='passed' %}
+                                    {% set css.table = 'table-success' %}
+                                {%  elif step.status=='failed' %}
+                                    {% set css.table = 'table-danger' %}
+                                {%  elif step.status=='broken' %}
+                                    {% set css.table = 'table-warning' %}
+                                {%  elif step.status=='skipped' %}
+                                    {% set css.table = 'table-light' %}
+                                {%  elif step.status=='unknown' %}
+                                    {% set css.table = 'table-dark' %}
+                                {% endif %}
                             <tr
-                                class="{% if step.status=='passed' %} table-success{% elif step.status=='failed' %} table-danger {% elif step.status=='broken' %} table-warning {% elif step.status=='skipped' %} table-light {% elif step.status=='unknown' %} table-dark{% endif %}">
+                                class="{{ css.table }}">
                                 <td>{{step.name}}</td>
                                 {% if step.time is defined and step.time.duration is defined %}
                                 <td>{{step.time.duration/1000}} s</td>

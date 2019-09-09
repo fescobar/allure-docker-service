@@ -27,6 +27,8 @@ Table of contents
               * [Override server link](#override-server-link)
               * [Develop a new template](#develop-a-new-template)
           * [Using Allure Options](#using-allure-options)
+   * [SUPPORT](#SUPPORT)
+      * [Gitter](#gitter)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
 
 ## FEATURES
@@ -60,9 +62,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.12.1                         | frankescobar/allure-docker-service:2.12.1-amd64   |
-|                                        | frankescobar/allure-docker-service:2.12.1-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.12.1-arm64v8 |
+| latest, 2.13.0                         | frankescobar/allure-docker-service:2.13.0-amd64   |
+|                                        | frankescobar/allure-docker-service:2.13.0-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.13.0-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -271,7 +273,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.12.1"
+    image: "frankescobar/allure-docker-service:2.13.0"
 ```
 or using latest version:
 
@@ -393,6 +395,11 @@ Reference:
 - https://docs.qameta.io/allure/#_config_samples
 - https://docs.qameta.io/allure/#_job_dsl_plugin
 
+## SUPPORT
+### Gitter
+[![Gitter](https://badges.gitter.im/allure-docker-service/community.svg)](https://gitter.im/allure-docker-service/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
+
 ## DOCKER GENERATION (Usage for developers)
 ### Install Docker
 ```sh
@@ -407,7 +414,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release --build-arg RELEASE=2.12.1 .
+docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.0 .
 ```
 ### Run container
 ```sh
@@ -458,5 +465,5 @@ docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.12.1
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.13.0
 ```
