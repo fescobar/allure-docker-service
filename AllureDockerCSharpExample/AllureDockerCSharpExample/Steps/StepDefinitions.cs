@@ -1,4 +1,5 @@
-﻿using TechTalk.SpecFlow;
+﻿using NUnit.Framework;
+using TechTalk.SpecFlow;
 
 namespace AllureDockerCSharpExample.Steps
 {
@@ -15,9 +16,15 @@ namespace AllureDockerCSharpExample.Steps
         {
         }
 
-        [Then(@"I verify is ok")]
-        public void ThenIVerifyIsOk()
+
+        [Then(@"I verify is ""(.*)""")]
+        public void ThenIVerifyIs(string status)
         {
+			switch (status) {
+				case "FAILED":
+					Assert.Fail("FAILURE ON PURPOSE");
+					break;
+			}
         }
     }
 }

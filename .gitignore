@@ -1,10 +1,14 @@
 allure-docker-java-testng-example/target
 allure-docker-java-testng-example/allure-results
-allure-docker-java-testng-example/.idea
+allure-docker-java-testng-example/.idea/*
 allure-docker-java-testng-example/*.iml
+allure-docker-java-junit4-example/target
+allure-docker-java-junit4-example/allure-results
+allure-docker-java-junit4-example/.idea/*
+allure-docker-java-junit4-example/*.iml
 allure-docker-java-cucumber-jvm-example/target
 allure-docker-java-cucumber-jvm-example/allure-results
-allure-docker-java-cucumber-jvm-example/.idea
+allure-docker-java-cucumber-jvm-example/.idea/*
 allure-docker-java-cucumber-jvm-example/*.iml
 allure-docker-nodejs-example/node_modules
 allure-docker-nodejs-example/package-lock.json
