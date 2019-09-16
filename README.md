@@ -72,6 +72,7 @@ First at all it's important to be clear. This container only generates reports b
 
 We have some examples projects:
 - [allure-docker-java-testng-example](allure-docker-java-testng-example)
+- [allure-docker-java-junit4-example](allure-docker-java-junit4-example)
 - [allure-docker-java-cucumber-jvm-example](allure-docker-java-cucumber-jvm-example)
 - [allure-docker-nodejs-example](allure-docker-nodejs-example)
 - [allure-docker-nodejs-typescript-example](allure-docker-nodejs-typescript-example)
@@ -87,7 +88,7 @@ cd allure-docker-java-testng-example
 Execute:
 
 ```sh
-mvn test -Dtest=FirstTestNGAllureTest
+mvn test -Dtest=FirstTest
 ```
 If everything is OK, you should see something like this:
 
@@ -95,27 +96,29 @@ If everything is OK, you should see something like this:
 [INFO] -------------------------------------------------------
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
-[INFO] Running com.allure.docker.FirstTestNGAllureTest
-SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-SLF4J: Defaulting to no-operation (NOP) logger implementation
-SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
-test1
-test2
-[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 2.419 s <<< FAILURE! - in com.allure.docker.FirstTestNGAllureTest
-[ERROR] test2(com.allure.docker.FirstTestNGAllureTest)  Time elapsed: 0.042 s  <<< FAILURE!
-java.lang.AssertionError: ERROR DURING THE TEST
-        at com.allure.docker.FirstTestNGAllureTest.test2(FirstTestNGAllureTest.java:42)
+[INFO] Running com.allure.docker.FirstTest
+13:19:03.028 [main] INFO com.allure.docker.FirstTest - test1
+13:19:03.044 [main] DEBUG io.qameta.allure.AllureLifecycle - Adding attachment to item with uuid 4b282bd9-6a0f-4fc3-a5cc-be6e8220d3c6
+13:19:03.124 [main] INFO com.allure.docker.FirstTest - test2
+13:19:03.133 [main] DEBUG io.qameta.allure.AllureLifecycle - Adding attachment to item with uuid e2097440-e9e8-46e9-8b9d-09467b5a49b1
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.702 s <<< FAILURE! - in com.allure.docker.FirstTest
+[ERROR] test2(com.allure.docker.FirstTest)  Time elapsed: 0.028 s  <<< FAILURE!
+java.lang.AssertionError: FAILURE ON PURPOSE
+        at com.allure.docker.FirstTest.test2(FirstTest.java:37)
 
-[INFO] 
+[INFO]
 [INFO] Results:
-[INFO] 
-[ERROR] Failures: 
-[ERROR]   FirstTestNGAllureTest.test2:42 ERROR DURING THE TEST
-[INFO] 
+[INFO]
+[ERROR] Failures:
+[ERROR]   FirstTest.test2:37 FAILURE ON PURPOSE
+[INFO]
 [ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
-[INFO] 
+[INFO]
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.600 s
+[INFO] Finished at: 2019-09-16T13:19:03+01:00
 [INFO] ------------------------------------------------------------------------
 ```
 
@@ -222,7 +225,7 @@ cd allure-docker-java-testng-example
 
 And execute another suite test:
 ```sh
-mvn test -Dtest=SecondTestNGAllureTest
+mvn test -Dtest=SecondTest
 ```
 When this second test finished, refresh your browser and you will see there is a new report including last results tests.
 

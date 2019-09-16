@@ -72,39 +72,39 @@ namespace AllureDockerCSharpExample.Features
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Simple Scenario")]
-        public virtual void SimpleScenario()
+        [NUnit.Framework.DescriptionAttribute("Single Example")]
+        public virtual void SingleExample()
         {
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Simple Scenario", null, ((string[])(null)));
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Single Example", null, ((string[])(null)));
 #line 4
-    this.ScenarioInitialize(scenarioInfo);
+  this.ScenarioInitialize(scenarioInfo);
             this.ScenarioStart();
 #line 5
-        testRunner.Given("I\'m on a site", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+    testRunner.Given("I\'m on a site", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line 6
-        testRunner.When("I enter \"something\" on the page", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+    testRunner.When("I enter \"something\" on the page", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line 7
-        testRunner.Then("I verify is ok", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+    testRunner.Then("I verify is \"OK\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             this.ScenarioCleanup();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Outline Scenario")]
-        [NUnit.Framework.TestCaseAttribute("\"something\"", null)]
-        [NUnit.Framework.TestCaseAttribute("\"something2\"", null)]
-        public virtual void OutlineScenario(string data, string[] exampleTags)
+        [NUnit.Framework.DescriptionAttribute("Multiple Data Example")]
+        [NUnit.Framework.TestCaseAttribute("\"something\"", "\"OK\"", null)]
+        [NUnit.Framework.TestCaseAttribute("\"something2\"", "\"FAILED\"", null)]
+        public virtual void MultipleDataExample(string data, string status, string[] exampleTags)
         {
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Outline Scenario", null, exampleTags);
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Multiple Data Example", null, exampleTags);
 #line 10
-    this.ScenarioInitialize(scenarioInfo);
+  this.ScenarioInitialize(scenarioInfo);
             this.ScenarioStart();
 #line 11
-        testRunner.Given("I\'m on a site", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+    testRunner.Given("I\'m on a site", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line 12
-        testRunner.When(string.Format("I enter {0} on the page", data), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+    testRunner.When(string.Format("I enter {0} on the page", data), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line 13
-        testRunner.Then("I verify is ok", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+    testRunner.Then(string.Format("I verify is {0}", status), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             this.ScenarioCleanup();
         }
