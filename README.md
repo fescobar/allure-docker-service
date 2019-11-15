@@ -76,6 +76,7 @@ We have some examples projects:
 - [allure-docker-java-cucumber-jvm-example](allure-docker-java-cucumber-jvm-example)
 - [allure-docker-nodejs-example](allure-docker-nodejs-example)
 - [allure-docker-nodejs-typescript-example](allure-docker-nodejs-typescript-example)
+- [allure-docker-python-behave-example](allure-docker-python-behave-example)
 - [AllureDockerCSharpExample](AllureDockerCSharpExample)
 
 In this case we are going to generate results using the java project [allure-docker-java-testng-example](allure-docker-java-testng-example) of this repository.
@@ -141,6 +142,9 @@ From this directory [allure-docker-java-testng-example](allure-docker-java-testn
 docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
 ```
 
+NOTE FOR WINDOWS USERS:
+- `/$(pwd)` determines the current directory. This only works for [GIT BASH](https://git-scm.com/downloads). If you want to use PowerShell or CMD you need to put your full path to `allure-results` directory or find the way to get the current directory path using those tools.
+
 #### Using Docker Compose
 Using docker-compose is the best way to manage containers: [allure-docker-java-testng-example/docker-compose.yml](allure-docker-java-testng-example/docker-compose.yml)
 
@@ -180,6 +184,9 @@ docker-compose logs -f allure
 NOTE:
 - The `${PWD}/allure-results` directory could be in anywhere on your machine. Your project must generate results in that directory.
 - The `/app/allure-results` directory is inside of the container. You MUST NOT change this directory, otherwise, the container won't detect the new changes.
+
+NOTE FOR WINDOWS USERS:
+- `${PWD}` determines the current directory. This only works for [GIT BASH](https://git-scm.com/downloads). If you want to use PowerShell or CMD you need to put your full path to `allure-results` directory or find the way to get the current directory path using those tools.
 
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
@@ -232,6 +239,11 @@ When this second test finished, refresh your browser and you will see there is a
 [![](images/allure04.png)](images/allure04.png)
 
 [![](images/allure05.png)](images/allure05.png)
+
+You can repeat these steps, but now executing the third test
+ ```sh
+mvn test -Dtest=ThirdTest
+ ```
 
 ### Extra options
 
