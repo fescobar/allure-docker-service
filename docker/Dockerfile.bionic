@@ -10,6 +10,8 @@ ARG ARCH
 ARG ALLURE_RELEASE=NONE
 ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
 ARG QEMU_ARCH
+ARG UID=1000
+ARG GID=1000
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.docker.dockerfile="docker/Dockerfile.bionic" \
@@ -46,6 +48,9 @@ RUN apt-get update && \
         chmod -R +x /allure-$ALLURE_RELEASE/bin && \
         mkdir -p /app
 
+RUN groupadd --gid ${GID} allure \
+    && useradd --uid ${UID} --gid allure --shell /bin/bash --create-home allure
+
 ENV ROOT=/app
 ENV ALLURE_HOME=/allure-$ALLURE_RELEASE
 ENV PATH=$PATH:$ALLURE_HOME/bin
@@ -61,13 +66,15 @@ RUN echo $(allure --version) > ${ALLURE_VERSION} && \
     echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION})
 
 WORKDIR $ROOT
-COPY allure-docker-api $ROOT/allure-docker-api
-COPY allure-docker-scripts $ROOT/
+COPY --chown=allure:allure allure-docker-api $ROOT/allure-docker-api
+COPY --chown=allure:allure allure-docker-scripts $ROOT/
 RUN chmod +x $ROOT/*.sh && \
     mkdir $RESULTS_DIRECTORY && \
     mkdir $REPORT_DIRECTORY && \
     mkdir $EMAILABLE_REPORT_DIRECTORY && \
     echo '<html><head><title>Allure Emailable Report</title></head><body><h3>Initializing Allure Emailable Report...</h3></body></html>' > ${EMAILABLE_REPORT_HTML}
+
+RUN chown -R allure:allure $ROOT
 
 VOLUME [ "$RESULTS_DIRECTORY" ]
 
@@ -79,5 +86,7 @@ EXPOSE $PORT_API
 
 HEALTHCHECK --interval=10s --timeout=60s --retries=3 \
       CMD curl -f http://localhost:$PORT || exit 1
+
+USER allure
 
 CMD $ROOT/runAllure.sh & $ROOT/runAllureAPI.sh & $ROOT/checkAllureResultsFiles.sh

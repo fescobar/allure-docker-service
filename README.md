@@ -62,9 +62,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.13.0                         | frankescobar/allure-docker-service:2.13.0-amd64   |
-|                                        | frankescobar/allure-docker-service:2.13.0-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.13.0-arm64v8 |
+| latest, 2.13.1                         | frankescobar/allure-docker-service:2.13.1-amd64   |
+|                                        | frankescobar/allure-docker-service:2.13.1-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.13.1-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -429,7 +429,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.0 .
+docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.1 .
 ```
 ### Run container
 ```sh
@@ -480,5 +480,5 @@ docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.13.0
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.13.1
 ```

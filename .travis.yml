@@ -8,7 +8,7 @@ language: bash
 
 env:
   global:
-    - ALLURE_RELEASE=2.13.0
+    - ALLURE_RELEASE=2.13.1
     - TARGET=frankescobar/allure-docker-service
     - QEMU_VERSION=v4.0.0
   matrix:
