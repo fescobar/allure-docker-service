@@ -17,10 +17,12 @@ Table of contents
       * [Extra options](#extra-options)
           * [Allure API](#allure-api)
           * [Send results through API](#send-results-through-api)
+          * [API Response Less Verbose](#api-response-less-verbose)
           * [Switching version](#switching-version)
           * [Switching port](#switching-port)
           * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
           * [Keep History and Trends](#keep-history-and-trends)
+          * [Override User Container](#override-user-container)
           * [Customize Emailable Report](#customize-emailable-report)
               * [Override CSS](#override-css)
               * [Override title](#override-title)
@@ -283,6 +285,17 @@ This script is sending these results as example [allure-docker-api-usage/allure-
 
 If you want to clean the results use the endpoint `/clean-results` ([Allure API](#allure-api)).
 
+#### API Response Less Verbose
+`Available from Allure Docker Service version 2.13.1`
+
+Enable `API_RESPONSE_LESS_VERBOSE` environment variable if you are handling big quantities of files. This option is useful to avoid to transfer too much data when you request the API. Have in mind the json response structure will change.
+
+```sh
+    environment:
+      API_RESPONSE_LESS_VERBOSE: 1
+```
+
+
 #### Switching version
 You can switch the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
 Docker Compose example:
@@ -334,6 +347,20 @@ Docker Compose example:
 ```
 If you want to clean the history use the [Allure API](#allure-api).
 
+#### Override User Container
+`Available from Allure Docker Service version 2.13.1`
+
+Override the user container in case your platform required it.
+
+`1000:1000` is the user:group for `allure` user
+
+Docker Compose example:
+```sh
+    user: 1000:1000
+    environment:
+      ...
+```
+Note: Don't use `root` user.
 
 #### Customize Emailable Report
 `Available from Allure Docker Service version 2.12.1`
