@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, render_template, send_file, request
 from flask_swagger_ui import get_swaggerui_blueprint
 from subprocess import call
-import os, uuid, glob, json, base64
+import os, uuid, glob, json, base64, zipfile, io
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
@@ -11,8 +11,9 @@ CLEAN_HISTORY_PROCESS = os.environ['ROOT'] + '/cleanAllureHistory.sh'
 CLEAN_RESULTS_PROCESS = os.environ['ROOT'] + '/cleanAllureResults.sh'
 RENDER_EMAIL_REPORT_PROCESS = os.environ['ROOT'] + '/renderEmailableReport.sh'
 RESULTS_DIRECTORY = os.environ['RESULTS_DIRECTORY']
+REPORT_DIRECTORY = os.environ['REPORT_DIRECTORY']
 ALLURE_VERSION = os.environ['ALLURE_VERSION']
-TEST_CASES_DIRECTORY = os.environ['REPORT_DIRECTORY'] + '/data/test-cases/*.json'
+TEST_CASES_DIRECTORY = REPORT_DIRECTORY + '/data/test-cases/*.json'
 EMAILABLE_REPORT_HTML = os.environ['EMAILABLE_REPORT_HTML']
 DEFAULT_TEMPLATE = 'default.html'
 CSS = "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstrap.css"
@@ -319,6 +320,42 @@ def emailable_report_export():
         check_process(GENERATE_REPORT_PROCESS)
 
         report = send_file(EMAILABLE_REPORT_HTML, as_attachment=True)
+    except Exception as ex:
+        message = str(ex)
+
+        body = {
+            'meta_data': {
+                'message' : message
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+        return resp
+    else:
+        return report
+
+@app.route("/report/export")
+def report_export():
+    try:
+        check_process(GENERATE_REPORT_PROCESS)
+
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            rootDir = os.path.basename(REPORT_DIRECTORY)
+            for dirpath, dirnames, files in os.walk(REPORT_DIRECTORY):
+                for file in files:
+                    filePath = os.path.join(dirpath, file)
+                    parentPath = os.path.relpath(filePath, REPORT_DIRECTORY)
+                    arcname = os.path.join(rootDir, parentPath)
+                    zipf.write(filePath, arcname)
+        data.seek(0)
+
+        report = send_file(
+            data,
+            mimetype='application/zip',
+            as_attachment=True,
+            attachment_filename='allure-docker-service-report.zip'
+        )
     except Exception as ex:
         message = str(ex)
 

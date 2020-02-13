@@ -202,6 +202,28 @@
                     }
                 }
             }
+        },
+        "/report/export": {
+            "get": {
+                "tags": [
+                    "Actions"
+                ],
+                "summary": "Export Allure report (from version 2.13.1)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST",
+                        "schema": {
+                            "$ref": "#/components/schemas/response"
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {

@@ -23,6 +23,7 @@ Table of contents
           * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
           * [Keep History and Trends](#keep-history-and-trends)
           * [Override User Container](#override-user-container)
+          * [Export Native Full Report](#export-native-full-report)
           * [Customize Emailable Report](#customize-emailable-report)
               * [Override CSS](#override-css)
               * [Override title](#override-title)
@@ -266,6 +267,8 @@ Available endpoints:
 
 `'GET'    /emailable-report/export`
 
+`'GET'    /report/export`
+
 Access to http://localhost:5050 to see Swagger documentation with examples
 
 [![](images/allure-api.png)](images/allure-api.png)
@@ -362,10 +365,20 @@ Docker Compose example:
 ```
 Note: Don't use `root` user.
 
+
+#### Export Native Full Report
+`Available from Allure Docker Service version 2.13.1`
+
+You can export the native full report using the endpoint `/report/export` [Allure API](#allure-api).
+
+[![](images/native-full-report.png)](images/native-full-report.png)
+
+
+
 #### Customize Emailable Report
 `Available from Allure Docker Service version 2.12.1`
 
-You can render and export the emailable report using the [Allure API](#allure-api).
+You can render and export the emailable report using the endpoints `/emailable-report/render` and `​/emailable-report​/export` [Allure API](#allure-api).
 
 [![](images/emailable-report.png)](images/emailable-report.png)
 
