@@ -10,7 +10,7 @@ services:
       context: ../allure-docker-service
       dockerfile: docker/archive/Dockerfile
       args:
-        RELEASE: "2.13.1"
+        RELEASE: "2.13.2"
     environment:
       CHECK_RESULTS_EVERY_SECONDS: 1
       KEEP_HISTORY: "TRUE"

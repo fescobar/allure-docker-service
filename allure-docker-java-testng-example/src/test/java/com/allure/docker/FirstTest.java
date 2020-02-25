@@ -20,7 +20,7 @@ public class FirstTest {
     private URL pathResources = FirstTest.class.getResource("/files/");
 
     @Test
-    public void test1() throws Exception{
+    public void test1() throws Exception {
         LOGGER.info("test1");
         ByteArrayInputStream imageAsByteArrayIS = new ByteArrayInputStream(FileUtils.readFileToByteArray(new File(pathResources.getPath() +"/"+ "fescobar.png")));
 

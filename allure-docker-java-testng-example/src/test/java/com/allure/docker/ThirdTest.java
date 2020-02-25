@@ -1,16 +1,19 @@
 package com.allure.docker;
 
+import com.allure.docker.listeners.MyListener;
 import io.qameta.allure.Issue;
 import io.qameta.allure.Link;
 import io.qameta.allure.TmsLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Listeners(MyListener.class)
 public class ThirdTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(ThirdTest.class.getName());
 

@@ -36,7 +36,7 @@ Table of contents
 
 ## FEATURES
 Allure Framework provides you good looking reports for automation testing.
-For using this tool it's required to install a server. You could have this server running on Jenkins or if you want to see reports locally you need run some commands on your machine. This work results tedious, at least for me :)
+For using this tool is required to install a server. You could have this server running on Jenkins or if you want to see reports locally you need run some commands on your machine. This work results tedious, at least for me :)
 
 For that reason this docker container allows you to see up to date reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those changes and it will generate a new report automatically (optional: send results / generate report through API), what you will see refreshing your browser.
 
@@ -65,9 +65,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.13.1                         | frankescobar/allure-docker-service:2.13.1-amd64   |
-|                                        | frankescobar/allure-docker-service:2.13.1-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.13.1-arm64v8 |
+| latest, 2.13.2                         | frankescobar/allure-docker-service:2.13.2-amd64   |
+|                                        | frankescobar/allure-docker-service:2.13.2-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.13.2-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -304,7 +304,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.13.0"
+    image: "frankescobar/allure-docker-service:2.13.1"
 ```
 or using latest version:
 
@@ -469,7 +469,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.1 .
+docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.2 .
 ```
 ### Run container
 ```sh
@@ -520,5 +520,5 @@ docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.13.1
+docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.13.2
 ```
