@@ -1,18 +1,18 @@
 # PYTHON BEHAVE DEMO PROJECT USING ALLURE
 
 ## INSTALLATION
-- Download Python
+- Download Python 3
 https://www.python.org/downloads/
 
 - Check Python version
 ```sh
-python --version
+python3 --version
 ```
 - Go to project
 - Install dependencies
 
 ```sh
-pip install -r requirements.txt
+pip3 install -r requirements.txt
  ```
 
 ## USAGE
