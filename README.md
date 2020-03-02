@@ -80,6 +80,7 @@ We have some examples projects:
 - [allure-docker-nodejs-example](allure-docker-nodejs-example)
 - [allure-docker-nodejs-typescript-example](allure-docker-nodejs-typescript-example)
 - [allure-docker-python-behave-example](allure-docker-python-behave-example)
+- [allure-docker-python-pytest-example](allure-docker-python-pytest-example)
 - [AllureDockerCSharpExample](AllureDockerCSharpExample)
 
 In this case we are going to generate results using the java project [allure-docker-java-testng-example](allure-docker-java-testng-example) of this repository.
