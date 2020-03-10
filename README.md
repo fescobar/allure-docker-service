@@ -29,7 +29,8 @@ Table of contents
               * [Override title](#override-title)
               * [Override server link](#override-server-link)
               * [Develop a new template](#develop-a-new-template)
-          * [Using Allure Options](#using-allure-options)
+          * [Allure Customized Plugins](#allure-customized-plugins)
+          * [Allure Options](#allure-options)
    * [SUPPORT](#SUPPORT)
       * [Gitter](#gitter)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
@@ -429,8 +430,19 @@ This variable will allow you to use `hot reloading`, you can update the content 
     - ${PWD}/my-template:/app/allure-docker-api/templates
 ```
 
+#### Allure Customized Plugins
+If you want to use your own Allure plugins you can mount your plugin directory
+```sh
+    environment:
+      ...
+    volumes:
+    - ${PWD}/my-plugin:/allure/plugins/my-plugin
+```
 
-#### Using Allure Options
+References:
+- https://docs.qameta.io/allure/#_allure_plugins_system
+
+#### Allure Options
 Some frameworks/adaptors don't support allure properties to set up links for `Tracker Management Systems` or `Issue/Bug Trackers`. In that case you need to set up `ALLURE_OPTS` environment variable:
 - For Allure1 (XML results)
 ```sh
