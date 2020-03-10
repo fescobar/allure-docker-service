@@ -53,6 +53,7 @@ RUN groupadd --gid ${GID} allure \
 
 ENV ROOT=/app
 ENV ALLURE_HOME=/allure-$ALLURE_RELEASE
+ENV ALLURE_HOME_SL=/allure
 ENV PATH=$PATH:$ALLURE_HOME/bin
 ENV RESULTS_DIRECTORY=$ROOT/allure-results
 ENV REPORT_DIRECTORY=$ROOT/allure-report
@@ -63,7 +64,9 @@ ENV EMAILABLE_REPORT_DIRECTORY=$ROOT/emailable-report
 ENV EMAILABLE_REPORT_HTML=$EMAILABLE_REPORT_DIRECTORY/emailable-report-allure-docker-service.html
 
 RUN echo $(allure --version) > ${ALLURE_VERSION} && \
-    echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION})
+    echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION}) && \
+    mkdir $ALLURE_HOME_SL && \
+    ln -s $ALLURE_HOME/* $ALLURE_HOME_SL
 
 WORKDIR $ROOT
 COPY --chown=allure:allure allure-docker-api $ROOT/allure-docker-api

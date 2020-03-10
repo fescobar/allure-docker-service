@@ -38,6 +38,7 @@ COPY --chown=allure:allure ./allure-docker-api /app/allure-docker-api
 
 ENV ROOT=/app
 ENV ALLURE_HOME=/allure-$RELEASE
+ENV ALLURE_HOME_SL=/allure
 ENV PATH=$PATH:$ALLURE_HOME/bin
 ENV RESULTS_DIRECTORY=$ROOT/allure-results
 ENV REPORT_DIRECTORY=$ROOT/allure-report
@@ -49,6 +50,8 @@ ENV EMAILABLE_REPORT_HTML=$EMAILABLE_REPORT_DIRECTORY/emailable-report-allure-do
 
 RUN echo $(allure --version) > ${ALLURE_VERSION}
 RUN echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION})
+RUN mkdir $ALLURE_HOME_SL
+RUN ln -s $ALLURE_HOME/* $ALLURE_HOME_SL
 
 WORKDIR $ROOT
 ADD allure-docker-scripts/*.sh $ROOT/
