@@ -278,15 +278,19 @@ Access to http://localhost:5050 to see Swagger documentation with examples
 #### Send results through API
 `Available from Allure Docker Service version 2.12.1`
 
-After running your tests, you can execute any script to send the generated results from any server to the Allure container using the [Allure API](#allure-api). For that you can use the endpoint `/send-results`.
+After running your tests, you can execute any script to send the generated results from any node/agent/machine to the Allure Docker server container using the [Allure API](#allure-api). Use the endpoint `/send-results`.
 
-Here a python script as example: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
+- Python script: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
 
 ```sh
 python send_results.py
 ```
 
-This script is sending these results as example [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
+- Declarative Pipeline script for JENKINS: [allure-docker-api-usage/send_results_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_jenkins_pipeline.groovy)
+
+
+
+These scripts are sending these example results [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
 
 If you want to clean the results use the endpoint `/clean-results` ([Allure API](#allure-api)).
 
