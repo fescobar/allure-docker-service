@@ -359,7 +359,7 @@ If you want to clean the history use the [Allure API](#allure-api).
 #### Override User Container
 `Available from Allure Docker Service version 2.13.1`
 
-Override the user container in case your platform required it.
+Override the user container in case your platform required it. The container must have permissions to create files inside `allure-results` directory mounted.
 
 `1000:1000` is the user:group for `allure` user
 
@@ -369,8 +369,25 @@ Docker Compose example:
     environment:
       ...
 ```
-Note: Don't use `root` user.
+or you can pass the current user using environment variable
+```sh
+    user: ${MY_USER}
+    environment:
+      ...
+```
+```sh
+MY_USER=$(id -u):$(id -g) docker-compose up -d allure
+```
 
+or from Docker you can use parameter `--user`
+```sh
+docker run --user="$(id -u):$(id -g)" -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
+```
+
+Note: It's not a good practice to use `root` user to manipulate containers.
+
+Reference: 
+- https://snyk.io/blog/10-docker-image-security-best-practices/
 
 #### Export Native Full Report
 `Available from Allure Docker Service version 2.13.1`
