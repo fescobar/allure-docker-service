@@ -9,14 +9,25 @@ Table of contents
       * [Docker Versions](#docker-versions)
    * [USAGE](#USAGE)
       * [Generate Allure Results](#generate-allure-results)
-      * [Allure Docker Service](#allure-docker-service-1)
-          * [Using Docker on Unix/Mac](#using-docker-on-unixmac)
-          * [Using Docker on Windows (Git Bash)](#using-docker-on-windows-git-bash)
-          * [Using Docker Compose](#using-docker-compose)
+      * [ALLURE DOCKER SERVICE](#allure-docker-service-1)
+          * [SINGLE PROJECT - LOCAL REPORTS](#SINGLE-PROJECT---LOCAL-REPORTS)
+            * [Single Project - Docker on Unix/Mac](#single-project---docker-on-unixmac)
+            * [Single Project - Docker on Windows (Git Bash)](#single-project---docker-on-windows-git-bash)
+            * [Single Project - Docker Compose](#single-project---docker-compose)
+          * [MULTIPLE PROJECTS - REMOTE REPORTS](#MULTIPLE-PROJECTS---REMOTE-REPORTS)
+            * [Multiple Project - Docker on Unix/Mac](#multiple-project---docker-on-unixmac)
+            * [Multiple Project - Docker on Windows (Git Bash)](#multiple-project---docker-on-windows-git-bash)
+            * [Multiple Project - Docker Compose](#multiple-project---docker-compose)
+            * [Creating our first project](#creating-our-first-project)
+      * [PORT 4040 Deprecated](#port-4040-deprecated)
       * [Opening & Refreshing Report](#opening--refreshing-report)
       * [Extra options](#extra-options)
           * [Allure API](#allure-api)
+            * [Info Endpoints](#info-endpoints)
+            * [Action Endpoints](#action-endpoints)
+            * [Project Endpoints](#project-endpoints)
           * [Send results through API](#send-results-through-api)
+          * [Customize Executors Configuration](#customize-executors-configuration)
           * [API Response Less Verbose](#api-response-less-verbose)
           * [Switching version](#switching-version)
           * [Switching port](#switching-port)
@@ -37,11 +48,12 @@ Table of contents
 
 ## FEATURES
 Allure Framework provides you good looking reports for automation testing.
-For using this tool is required to install a server. You could have this server running on Jenkins or if you want to see reports locally you need run some commands on your machine. This work results tedious, at least for me :)
+For using this tool is required to install a server. You could have this server running on Jenkins or if you want to see reports locally, you need to run some commands on your machine. This work results tedious, at least for me :)
 
-For that reason this docker container allows you to see up to date reports simply mounting your `allure-results` directory in the container. Every time appears new results (generated for your tests), Allure Docker Service will detect those changes and it will generate a new report automatically (optional: send results / generate report through API), what you will see refreshing your browser.
+For that reason, this docker container allows you to see up to date reports simply mounting your `allure-results` directory (for a Single Project) or your `projects` directory (for Multiple Projects). Every time appears new results (generated for your tests), Allure Docker Service will detect those changes and it will generate a new report automatically (optional: send results / generate report through API), what you will see refreshing your browser.
 
-It's useful even for developers who wants to run tests locally and want to see what were the problems during regressions.
+- Useful for developers who wants to run tests locally and want to see what were the problems during regressions.
+- Useful for the team to check the tests status for every project.
 
 ### Docker Hub
 - Repository: [frankescobar/allure-docker-service](https://hub.docker.com/r/frankescobar/allure-docker-service/)
@@ -78,8 +90,9 @@ We have some examples projects:
 - [allure-docker-java-testng-example](allure-docker-java-testng-example)
 - [allure-docker-java-junit4-example](allure-docker-java-junit4-example)
 - [allure-docker-java-cucumber-jvm-example](allure-docker-java-cucumber-jvm-example)
-- [allure-docker-nodejs-example](allure-docker-nodejs-example)
-- [allure-docker-nodejs-typescript-example](allure-docker-nodejs-typescript-example)
+- [allure-docker-nodejs-cucumber-example](allure-docker-nodejs-cucumber-example)
+- [allure-docker-nodejs-typescript-cucumber-example](allure-docker-nodejs-typescript-cucumber-example)
+- [allure-docker-nodejs-typescript-mocha-example](allure-docker-nodejs-typescript-mocha-example)
 - [allure-docker-python-behave-example](allure-docker-python-behave-example)
 - [allure-docker-python-pytest-example](allure-docker-python-pytest-example)
 - [AllureDockerCSharpExample](AllureDockerCSharpExample)
@@ -132,25 +145,48 @@ There are 2 tests, one of them failed. Now you can see the `allure-results` dire
 
 Just it has left 1 step more. You have to run `allure-docker-service` mounting your `allure-results` directory.
 
-### Allure Docker Service
+Start the container for a single project -> [SINGLE PROJECT - LOCAL REPORTS](#SINGLE-PROJECT---LOCAL-REPORTS)
+
+### ALLURE DOCKER SERVICE
 Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
 
-#### Using Docker on Unix/Mac
+|  **Project Type**   |  **Port**  |       **Volume Path**     |  **Container Volume Path**   |
+|---------------------|------------|---------------------------|------------------------------|
+|  Single Project     |    5050    |   ${PWD}/allure-results   |    /app/allure-results       |
+|                     |            |   ${PWD}/allure-reports   |    /app/default-reports      |
+|  Multiple Projects  |    5050    |   ${PWD}/projects         |    /app/projects             |
+
+To improve the navigability is recommended to install an Extension/AddOn in your browser:
+- Google Chrome >  JSONView > https://chrome.google.com/webstore/detail/jsonview/chklaanhfefbnpoihckbnefhakgolnmc?hl=en
+- Mozilla Firefox > JSONView > https://addons.mozilla.org/en-US/firefox/addon/jsonview/
+
+
+#### SINGLE PROJECT - LOCAL REPORTS
+This option is recommended for local executions. You should attach the volume where your results are being generated locally for your automation project. 
+
+All the information related local executions will be stored in the `default` project what is created when you start the container. You can see the complete info using the `GET /projects/default` endpoint:
+
+- http://localhost:5050/projects/default
+
+##### Single Project - Docker on Unix/Mac
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 ```sh
-docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+                 -v ${PWD}/allure-results:/app/allure-results \
+                 -v ${PWD}/allure-reports:/app/default-reports \
+                 frankescobar/allure-docker-service
 ```
 
-#### Using Docker on Windows (Git Bash)
+##### Single Project - Docker on Windows (Git Bash)
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 ```sh
-docker run -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" -v "/$(pwd)/allure-results:/app/allure-results" frankescobar/allure-docker-service
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+                 -v "/$(pwd)/allure-results:/app/allure-results" \
+                 -v "/$(pwd)/allure-reports:/app/default-reports" \
+                 frankescobar/allure-docker-service
 ```
 
-NOTE FOR WINDOWS USERS:
-- `/$(pwd)` determines the current directory. This only works for [GIT BASH](https://git-scm.com/downloads). If you want to use PowerShell or CMD you need to put your full path to `allure-results` directory or find the way to get the current directory path using those tools.
-
-#### Using Docker Compose
+##### Single Project - Docker Compose
 Using docker-compose is the best way to manage containers: [allure-docker-java-testng-example/docker-compose.yml](allure-docker-java-testng-example/docker-compose.yml)
 
 ```sh
@@ -162,10 +198,10 @@ services:
       CHECK_RESULTS_EVERY_SECONDS: 1
       KEEP_HISTORY: "TRUE"
     ports:
-      - "4040:4040"
       - "5050:5050"
     volumes:
       - ${PWD}/allure-results:/app/allure-results
+      - ${PWD}/allure-reports:/app/default-reports
 ```
 
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
@@ -187,40 +223,216 @@ docker-compose logs -f allure
 ```
 
 NOTE:
+- Read about [PORT 4040 Deprecated](#port-4040-deprecated) in case you are using previous versions.
 - The `${PWD}/allure-results` directory could be in anywhere on your machine. Your project must generate results in that directory.
 - The `/app/allure-results` directory is inside of the container. You MUST NOT change this directory, otherwise, the container won't detect the new changes.
+- The `/app/default-reports` directory is inside of the container. You MUST NOT change this directory, otherwise, the history reports won't be stored.
 
 NOTE FOR WINDOWS USERS:
 - `${PWD}` determines the current directory. This only works for [GIT BASH](https://git-scm.com/downloads). If you want to use PowerShell or CMD you need to put your full path to `allure-results` directory or find the way to get the current directory path using those tools.
 
+#### MULTIPLE PROJECTS - REMOTE REPORTS
+`Available from Allure Docker Service version 2.13.3`
+
+With this option you could generate multiple reports for multiple projects, you can create, delete and get projects using [Project Endpoints](#project-endpoints). You can use Swagger documentation to help you.
+
+##### Multiple Project - Docker on Unix/Mac
+```sh
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+                 -v ${PWD}/projects:/app/projects \
+                 frankescobar/allure-docker-service
+```
+
+##### Multiple Project - Docker on Windows (Git Bash)
+```sh
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+                 -v "/$(pwd)/projects:/app/projects" \
+                 frankescobar/allure-docker-service
+```
+
+##### Multiple Project - Docker Compose
+Using docker-compose is the best way to manage containers: [allure-docker-multi-project-example/docker-compose.yml](allure-docker-multi-project-example/docker-compose.yml)
+
+```sh
+version: '3'
+services:
+  allure:
+    image: "frankescobar/allure-docker-service"
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 1
+      KEEP_HISTORY: "TRUE"
+      KEEP_HISTORY_LATEST: 25
+    ports:
+      - "5050:5050"
+    volumes:
+      - ${PWD}/projects:/app/projects
+```
+
+```sh
+docker-compose up allure
+```
+
+If you want to run in background:
+
+```sh
+docker-compose up -d allure
+```
+
+You can see the logs:
+
+```sh
+docker-compose logs -f allure
+```
+
+NOTE:
+- Read about [PORT 4040 Deprecated](#port-4040-deprecated) in case you are using previous versions.
+- The `/app/projects` directory is inside of the container. You MUST NOT change this directory, otherwise, the information about projects won't be stored.
+
+NOTE FOR WINDOWS USERS:
+- `${PWD}` determines the current directory. This only works for [GIT BASH](https://git-scm.com/downloads). If you want to use PowerShell or CMD you need to put your full path to `allure-results` directory or find the way to get the current directory path using those tools.
+
+
+##### Creating our first project
+
+- Creating the project `my-project-id` using the endpoint `POST /projects`:
+
+[![](images/allure-mp00.png)](images/allure-mp00.png)
+
+
+- You can see all the existent projects using the endpoint `GET /projects`:
+
+[![](images/allure-mp01.png)](images/allure-mp01.png)
+
+- The `default` project is always created automatically, it shouldn't be removed.
+
+- And get specific information using the endpoint `GET /projects/{id}`
+
+[![](images/allure-mp02.png)](images/allure-mp02.png)
+
+
+If we want to generate reports for this specific project we need to use the same [Action Endpoints](#action-endpoints) that we used for a single project, but the difference now is we need to use the query parameter `project_id` to specify our new project.
+
+For example if we want to get the `latest` report for a `single project`, generally we execute this command:
+- http://localhost:5050/latest-report/     >>      http://localhost:5050/projects/default/reports/latest/index.html?redirect=false
+
+This command will return the `latest` report from the `default` project as you see in the url above
+
+If we want to get the `latest` report from our new project we need to execute this one:
+- http://localhost:5050/latest-report?project_id=my-project-id     >>      http://localhost:5050/projects/my-project-id/reports/latest/index.html?redirect=false
+
+You can appreciate the difference in the path `/projects/{PROJECT_ID}/....`
+
+You can use any [Action Endpoints](#action-endpoints), but don't forget to pass the parameter `project_id` with the right project id that you want to interact with it.
+
+'GET'      /latest-report`?project_id=my-project-id`
+
+'POST'     /send-results`?project_id=my-project-id`
+
+'GET'      /generate-report`?project_id=my-project-id`
+
+'GET'      /clean-results`?project_id=my-project-id`
+
+'GET'      /clean-history`?project_id=my-project-id`
+
+'GET'      /emailable-report/render`?project_id=my-project-id`
+
+'GET'      /emailable-report/export`?project_id=my-project-id`
+
+'GET'      /report/export`?project_id=my-project-id`
+
+We are going to attach our volume NOT for our `local allure-results`. For this case is necessary to store the information regarding all our projects. The project structure is this one:
+```sh
+projects
+   |-- default
+   |   |-- results
+   |   |-- reports
+   |   |   |-- latest
+   |   |   |-- ..
+   |   |   |-- 3
+   |   |   |-- 2
+   |   |   |-- 1
+   |-- my-project-id
+   |   |-- results
+   |   |-- reports
+   |   |   |-- latest
+   |   |   |-- ..
+   |   |   |-- 3
+   |   |   |-- 2
+   |   |   |-- 1
+
+```
+
+NOTE:
+- You MUST NOT MODIFY MANUALLY the structure directory of any project, you could affect the right behaviour.
+- If you don't attach your volume with the proper path `/app/projects` you will lost the information about the projects generated for you.
+
+
+### PORT 4040 Deprecated
+The first versions of this container used port `4040` for Allure Report and port `5050` for Allure API.
+
+The latest version includes new features `Multiple Projects` & `Navigate detailed previous history/trends`. These improvements allow us to handle multiple projects and multiple history reports.
+
+The only change required from your side is start using only port `5050` and instead to use http://localhost:4040/ for rendering Allure report you should use http://localhost:5050/latest-report
+
+If you are mounting your volume `-v ${PWD}/allure-results:/app/allure-results` your allure results are being used and stored in `default` project internally in the container, you don't need to change your volume path directory or do anything else. If you want to keep the history reports start to attach another path ` -v ${PWD}/allure-reports:/app/default-reports`.
+
+If you are already using port `4040`, NO WORRIES. The Allure Report exposed in port `4040` will still being rendered for avoiding compatibility problems.
+The only issue you will face will be when you try to navigate the HISTORY from the TREND chart or any other widget aiming to any historic data. The error you will see is `HTTP ERROR 404 NOT FOUND`
+
+|       **Version**     |  **Port**  |       **Volume Path**     |  **Container Volume Path**   |         **Get Latest Report**           |
+|-----------------------|------------|---------------------------|------------------------------|-----------------------------------------|
+|  Previous to 2.13.3   |    4040    |   ${PWD}/allure-results   |    /app/allure-results       |   http://localhost:4040/                |
+|  From 2.13.3          |    5050    |   ${PWD}/allure-results   |    /app/allure-results       |   http://localhost:5050/latest-report   |                                   |
+|                       |            |   ${PWD}/allure-reports   |    /app/default-reports      |                                         |
+
+Check the new commands to start the container for a single project or for multiple projects: [ALLURE DOCKER SERVICE](#allure-docker-service-1)
+
+
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
 ```sh
-allure_1  | Opening existing report
+allure_1  | Generating default report
 allure_1  | Overriding configuration
 allure_1  | Checking Allure Results every 1 second/s
+allure_1  | Creating executor.json for PROJECT_ID: default
+allure_1  | Generating report for PROJECT_ID: default
 allure_1  |  * Serving Flask app "app" (lazy loading)
 allure_1  |  * Environment: production
 allure_1  |    WARNING: This is a development server. Do not use it in a production deployment.
 allure_1  |    Use a production WSGI server instead.
 allure_1  |  * Debug mode: off
 allure_1  |  * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
-allure_1  | Starting web server...
-allure_1  | 2019-08-15 10:09:14.715:INFO::main: Logging initialized @219ms to org.eclipse.jetty.util.log.StdErrLog
-allure_1  | Can not open browser because this capability is not supported on your platform. You can use the link below to open the report manually.
-allure_1  | Server started at <http://192.168.224.2:4040/>. Press <Ctrl+C> to exit
-allure_1  | Detecting results changes...
-allure_1  | Creating history on results directory...
+allure_1  | Detecting results changes for PROJECT_ID: default ...
+allure_1  | Creating history on results directory for PROJECT_ID: default ...
 allure_1  | Copying history from previous results...
-allure_1  | Generating report
+allure_1  | Creating executor.json for PROJECT_ID: default
+allure_1  | Generating report for PROJECT_ID: default
 allure_1  | Report successfully generated to allure-report
-allure_1  | 127.0.0.1 - - [15/Aug/2019 10:09:20] "GET /emailable-report/render HTTP/1.1" 200 -
+allure_1  | 127.0.0.1 - - [22/May/2020 17:30:16] "GET /emailable-report/render?project_id=default HTTP/1.1" 400 -
+allure_1  | Retrying call http://localhost:5050/emailable-report/render?project_id=default in 2 seconds
+allure_1  | 127.0.0.1 - - [22/May/2020 17:30:19] "GET /emailable-report/render?project_id=default HTTP/1.1" 400 -
+allure_1  | Retrying call http://localhost:5050/emailable-report/render?project_id=default in 2 seconds
+allure_1  | 127.0.0.1 - - [22/May/2020 17:30:21] "GET /emailable-report/render?project_id=default HTTP/1.1" 400 -
+allure_1  | Retrying call http://localhost:5050/emailable-report/render?project_id=default in 2 seconds
+allure_1  | Report successfully generated to allure-report
+allure_1  | 127.0.0.1 - - [22/May/2020 17:30:21] "GET /emailable-report/render?project_id=default HTTP/1.1" 200 -
 allure_1  | Status: 200
 ```
 
-All previous examples started the container using port 4040. Simply open your browser and access to: 
+To see your `latest` report simply open your browser and access to:
 
-http://localhost:4040
+- http://localhost:5050/latest-report
+
+The `latest` report is generated automatically and sometimes could be not available temporary until the new `latest` report has been generated. If you access to the `latest` report url when is not available you will see the `NOT FOUND` page. It will take a few seconds until the latest report be available again.
+
+When you use the `latest-report` will be redirected to the resource url:
+
+- http://localhost:5050/projects/default/reports/latest/index.html?redirect=false
+
+When you start the container for a single report, the `default` project will be created automatically, for that reason you are redirected to this endpoint to get information about `default` project, you can see this in the path `.../projects/default/...`
+
+The `redirect=false` parameter is used to avoid be redirected to the `GET /projects/{id}` endpoint (default behaviour)
+
 
 [![](images/allure01.png)](images/allure01.png)
 
@@ -245,6 +457,15 @@ When this second test finished, refresh your browser and you will see there is a
 
 [![](images/allure05.png)](images/allure05.png)
 
+We can run the same test suite again and navigate the history:
+
+[![](images/allure06.png)](images/allure06.png)
+
+[![](images/allure07.png)](images/allure07.png)
+
+[![](images/allure08.png)](images/allure08.png)
+
+
 You can repeat these steps, but now executing the third test
  ```sh
 mvn test -Dtest=ThirdTest
@@ -255,21 +476,40 @@ mvn test -Dtest=ThirdTest
 #### Allure API
 Available endpoints:
 
-`'GET'    /version`
+##### Info Endpoints
 
-`'POST'   /send-results`
+`'GET'      /version`
 
-`'GET'    /generate-report`
+##### Action Endpoints
 
-`'GET'    /clean-results`
+`'GET'      /latest-report`
 
-`'GET'    /clean-history`
+`'POST'     /send-results`
 
-`'GET'    /emailable-report/render`
+`'GET'      /generate-report`
 
-`'GET'    /emailable-report/export`
+`'GET'      /clean-results`
 
-`'GET'    /report/export`
+`'GET'      /clean-history`
+
+`'GET'      /emailable-report/render`
+
+`'GET'      /emailable-report/export`
+
+`'GET'      /report/export`
+
+
+##### Project Endpoints
+
+`'POST'     /projects`
+
+`'GET'      /projects`
+
+`'DELETE'   /projects/{id}`
+
+`'GET'      /projects/{id}`
+
+`'GET'      /projects/{id}/reports/{path}`
 
 Access to http://localhost:5050 to see Swagger documentation with examples
 
@@ -278,7 +518,7 @@ Access to http://localhost:5050 to see Swagger documentation with examples
 #### Send results through API
 `Available from Allure Docker Service version 2.12.1`
 
-After running your tests, you can execute any script to send the generated results from any node/agent/machine to the Allure Docker server container using the [Allure API](#allure-api). Use the endpoint `/send-results`.
+After running your tests, you can execute any script to send the generated results from any node/agent/machine to the Allure Docker server container using the [Allure API](#allure-api). Use the endpoint `POST /send-results`.
 
 - Python script: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
 
@@ -288,11 +528,52 @@ python send_results.py
 
 - Declarative Pipeline script for JENKINS: [allure-docker-api-usage/send_results_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_jenkins_pipeline.groovy)
 
-
-
 These scripts are sending these example results [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
 
-If you want to clean the results use the endpoint `/clean-results` ([Allure API](#allure-api)).
+If you want to clean the results use the endpoint `GET /clean-results` ([Allure API](#allure-api)).
+
+#### Customize Executors Configuration
+`Available from Allure Docker Service version 2.13.3`
+
+When you use the `GET /generate-report`, you will see this in your report:
+
+[![](images/executor00.png)](images/executor00.png)
+
+If you want to change the `execution name`, you need to pass a parameter named `execution_name` with the value. Example:
+`GET /generate-report?execution_name=my-execution-name`
+
+[![](images/executor01.png)](images/executor01.png)
+
+
+If you want to change the `execution from` (by default is empty), you need to pass a parameter named `execution_from` with the value. Example:
+`GET /generate-report?execution_from=http://my-jenkins-url/job/my-job/7/`
+
+This option allow you to come back to your executor server.
+
+[![](images/executor02.png)](images/executor02.png)
+
+
+If you want to change the `execution icon` (default is empty), you need to pass a parameter named `execution_type` with the value. Example:
+`GET /generate-report?execution_type=jenkins`
+
+If the type is not recognized it will take the default icon. You can use different types like:
+- jenkins
+
+[![](images/executor03.png)](images/executor03.png)
+
+
+- teamcity
+
+[![](images/executor04.png)](images/executor04.png)
+
+
+- bamboo
+
+[![](images/executor05.png)](images/executor05.png)
+
+
+The icons are based on the native Allure2 Framework:
+- https://github.com/allure-framework/allure2/tree/master/allure-generator/src/main/javascript/blocks/executor-icon
 
 #### API Response Less Verbose
 `Available from Allure Docker Service version 2.13.1`
@@ -322,16 +603,15 @@ or using latest version:
 By default it will take last version: https://hub.docker.com/r/frankescobar/allure-docker-service/tags
 
 #### Switching port
-Inside of the container `Allure Report` use port `4040` and `Allure API` use port `5050`.
-You can switch those ports according to your convenience.
+Inside of the container `Allure API` use port `5050`.
+You can switch the port according to your convenience.
 Docker Compose example:
 ```sh
     ports:
-      - "8484:4040"
       - "9292:5050"
 ```
 #### Updating seconds to check Allure Results
-Updating seconds to check `allure-results` directory to generate a new report up to date.
+Updating seconds to check `results` directory to generate a new report up to date.
 Docker Compose example:
 ```sh
     environment:
@@ -356,10 +636,41 @@ Docker Compose example:
 ```
 If you want to clean the history use the [Allure API](#allure-api).
 
+Allure framework allow you to see the latest 20 executions in the history https://github.com/allure-framework/allure2/pull/1059
+
+[![](images/allure-history-visually-limited-01.png)](images/allure-history-visually-limited-01.png)
+
+`Available from Allure Docker Service version 2.13.3`
+
+You can access to previous history clicking on the Allure image in the report. If the report is not available you will be redirected to the endpoint `GET /projects/{id}`
+
+[![](images/allure-history-visually-limited-02.png)](images/allure-history-visually-limited-02.png)
+
+
+Also, `Allure Docker Service` by default keeps the latest 20 executions in the history, but you can extend that limit:
+```sh
+    environment:
+      KEEP_HISTORY_LATEST: 28
+```
+
+[![](images/allure-docker-service-history-28.png)](images/allure-docker-service-history-28.png)
+
+
+or you can reduce it
+```sh
+    environment:
+      KEEP_HISTORY_LATEST: 10
+```
+
+[![](images/allure-docker-service-history-10.png)](images/allure-docker-service-history-10.png)
+
+
+
+
 #### Override User Container
 `Available from Allure Docker Service version 2.13.1`
 
-Override the user container in case your platform required it. The container must have permissions to create files inside `allure-results` directory mounted.
+Override the user container in case your platform required it. The container must have permissions to create files inside directories like `allure-results` (Single Project) or `projects` (Multiple Project) or any other directory that you want to mount.
 
 `1000:1000` is the user:group for `allure` user
 
@@ -381,7 +692,10 @@ MY_USER=$(id -u):$(id -g) docker-compose up -d allure
 
 or from Docker you can use parameter `--user`
 ```sh
-docker run --user="$(id -u):$(id -g)" -p 4040:4040 -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" -v ${PWD}/allure-results:/app/allure-results frankescobar/allure-docker-service
+docker run --user="$(id -u):$(id -g)" -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+           -v ${PWD}/allure-results:/app/allure-results \
+           -v ${PWD}/allure-reports:/app/default-reports \
+           frankescobar/allure-docker-service
 ```
 
 Note: It's not a good practice to use `root` user to manipulate containers.
@@ -392,7 +706,7 @@ Reference:
 #### Export Native Full Report
 `Available from Allure Docker Service version 2.13.1`
 
-You can export the native full report using the endpoint `/report/export` [Allure API](#allure-api).
+You can export the native full report using the endpoint `GET /report/export` [Allure API](#allure-api).
 
 [![](images/native-full-report.png)](images/native-full-report.png)
 
@@ -401,7 +715,7 @@ You can export the native full report using the endpoint `/report/export` [Allur
 #### Customize Emailable Report
 `Available from Allure Docker Service version 2.12.1`
 
-You can render and export the emailable report using the endpoints `/emailable-report/render` and `​/emailable-report​/export` [Allure API](#allure-api).
+You can render and export the emailable report using the endpoints `GET /emailable-report/render` and `GET ​/emailable-report​/export` [Allure API](#allure-api).
 
 [![](images/emailable-report.png)](images/emailable-report.png)
 
@@ -432,7 +746,7 @@ If you want the Emailable Report to redirect to your Allure server, just you nee
 
 ```sh
     environment:
-      SERVER_URL: "http://allure-any-cloud.net/"
+      SERVER_URL: "http://allure-any-cloud.net/latest-report"
 ```
 
 [![](images/emailable-report-server-link.png)](images/emailable-report-server-link.png)
@@ -507,7 +821,7 @@ docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=
 ```
 ### Run container
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 allure-release
+docker run -d  -p 5050:5050 allure-release
 ```
 ### See active containers
 ```sh
@@ -550,9 +864,9 @@ docker push frankescobar/allure-docker-service
 ```
 ### Download latest image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service
+docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 4040:4040 -p 5050:5050 frankescobar/allure-docker-service:2.13.3
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.3
 ```

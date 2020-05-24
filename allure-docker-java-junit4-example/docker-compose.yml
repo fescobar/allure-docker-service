@@ -6,7 +6,7 @@ services:
       CHECK_RESULTS_EVERY_SECONDS: 1
       KEEP_HISTORY: "TRUE"
     ports:
-      - "4040:4040"
       - "5050:5050"
     volumes:
       - ${PWD}/allure-results:/app/allure-results
+      - ${PWD}/allure-reports:/app/default-reports
