@@ -17,21 +17,42 @@ fi
 
 echo "Checking Allure Results every $SECONDS_TO_WAIT second/s"
 
-detect_changes() {
-	FILES="$(echo $(ls $RESULTS_DIRECTORY -Ihistory -l --time-style=full-iso) | md5sum)"
+declare -A RESULTS
+declare -A PREV_RESULTS
+
+detect_changes(){
+    for PROJECT_ID in $(ls $STATIC_CONTENT_PROJECTS) ; do
+        RESULTS_DIR=$STATIC_CONTENT_PROJECTS/$PROJECT_ID/results
+        if [ -d "$RESULTS_DIR" ]; then
+            RESULTS[$PROJECT_ID]="$(echo $(ls $RESULTS_DIR -Ihistory -I$EXECUTOR_FILENAME -lH --time-style=full-iso) | md5sum)"
+        else
+            unset RESULTS[$PROJECT_ID]
+        fi
+    done
 }
 
 sleep 5
 
+EXEC_STORE_RESULTS_PROCESS=1
+
 while :
 do
-	detect_changes
-	if [ "$FILES" != "$PREV_FILES" ]; then
-		echo "Detecting results changes..."
-		export env PREV_FILES=$FILES
-		$ROOT/keepAllureHistory.sh
-		$ROOT/generateAllureReport.sh
-		$ROOT/renderEmailableReport.sh
-	fi
-	sleep $SECONDS_TO_WAIT
+    detect_changes
+    for KEY in "${!RESULTS[@]}" ; do
+        #echo "$KEY > ${RESULTS[$KEY]}"
+        if [ "${RESULTS[$KEY]}" != "${PREV_RESULTS[$KEY]}" ]; then
+            echo "Detecting results changes for PROJECT_ID: $KEY"
+            API_PROCESSES_SIZE=$(ps -fea | grep -w $KEY | grep -w api | wc -l)
+            if [ "$API_PROCESSES_SIZE" -le "0" ]; then
+                echo "Automatic Execution in Progress for PROJECT_ID: $KEY..."
+                PREV_RESULTS[$KEY]=${RESULTS[$KEY]}
+                $ROOT/keepAllureHistory.sh $KEY
+                $ROOT/generateAllureReport.sh $EXEC_STORE_RESULTS_PROCESS $KEY
+                $ROOT/renderEmailableReport.sh $KEY
+            else
+                echo "API Processes in progress for PROJECT_ID: $KEY - Automatic Execution skipped."
+            fi
+        fi
+    done
+    sleep $SECONDS_TO_WAIT
 done

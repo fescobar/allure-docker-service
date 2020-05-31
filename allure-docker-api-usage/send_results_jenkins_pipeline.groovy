@@ -12,6 +12,9 @@ class Result { String file_name; String content_base64 }
 
 // This url is where the Allure container is deployed. We are using localhost as example
 allure_server_url = 'http://localhost:5050'
+// Project ID according to existent projects in your Allure container - Check endpoint for project creation >> `[POST]/projects`
+project_id = 'default'
+//project_id = 'my-project-id'
 
 // This directory is where you have all your results, generally named as `allure-results`
 // For the example we are using the results located in 'allure-docker-service/allure-docker-api-usage/allure-results-example'
@@ -35,11 +38,23 @@ String build_allure_results_json(pattern) {
     JsonOutput.toJson(results: results)
 }
 
-Object send_results_to_allure_docker_service(allure_server_url, resultsJson) {
-    httpRequest url: "${allure_server_url}/send-results",
+Object send_results_to_allure_docker_service(allure_server_url, project_id, results_json) {
+    httpRequest url: "${allure_server_url}/send-results?project_id=${project_id}",
                 httpMode: 'POST',
                 contentType: 'APPLICATION_JSON',
-                requestBody: resultsJson,
+                requestBody: results_json,
+                consoleLogResponseBody: true,
+                validResponseCodes: '200'
+}
+
+Object generate_allure_report(allure_server_url, project_id, execution_name, execution_from, execution_type) {
+    execution_name = URLEncoder.encode(execution_name, 'UTF-8')
+    execution_from = URLEncoder.encode(execution_from, 'UTF-8')
+    execution_type = URLEncoder.encode(execution_type, 'UTF-8')
+
+    httpRequest url: "${allure_server_url}/generate-report?project_id=${project_id}&execution_name=${execution_name}&execution_from=${execution_from}&execution_type=${execution_type}",
+                httpMode: 'GET',
+                contentType: 'APPLICATION_JSON',
                 consoleLogResponseBody: true,
                 validResponseCodes: '200'
 }
@@ -70,10 +85,24 @@ pipeline {
         stage('Post Results to Allure Docker Service Server') {
             steps {
                 script {                    
-                    def resultsJson = build_allure_results_json(pattern_allure_results_directory)
-                    send_results_to_allure_docker_service(allure_server_url, resultsJson)
+                    def results_json = build_allure_results_json(pattern_allure_results_directory)
+                    send_results_to_allure_docker_service(allure_server_url, project_id, results_json)
                 }
             }
         }
+
+        /*
+        stage('Generate Report in Allure Docker Service Server') {
+            steps {
+                script {
+                    // If you want to generate reports on demand use the endpoint `GET /generate-report` and disable the Automatic Execution >> `CHECK_RESULTS_EVERY_SECONDS: NONE`
+                    execution_name = 'execution from my jenkins'
+                    execution_from = "$BUILD_URL"
+                    execution_type = 'jenkins'
+                    generate_allure_report(allure_server_url, project_id, execution_name, execution_from, execution_type)
+                }
+            }
+        }
+        */
     }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "allure-docker-nodejs-typescript-example",
+  "name": "allure-docker-nodejs-typescript-cucumber-example",
   "version": "1.0.0",
   "scripts": {
     "build": "node_modules/.bin/tsc",

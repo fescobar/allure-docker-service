@@ -1,0 +1,26 @@
+{
+  "name": "allure-docker-nodejs-typescript-mocha-example",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "clean": "rm -rf ./allure-results/* ./dist/",
+    "build": "node_modules/.bin/tsc",
+    "mocha": "./node_modules/.bin/mocha",
+    "allure-test": "npm run clean && npm run build && npm run mocha --config .mocharc.js"
+  },
+  "dependencies": {
+    "mocha": "7.2.0",
+    "allure-mocha": "2.0.0-beta.7",
+    "es-abstract": "1.17.5",
+    "module-alias": "2.1.0",
+    "chai": "4.2.0",
+    "ts-node": "8.10.1",
+    "typescript": "3.9.3",
+    "@types/mocha": "7.0.2",
+    "@types/node": "14.0.5",
+    "@types/module-alias": "2.0.0"
+  },
+  "_moduleAliases": {
+    "@utils": "dist/utils"
+  }
+}

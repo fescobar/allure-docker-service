@@ -56,22 +56,29 @@ ENV REPORT_DIRECTORY=$ROOT/allure-report
 ENV RESULTS_HISTORY=$RESULTS_DIRECTORY/history
 ENV REPORT_HISTORY=$REPORT_DIRECTORY/history
 ENV ALLURE_VERSION=$ROOT/version
-ENV EMAILABLE_REPORT_DIRECTORY=$ROOT/emailable-report
-ENV EMAILABLE_REPORT_HTML=$EMAILABLE_REPORT_DIRECTORY/emailable-report-allure-docker-service.html
+ENV EMAILABLE_REPORT_FILE_NAME='emailable-report-allure-docker-service.html'
+ENV STATIC_CONTENT_PROJECTS=$ROOT/allure-docker-api/static/projects
+ENV DEFAULT_PROJECT=default
+ENV DEFAULT_PROJECT_ROOT=$STATIC_CONTENT_PROJECTS/$DEFAULT_PROJECT
+ENV DEFAULT_PROJECT_RESULTS=$DEFAULT_PROJECT_ROOT/results
+ENV DEFAULT_PROJECT_REPORTS=$DEFAULT_PROJECT_ROOT/reports
+ENV EXECUTOR_FILENAME=executor.json
 
 RUN echo $(allure --version) > ${ALLURE_VERSION} && \
     echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION}) && \
     mkdir $ALLURE_HOME_SL && \
-    ln -s $ALLURE_HOME/* $ALLURE_HOME_SL
+    ln -s $ALLURE_HOME/* $ALLURE_HOME_SL && \
+    ln -s $STATIC_CONTENT_PROJECTS $ROOT/projects && \
+    ln -s $DEFAULT_PROJECT_REPORTS $ROOT/default-reports
 
 WORKDIR $ROOT
 COPY --chown=allure:allure allure-docker-api $ROOT/allure-docker-api
 COPY --chown=allure:allure allure-docker-scripts $ROOT/
 RUN chmod +x $ROOT/*.sh && \
     mkdir $RESULTS_DIRECTORY && \
-    mkdir $REPORT_DIRECTORY && \
-    mkdir $EMAILABLE_REPORT_DIRECTORY && \
-    echo '<html><head><title>Allure Emailable Report</title></head><body><h3>Initializing Allure Emailable Report...</h3></body></html>' > ${EMAILABLE_REPORT_HTML}
+    mkdir -p $DEFAULT_PROJECT_REPORTS/latest && \
+    ln -sf $RESULTS_DIRECTORY $DEFAULT_PROJECT_RESULTS && \
+    ln -sf $DEFAULT_PROJECT_REPORTS/latest $REPORT_DIRECTORY
 
 RUN chown -R allure:allure $ROOT
 
@@ -84,7 +91,7 @@ EXPOSE $PORT
 EXPOSE $PORT_API
 
 HEALTHCHECK --interval=10s --timeout=60s --retries=3 \
-      CMD curl -f http://localhost:$PORT || exit 1
+      CMD curl -f http://localhost:$PORT_API || exit 1
 
 USER allure
 
