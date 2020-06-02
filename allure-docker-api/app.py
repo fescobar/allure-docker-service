@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, render_template, send_file, request, send_from_directory, redirect, url_for
 from flask_swagger_ui import get_swaggerui_blueprint
 from subprocess import call
+from werkzeug.utils import secure_filename
 import os, uuid, glob, json, base64, zipfile, io, re, shutil, tempfile
 
 app = Flask(__name__)
@@ -216,6 +217,45 @@ def send_results():
             body = {
                 'meta_data': {
                     'message' : "Results successfully sent for project_id '{}'".format(project_id)
+                }
+            }
+
+        resp = jsonify(body)
+        resp.status_code = 200
+
+    return resp
+    
+@app.route("/send-data", methods=['POST'])
+def send_data():
+    try:
+        RESULTS_DIRECTORY = os.environ['RESULTS_DIRECTORY']
+        app.config['RESULTS_DIRECTORY'] = RESULTS_DIRECTORY
+        file = request.files['filedata']
+        filename=secure_filename(file.filename) 
+        if file:
+            file.save(os.path.join(app.config['RESULTS_DIRECTORY'],filename))
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+    else:
+        if API_RESPONSE_LESS_VERBOSE != "1":
+            body = {
+                'data': {
+                    'current_files': filename
+                    },
+                'meta_data': {
+                    'message' : "Results successfully sent"
+                }
+            }
+        else:
+            body = {
+                'meta_data': {
+                    'message' : "Results successfully sent"
                 }
             }
 
