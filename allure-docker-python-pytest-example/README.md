@@ -20,8 +20,8 @@ Execute Allure Docker Service from this directory
 ```sh
 docker-compose up -d allure
 ```
-- Verify is Allure report is working. 
-- Go to -> http://localhost:5050/latest-report
+
+- Verify if Allure report is working. Go to -> http://localhost:5050/latest-report
 
 Each time you run tests, the Allure report will be updated.
 Execute tests:
