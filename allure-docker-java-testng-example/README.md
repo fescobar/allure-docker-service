@@ -42,4 +42,8 @@ mvn test -Dtest=SecondTest
 mvn test -Dtest=ThirdTest
  ```
 
+ ```sh
+mvn test -Dtest=FourthTestFactory
+ ```
+
 See documentation here: https://github.com/fescobar/allure-docker-service
