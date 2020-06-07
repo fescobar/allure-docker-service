@@ -27,6 +27,8 @@ Table of contents
             * [Action Endpoints](#action-endpoints)
             * [Project Endpoints](#project-endpoints)
           * [Send results through API](#send-results-through-api)
+            * [Content-Type - application/json](#content-type---applicationjson)
+            * [Content-Type - multipart/form-data](#content-type---multipartform-data)
           * [Customize Executors Configuration](#customize-executors-configuration)
           * [API Response Less Verbose](#api-response-less-verbose)
           * [Switching version](#switching-version)
@@ -520,6 +522,10 @@ Access to http://localhost:5050 to see Swagger documentation with examples
 
 After running your tests, you can execute any script to send the generated results from any node/agent/machine to the Allure Docker server container using the [Allure API](#allure-api). Use the endpoint `POST /send-results`.
 
+You have 2 options to send results:
+
+##### Content-Type - application/json
+
 - Python script: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
 
 ```sh
@@ -528,9 +534,22 @@ python send_results.py
 
 - Declarative Pipeline script for JENKINS: [allure-docker-api-usage/send_results_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_jenkins_pipeline.groovy)
 
-These scripts are sending these example results [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
 
-If you want to clean the results use the endpoint `GET /clean-results` ([Allure API](#allure-api)).
+##### Content-Type - multipart/form-data
+`Available from Allure Docker Service version 2.13.3`
+
+- Bash script: [allure-docker-api-usage/send_results.sh](allure-docker-api-usage/send_results.sh)
+
+```sh
+./send_results.sh
+```
+
+NOTE:
+
+- These scripts are sending these example results [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
+
+- If you want to clean the results use the endpoint `GET /clean-results` ([Allure API](#allure-api)).
+
 
 #### Customize Executors Configuration
 `Available from Allure Docker Service version 2.13.3`

@@ -34,8 +34,8 @@ RUN apt-get update && \
       unzip && \
     ln -s `which python3` /usr/bin/python && \
     pip3 install --upgrade pip && \
-    pip install setuptools wheel && \
-    pip install Flask flask-swagger-ui requests && \
+    pip install -Iv setuptools==47.1.1 wheel==0.34.2 && \
+    pip install -Iv Flask==1.1.2 flask-swagger-ui==3.25.0 requests==2.23.0 && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \

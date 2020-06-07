@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, render_template, send_file, request, send_from_directory, redirect, url_for
 from flask_swagger_ui import get_swaggerui_blueprint
 from subprocess import call
+from werkzeug.utils import secure_filename
 import os, uuid, glob, json, base64, zipfile, io, re, shutil, tempfile
 
 app = Flask(__name__)
@@ -52,6 +53,7 @@ def index():
 
 @app.route("/version", strict_slashes=False)
 def version():
+    f = None
     try:
         f = open(ALLURE_VERSION, "r")
         version = f.read()
@@ -74,6 +76,9 @@ def version():
         }
         resp = jsonify(body)
         resp.status_code = 200
+    finally:
+        if f is not None:
+            f.close()
 
     return resp
 
@@ -107,6 +112,13 @@ def latest_report():
 @app.route("/send-results", methods=['POST'], strict_slashes=False)
 def send_results():
     try:
+        content_type = request.content_type
+        if content_type is None:
+            raise Exception("Header 'Content-Type' should be 'application/json' or 'multipart/form-data'")
+
+        if content_type != 'application/json' and content_type.startswith('multipart/form-data') is False:
+            raise Exception("Header 'Content-Type' should be 'application/json' or 'multipart/form-data'")
+
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
             body = {
@@ -118,76 +130,100 @@ def send_results():
             resp.status_code = 404
             return resp
 
-        if not request.is_json:
-            raise Exception("Header 'Content-Type' is not 'application/json'")
-
-        json = request.get_json()
-
-        if 'results' not in json:
-            raise Exception("'results' array is required in the body")
-
-        results = json['results']
-
-        if  isinstance(results, list) == False:
-            raise Exception("'results' should be an array")
-
-        if not results:
-            raise Exception("'results' array is empty")
-
-        map_results = {}
-        for result in results:
-            if 'file_name' not in result or not result['file_name'].strip():
-                raise Exception("'file_name' attribute is required for all results")
-            fileName = result.get('file_name')
-            map_results[fileName] = ''
-
-        if len(results) != len(map_results):
-            raise Exception("Duplicated file names in 'results'")
-
-        validatedResults = []
-        for result in results:
-            fileName = result.get('file_name')
-            validated_result = {}
-            validated_result['file_name'] = fileName
-
-            if 'content_base64' not in result or not result['content_base64'].strip():
-                raise Exception("'content_base64' attribute is required for '%s' file" % (fileName))
-            else:
-                contentBase64 = result.get('content_base64')
-                try:
-                    validated_result['content_base64'] = base64.b64decode(contentBase64)
-                except Exception:
-                    raise Exception("'content_base64' attribute content for '%s' file should be encoded to base64" % (fileName))
-
-            validatedResults.append(validated_result)
-
         processedFiles = []
         failedFiles = []
-        project_path=get_project_path(project_id)
+        validatedResults = []
+        project_path = get_project_path(project_id)
         results_project='{}/results'.format(project_path)
 
-        for result in validatedResults:
-            fileName = result.get('file_name')
-            content_base64 = result.get('content_base64')
-            try:
-                f = open("%s/%s" % (results_project, fileName), "wb")
-                f.write(content_base64)
-            except Exception as ex:
-                error = {}
-                error['message'] = str(ex)
-                error['file_name'] = fileName
-                failedFiles.append(error)
-            else:
-                processedFiles.append(fileName)
-            finally:
-                f.close()
+        if content_type == 'application/json':
+            json = request.get_json()
+
+            if 'results' not in json:
+                raise Exception("'results' array is required in the body")
+
+            results = json['results']
+
+            if  isinstance(results, list) == False:
+                raise Exception("'results' should be an array")
+
+            if not results:
+                raise Exception("'results' array is empty")
+
+            map_results = {}
+            for result in results:
+                if 'file_name' not in result or not result['file_name'].strip():
+                    raise Exception("'file_name' attribute is required for all results")
+                fileName = result.get('file_name')
+                map_results[fileName] = ''
+
+            if len(results) != len(map_results):
+                raise Exception("Duplicated file names in 'results'")
+
+            for result in results:
+                file_name = result.get('file_name')
+                validated_result = {}
+                validated_result['file_name'] = file_name
+
+                if 'content_base64' not in result or not result['content_base64'].strip():
+                    raise Exception("'content_base64' attribute is required for '%s' file" % (file_name))
+                else:
+                    content_base64 = result.get('content_base64')
+                    try:
+                        validated_result['content_base64'] = base64.b64decode(content_base64)
+                    except Exception:
+                        raise Exception("'content_base64' attribute content for '%s' file should be encoded to base64" % (file_name))
+
+                validatedResults.append(validated_result)
+
+            for result in validatedResults:
+                file_name = secure_filename(result.get('file_name'))
+                content_base64 = result.get('content_base64')
+                f = None
+                try:
+                    f = open("%s/%s" % (results_project, file_name), "wb")
+                    f.write(content_base64)
+                except Exception as ex:
+                    error = {}
+                    error['message'] = str(ex)
+                    error['file_name'] = file_name
+                    failedFiles.append(error)
+                else:
+                    processedFiles.append(file_name)
+                finally:
+                    if f is not None:
+                        f.close()
+
+        if content_type.startswith('multipart/form-data') is True:
+            files = request.files.getlist('files[]')
+            if not files:
+                raise Exception("'files[]' array is empty")
+
+            for file in files:
+                try:
+                    file_name = secure_filename(file.filename)
+                    file.save("{}/{}".format(results_project, file_name))
+                except Exception as ex:
+                    error = {}
+                    error['message'] = str(ex)
+                    error['file_name'] = file_name
+                    failedFiles.append(error)
+                else:
+                    processedFiles.append(file_name)
+
+            validatedResults = processedFiles
+
+
+        failedFilesCount = len(failedFiles)
+        if failedFilesCount > 0:
+            raise Exception('Problems with files: {}'.format(failedFiles))
 
         if API_RESPONSE_LESS_VERBOSE != "1":
             files = os.listdir(results_project)
             currentFilesCount = len(files)
             sentFilesCount = len(validatedResults)
             processedFilesCount = len(processedFiles)
-            failedFilesCount = len(failedFiles)
+
     except Exception as ex:
         body = {
             'meta_data': {
@@ -407,12 +443,13 @@ def emailable_report_render():
         report = render_template(DEFAULT_TEMPLATE, css=CSS, title=TITLE, projectId=project_id, serverUrl=server_url, testCases=testCases)
 
         emailable_report_path = '{}/reports/{}'.format(project_path, EMAILABLE_REPORT_FILE_NAME)
-
+        f = None
         try:
             f = open(emailable_report_path, "w")
             f.write(report)
         finally:
-            f.close()
+            if f is not None:
+                f.close()
     except Exception as ex:
         body = {
             'meta_data': {
