@@ -2,7 +2,7 @@ from flask import Flask, jsonify, render_template, send_file, request, send_from
 from flask_swagger_ui import get_swaggerui_blueprint
 from subprocess import call
 from werkzeug.utils import secure_filename
-import os, uuid, glob, json, base64, zipfile, io, re, shutil, tempfile
+import os, uuid, glob, json, base64, zipfile, io, re, shutil, tempfile, subprocess
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -299,8 +299,15 @@ def generate_report():
         exec_store_results_process='1'
 
         call([KEEP_HISTORY_PROCESS, project_id, ORIGIN])
-        call([GENERATE_REPORT_PROCESS, exec_store_results_process, project_id, ORIGIN, execution_name, execution_from, execution_type])
+        response = subprocess.Popen([GENERATE_REPORT_PROCESS, exec_store_results_process, project_id, ORIGIN, execution_name, execution_from, execution_type], stdout=subprocess.PIPE).communicate()[0]
         call([RENDER_EMAIL_REPORT_PROCESS, project_id, ORIGIN])
+
+        build_order = 'latest'
+        for line in response.decode("utf-8").split("\n") :
+            if line.startswith("BUILD_ORDER"):
+                build_order = line[line.index(':') + 1: len(line)]
+
+        report_url = url_for('get_reports', project_id=project_id, path='{}/index.html'.format(build_order), _external=True)
     except Exception as ex:
         body = {
             'meta_data': {
@@ -313,6 +320,7 @@ def generate_report():
         if files is not None:
             body = {
                 'data': {
+                    'report_url': report_url,
                     'allure_results_files': files
                 },
                 'meta_data': {
@@ -321,6 +329,9 @@ def generate_report():
             }
         else:
             body = {
+                'data': {
+                    'report_url': report_url
+                },
                 'meta_data': {
                     'message' : "Report successfully generated for project_id '{}'".format(project_id)
                 }

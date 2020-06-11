@@ -90,19 +90,20 @@ pipeline {
                 }
             }
         }
-
-        /*
+/*
         stage('Generate Report in Allure Docker Service Server') {
             steps {
                 script {
                     // If you want to generate reports on demand use the endpoint `GET /generate-report` and disable the Automatic Execution >> `CHECK_RESULTS_EVERY_SECONDS: NONE`
-                    execution_name = 'execution from my jenkins'
-                    execution_from = "$BUILD_URL"
-                    execution_type = 'jenkins'
-                    generate_allure_report(allure_server_url, project_id, execution_name, execution_from, execution_type)
+                    def execution_name = 'execution from my jenkins'
+                    def execution_from = "$BUILD_URL"
+                    def execution_type = 'jenkins'
+                    def response = generate_allure_report(allure_server_url, project_id, execution_name, execution_from, execution_type)
+                    def response_body = readJSON text: response.content
+                    print "ALLURE REPORT URL: $response_body.data.report_url"
                 }
             }
         }
-        */
+*/
     }
 }

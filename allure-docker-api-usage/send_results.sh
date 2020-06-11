@@ -24,9 +24,15 @@ echo "------------------SEND-RESULTS------------------"
 curl -X POST "$ALLURE_SERVER/send-results?project_id=$PROJECT_ID" -H 'Content-Type: multipart/form-data' $FILES -ik
 
 
-# If you want to generate reports on demand use the endpoint `GET /generate-report` and disable the Automatic Execution >> `CHECK_RESULTS_EVERY_SECONDS: NONE`
-# echo "------------------GENERATE-REPORT------------------"
-# EXECUTION_NAME='execution_from_my_bash_script'
-# EXECUTION_FROM='http://google.com'
-# EXECUTION_TYPE='bamboo'
-# curl -X GET "$ALLURE_SERVER/generate-report?project_id=$PROJECT_ID&execution_name=$EXECUTION_NAME&execution_from=$EXECUTION_FROM&execution_type=$EXECUTION_TYPE" $FILES -ik
+#If you want to generate reports on demand use the endpoint `GET /generate-report` and disable the Automatic Execution >> `CHECK_RESULTS_EVERY_SECONDS: NONE`
+#echo "------------------GENERATE-REPORT------------------"
+#EXECUTION_NAME='execution_from_my_bash_script'
+#EXECUTION_FROM='http://google.com'
+#EXECUTION_TYPE='bamboo'
+
+#You can try with a simple curl
+#curl -X GET "$ALLURE_SERVER/generate-report?project_id=$PROJECT_ID&execution_name=$EXECUTION_NAME&execution_from=$EXECUTION_FROM&execution_type=$EXECUTION_TYPE" $FILES -ik
+
+#OR You can use JQ to extract json values -> https://stedolan.github.io/jq/download/
+#RESPONSE=$(curl -X GET "$ALLURE_SERVER/generate-report?project_id=$PROJECT_ID&execution_name=$EXECUTION_NAME&execution_from=$EXECUTION_FROM&execution_type=$EXECUTION_TYPE" $FILES)
+#ALLURE_REPORT=$(echo $RESPONSE | jq '.data.report_url')

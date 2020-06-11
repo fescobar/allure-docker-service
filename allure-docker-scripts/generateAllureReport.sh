@@ -9,12 +9,6 @@ EXECUTION_NAME=$4
 EXECUTION_FROM=$5
 EXECUTION_TYPE=$6
 
-if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ]; then
-    if [[ "$EXEC_STORE_RESULTS_PROCESS" == "1" ]]; then
-        $ROOT/storeAllureReport.sh $PROJECT_ID
-    fi
-fi
-
 echo "Creating $EXECUTOR_FILENAME for PROJECT_ID: $PROJECT_ID"
 
 PROJECT_LATEST_REPORT=$STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest
@@ -25,6 +19,7 @@ else
 fi
 
 LAST_REPORT_DIRECTORY=$(basename -- "$LAST_REPORT_PATH_DIRECTORY")
+#echo "LAST REPORT DIRECTORY >> $LAST_REPORT_DIRECTORY"
 
 RESULTS_DIRECTORY=$STATIC_CONTENT_PROJECTS/$PROJECT_ID/results
 if [ ! -d "$RESULTS_DIRECTORY" ]; then
@@ -64,5 +59,11 @@ fi
 
 echo "Generating report for PROJECT_ID: $PROJECT_ID"
 allure generate --clean $RESULTS_DIRECTORY -o $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest
+
+if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ]; then
+    if [[ "$EXEC_STORE_RESULTS_PROCESS" == "1" ]]; then
+        $ROOT/storeAllureReport.sh $PROJECT_ID $BUILD_ORDER
+    fi
+fi
 
 $ROOT/keepAllureLatestHistory.sh $PROJECT_ID

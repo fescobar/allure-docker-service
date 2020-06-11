@@ -683,7 +683,9 @@ or you can reduce it
 
 [![](images/allure-docker-service-history-10.png)](images/allure-docker-service-history-10.png)
 
+The `latest` directory contains the report from the last execution. On this case, the `31` directory contains the same report in the `latest` directory: 
 
+[![](images/allure-docker-service-history-latest-and-last-execution.png)](allure-docker-service-history-latest-and-last-execution.png)
 
 
 #### Override User Container
