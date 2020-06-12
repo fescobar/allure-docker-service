@@ -763,6 +763,11 @@ If you want override the title of the Emailable Report, just you need to pass th
 [![](images/emailable-report-title.png)](images/emailable-report-title.png)
 
 ##### Override server link
+`Functionality Deprecated`
+- Currently the latest version resolves the host automatically.
+
+---
+
 If you want the Emailable Report to redirect to your Allure server, just you need to pass the environment variable `SERVER_URL`.
 
 ```sh
