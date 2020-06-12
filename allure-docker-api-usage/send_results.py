@@ -69,4 +69,7 @@ print("RESPONSE:")
 json_response_body = json.loads(response.content)
 json_prettier_response_body = json.dumps(json_response_body, indent=4, sort_keys=True)
 print(json_prettier_response_body)
+
+print('ALLURE REPORT URL:')
+print(json_response_body['data']['report_url'])
 """

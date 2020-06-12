@@ -50,7 +50,7 @@ do
                 $ROOT/generateAllureReport.sh $EXEC_STORE_RESULTS_PROCESS $KEY
                 $ROOT/renderEmailableReport.sh $KEY
             else
-                echo "API Processes in progress for PROJECT_ID: $KEY - Automatic Execution skipped."
+                echo "API Processes in progress for PROJECT_ID: $KEY - Automatic Execution Postponed"
             fi
         fi
     done
