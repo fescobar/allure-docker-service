@@ -2,7 +2,7 @@ from flask import Flask, jsonify, render_template, send_file, request, send_from
 from flask_swagger_ui import get_swaggerui_blueprint
 from subprocess import call
 from werkzeug.utils import secure_filename
-import os, uuid, glob, json, base64, zipfile, io, re, shutil, tempfile, subprocess
+import waitress, os, uuid, glob, json, base64, zipfile, io, re, shutil, tempfile, subprocess
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -21,7 +21,7 @@ REPORT_INDEX_FILE = 'index.html'
 DEFAULT_TEMPLATE = 'default.html'
 CSS = "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstrap.css"
 TITLE = "Emailable Report"
-API_RESPONSE_LESS_VERBOSE = ''
+API_RESPONSE_LESS_VERBOSE = 0
 
 if "EMAILABLE_REPORT_CSS_CDN" in os.environ:
     app.logger.info('Overriding CSS')
@@ -32,7 +32,10 @@ if "EMAILABLE_REPORT_TITLE" in os.environ:
     TITLE = os.environ['EMAILABLE_REPORT_TITLE']
 
 if "API_RESPONSE_LESS_VERBOSE" in os.environ:
-    API_RESPONSE_LESS_VERBOSE = os.environ['API_RESPONSE_LESS_VERBOSE']
+    try:
+        API_RESPONSE_LESS_VERBOSE = int(os.environ['API_RESPONSE_LESS_VERBOSE'])
+    except Exception as ex:
+        app.logger.error('Wrong env var value. Setting API_RESPONSE_LESS_VERBOSE by default')
 
 ### swagger specific ###
 SWAGGER_URL = '/swagger'
@@ -218,7 +221,7 @@ def send_results():
         if failedFilesCount > 0:
             raise Exception('Problems with files: {}'.format(failedFiles))
 
-        if API_RESPONSE_LESS_VERBOSE != "1":
+        if API_RESPONSE_LESS_VERBOSE != 1:
             files = os.listdir(results_project)
             currentFilesCount = len(files)
             sentFilesCount = len(validatedResults)
@@ -233,7 +236,7 @@ def send_results():
         resp = jsonify(body)
         resp.status_code = 400
     else:
-        if API_RESPONSE_LESS_VERBOSE != "1":
+        if API_RESPONSE_LESS_VERBOSE != 1:
             body = {
                 'data': {
                     'current_files': files,
@@ -278,7 +281,7 @@ def generate_report():
         project_path=get_project_path(project_id)
         results_project='{}/results'.format(project_path)
 
-        if API_RESPONSE_LESS_VERBOSE != "1":
+        if API_RESPONSE_LESS_VERBOSE != 1:
             files = os.listdir(results_project)
 
         execution_name = request.args.get('execution_name')
@@ -784,5 +787,16 @@ def check_process(process_file, project_id):
     if proccount > 0:
         raise Exception("Processing files for project_id '{}'. Try later!".format(project_id))
 
+dev_mode = 0
+if "DEV_MODE" in os.environ:
+    try:
+        dev_mode = int(os.environ['DEV_MODE'])
+    except Exception as ex:
+        app.logger.error('Wrong env var value. Setting DEV_MODE by default')
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ['PORT_API'])
+    if dev_mode == 1:
+        app.logger.info('Stating in DEV_MODE')
+        app.run(host='0.0.0.0', port=os.environ['PORT_API'])
+    else:
+        waitress.serve(app, threads=6, host='0.0.0.0', port=os.environ['PORT_API'], url_scheme='http')

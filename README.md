@@ -36,6 +36,7 @@ Table of contents
           * [Updating seconds to check Allure Results](#updating-seconds-to-check-allure-results)
           * [Keep History and Trends](#keep-history-and-trends)
           * [Override User Container](#override-user-container)
+          * [Start in DEV Mode](#start-in-dev-mode)
           * [Export Native Full Report](#export-native-full-report)
           * [Customize Emailable Report](#customize-emailable-report)
               * [Override CSS](#override-css)
@@ -240,14 +241,14 @@ With this option you could generate multiple reports for multiple projects, you 
 
 ##### Multiple Project - Docker on Unix/Mac
 ```sh
-      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=NONE -e KEEP_HISTORY="TRUE" \
                  -v ${PWD}/projects:/app/projects \
                  frankescobar/allure-docker-service
 ```
 
 ##### Multiple Project - Docker on Windows (Git Bash)
 ```sh
-      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=NONE -e KEEP_HISTORY="TRUE" \
                  -v "/$(pwd)/projects:/app/projects" \
                  frankescobar/allure-docker-service
 ```
@@ -261,7 +262,7 @@ services:
   allure:
     image: "frankescobar/allure-docker-service"
     environment:
-      CHECK_RESULTS_EVERY_SECONDS: 1
+      CHECK_RESULTS_EVERY_SECONDS: NONE
       KEEP_HISTORY: "TRUE"
       KEEP_HISTORY_LATEST: 25
     ports:
@@ -398,26 +399,21 @@ allure_1  | Overriding configuration
 allure_1  | Checking Allure Results every 1 second/s
 allure_1  | Creating executor.json for PROJECT_ID: default
 allure_1  | Generating report for PROJECT_ID: default
-allure_1  |  * Serving Flask app "app" (lazy loading)
-allure_1  |  * Environment: production
-allure_1  |    WARNING: This is a development server. Do not use it in a production deployment.
-allure_1  |    Use a production WSGI server instead.
-allure_1  |  * Debug mode: off
-allure_1  |  * Running on http://0.0.0.0:5050/ (Press CTRL+C to quit)
-allure_1  | Detecting results changes for PROJECT_ID: default ...
+allure_1  | Report successfully generated to /app/allure-docker-api/static/projects/default/reports/latest
+allure_1  | Detecting results changes for PROJECT_ID: default
+allure_1  | Automatic Execution in Progress for PROJECT_ID: default...
 allure_1  | Creating history on results directory for PROJECT_ID: default ...
 allure_1  | Copying history from previous results...
+allure_1  | Status: 200
 allure_1  | Creating executor.json for PROJECT_ID: default
 allure_1  | Generating report for PROJECT_ID: default
-allure_1  | Report successfully generated to allure-report
-allure_1  | 127.0.0.1 - - [22/May/2020 17:30:16] "GET /emailable-report/render?project_id=default HTTP/1.1" 400 -
-allure_1  | Retrying call http://localhost:5050/emailable-report/render?project_id=default in 2 seconds
-allure_1  | 127.0.0.1 - - [22/May/2020 17:30:19] "GET /emailable-report/render?project_id=default HTTP/1.1" 400 -
-allure_1  | Retrying call http://localhost:5050/emailable-report/render?project_id=default in 2 seconds
-allure_1  | 127.0.0.1 - - [22/May/2020 17:30:21] "GET /emailable-report/render?project_id=default HTTP/1.1" 400 -
-allure_1  | Retrying call http://localhost:5050/emailable-report/render?project_id=default in 2 seconds
-allure_1  | Report successfully generated to allure-report
-allure_1  | 127.0.0.1 - - [22/May/2020 17:30:21] "GET /emailable-report/render?project_id=default HTTP/1.1" 200 -
+allure_1  | Starting web server...
+allure_1  | 2020-06-15 10:20:06.000:INFO::main: Logging initialized @1518ms to org.eclipse.jetty.util.log.StdErrLog
+allure_1  | Can not open browser because this capability is not supported on your platform. You can use the link below to open the report manually.
+allure_1  | Server started at <http://192.168.208.2:4040/>. Press <Ctrl+C> to exit
+allure_1  | Report successfully generated to /app/allure-docker-api/static/projects/default/reports/latest
+allure_1  | Storing report history for PROJECT_ID: default
+allure_1  | BUILD_ORDER:1
 allure_1  | Status: 200
 ```
 
@@ -723,6 +719,19 @@ Note: It's not a good practice to use `root` user to manipulate containers.
 
 Reference: 
 - https://snyk.io/blog/10-docker-image-security-best-practices/
+
+#### Start in DEV Mode
+`Available from Allure Docker Service version 2.13.3`
+
+Enable dev mode, if you want to see the logs about api requests using the `DEV_MODE` environment variable.
+
+Docker Compose example:
+```sh
+    environment:
+      DEV_MODE: 1
+```
+NOTE:
+- Don't use this mode for live/prod environments.
 
 #### Export Native Full Report
 `Available from Allure Docker Service version 2.13.1`
