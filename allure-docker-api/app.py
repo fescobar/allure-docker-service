@@ -797,6 +797,6 @@ if "DEV_MODE" in os.environ:
 if __name__ == '__main__':
     if dev_mode == 1:
         app.logger.info('Stating in DEV_MODE')
-        app.run(host='0.0.0.0', port=os.environ['PORT_API'])
+        app.run(host='0.0.0.0', port=os.environ['PORT'])
     else:
-        waitress.serve(app, threads=6, host='0.0.0.0', port=os.environ['PORT_API'], url_scheme='http')
+        waitress.serve(app, threads=6, host='0.0.0.0', port=os.environ['PORT'], url_scheme='http')

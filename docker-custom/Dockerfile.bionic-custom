@@ -4,10 +4,10 @@ ARG JDK=adoptopenjdk:11-jre-openj9-bionic
 FROM $ARCH/$JDK
 
 ARG BUILD_DATE
-ARG BUILD_VERSION=2.13.3-custom
+ARG BUILD_VERSION=2.13.4-custom
 ARG BUILD_REF=na
 ARG ARCH=amd64
-ARG ALLURE_RELEASE=2.13.3
+ARG ALLURE_RELEASE=2.13.4
 ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
 ARG UID=1000
 ARG GID=1000
@@ -84,15 +84,15 @@ RUN chown -R allure:allure $ROOT
 
 VOLUME [ "$RESULTS_DIRECTORY" ]
 
-ENV PORT=4040
-ENV PORT_API=5050
+ENV DEPRECATED_PORT=4040
+ENV PORT=5050
 
+EXPOSE $DEPRECATED_PORT
 EXPOSE $PORT
-EXPOSE $PORT_API
 
 HEALTHCHECK --interval=10s --timeout=60s --retries=3 \
-      CMD curl -f http://localhost:$PORT_API || exit 1
+      CMD curl -f http://localhost:$PORT || exit 1
 
 USER allure
 
-CMD $ROOT/runAllure.sh & $ROOT/runAllureAPI.sh & $ROOT/checkAllureResultsFiles.sh
+CMD $ROOT/runAllureDeprecated.sh & $ROOT/runAllureApp.sh & $ROOT/checkAllureResultsFiles.sh

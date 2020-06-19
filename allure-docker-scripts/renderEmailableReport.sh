@@ -1,7 +1,7 @@
 #!/bin/bash
 PROJECT_ID=$1
 
-API_CALL=http://localhost:$PORT_API/emailable-report/render?project_id=$PROJECT_ID
+API_CALL=http://localhost:$PORT/emailable-report/render?project_id=$PROJECT_ID
 RETRY=7
 DELAY=2
 

@@ -72,12 +72,12 @@ RUN chown -R allure:allure $ROOT
 
 VOLUME [ "$RESULTS_DIRECTORY" ]
 
-ENV PORT=4040
-ENV PORT_API=5050
+ENV DEPRECATED_PORT=4040
+ENV PORT=5050
 
+EXPOSE $DEPRECATED_PORT
 EXPOSE $PORT
-EXPOSE $PORT_API
 
 USER allure
 
-CMD $ROOT/runAllure.sh & $ROOT/runAllureAPI.sh & $ROOT/checkAllureResultsFiles.sh
+CMD $ROOT/runAllureDeprecated.sh & $ROOT/runAllureApp.sh & $ROOT/checkAllureResultsFiles.sh
