@@ -10,4 +10,4 @@ else
 	$ROOT/generateAllureReport.sh $EXEC_STORE_RESULTS_PROCESS $PROJECT_ID
 	$ROOT/renderEmailableReport.sh $PROJECT_ID
 fi
-allure open --port $PORT
+allure open --port $DEPRECATED_PORT > /tmp/log_deprecated_port

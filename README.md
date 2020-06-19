@@ -81,9 +81,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.13.3                         | frankescobar/allure-docker-service:2.13.3-amd64   |
-|                                        | frankescobar/allure-docker-service:2.13.3-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.13.3-arm64v8 |
+| latest, 2.13.4                         | frankescobar/allure-docker-service:2.13.4-amd64   |
+|                                        | frankescobar/allure-docker-service:2.13.4-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.13.4-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -400,17 +400,14 @@ allure_1  | Checking Allure Results every 1 second/s
 allure_1  | Creating executor.json for PROJECT_ID: default
 allure_1  | Generating report for PROJECT_ID: default
 allure_1  | Report successfully generated to /app/allure-docker-api/static/projects/default/reports/latest
+allure_1  | Status: 200
 allure_1  | Detecting results changes for PROJECT_ID: default
 allure_1  | Automatic Execution in Progress for PROJECT_ID: default...
 allure_1  | Creating history on results directory for PROJECT_ID: default ...
 allure_1  | Copying history from previous results...
-allure_1  | Status: 200
 allure_1  | Creating executor.json for PROJECT_ID: default
 allure_1  | Generating report for PROJECT_ID: default
-allure_1  | Starting web server...
-allure_1  | 2020-06-15 10:20:06.000:INFO::main: Logging initialized @1518ms to org.eclipse.jetty.util.log.StdErrLog
-allure_1  | Can not open browser because this capability is not supported on your platform. You can use the link below to open the report manually.
-allure_1  | Server started at <http://192.168.208.2:4040/>. Press <Ctrl+C> to exit
+allure_1  | 2020-06-18 17:02:12.364:INFO::main: Logging initialized @1620ms to org.eclipse.jetty.util.log.StdErrLog
 allure_1  | Report successfully generated to /app/allure-docker-api/static/projects/default/reports/latest
 allure_1  | Storing report history for PROJECT_ID: default
 allure_1  | BUILD_ORDER:1
@@ -606,7 +603,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.13.1"
+    image: "frankescobar/allure-docker-service:2.13.3"
 ```
 or using latest version:
 
@@ -852,7 +849,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.3 .
+docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.4 .
 ```
 ### Run container
 ```sh
@@ -903,5 +900,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.3
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.4
 ```
