@@ -42,6 +42,8 @@ AllureDockerCSharpExample/packages
 AllureDockerCSharpExample/AllureDockerCSharpExample/bin
 AllureDockerCSharpExample/AllureDockerCSharpExample/obj
 allure-docker-multi-project-example/projects/*
+allure-docker-kubernetes-example/tls.crt
+allure-docker-kubernetes-example/tls.key
 .data/
 /.idea/
 /Dockerfile

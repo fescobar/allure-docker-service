@@ -39,7 +39,7 @@ String build_allure_results_json(pattern) {
 }
 
 Object send_results_to_allure_docker_service(allure_server_url, project_id, results_json) {
-    httpRequest url: "${allure_server_url}/send-results?project_id=${project_id}",
+    httpRequest url: "${allure_server_url}/allure-docker-service/send-results?project_id=${project_id}",
                 httpMode: 'POST',
                 contentType: 'APPLICATION_JSON',
                 requestBody: results_json,
@@ -52,7 +52,7 @@ Object generate_allure_report(allure_server_url, project_id, execution_name, exe
     execution_from = URLEncoder.encode(execution_from, 'UTF-8')
     execution_type = URLEncoder.encode(execution_type, 'UTF-8')
 
-    httpRequest url: "${allure_server_url}/generate-report?project_id=${project_id}&execution_name=${execution_name}&execution_from=${execution_from}&execution_type=${execution_type}",
+    httpRequest url: "${allure_server_url}/allure-docker-service/generate-report?project_id=${project_id}&execution_name=${execution_name}&execution_from=${execution_from}&execution_type=${execution_type}",
                 httpMode: 'GET',
                 contentType: 'APPLICATION_JSON',
                 consoleLogResponseBody: true,

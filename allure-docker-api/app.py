@@ -18,6 +18,7 @@ CLEAN_HISTORY_PROCESS = '{}/cleanAllureHistory.sh'.format(os.environ['ROOT'])
 CLEAN_RESULTS_PROCESS = '{}/cleanAllureResults.sh'.format(os.environ['ROOT'])
 RENDER_EMAIL_REPORT_PROCESS = '{}/renderEmailableReport.sh'.format(os.environ['ROOT'])
 ALLURE_VERSION = os.environ['ALLURE_VERSION']
+STATIC_CONTENT = os.environ['STATIC_CONTENT']
 PROJECTS_DIRECTORY = os.environ['STATIC_CONTENT_PROJECTS']
 EMAILABLE_REPORT_FILE_NAME = os.environ['EMAILABLE_REPORT_FILE_NAME']
 ORIGIN='api'
@@ -57,8 +58,8 @@ if "TLS" in os.environ:
         app.logger.error('Wrong env var value. Setting TLS=0 by default')
 
 ### swagger specific ###
-SWAGGER_URL = '/swagger'
-API_URL = '/static/swagger.json'
+SWAGGER_URL = '/allure-docker-service/swagger'
+API_URL = '/allure-docker-service/swagger.json'
 SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
@@ -69,11 +70,38 @@ SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
 app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 ### end swagger specific ###
 
-@app.route("/")
+@app.route("/", strict_slashes=False)
+@app.route("/allure-docker-service", strict_slashes=False)
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+        return resp
+
+@app.route("/swagger.json")
+@app.route("/allure-docker-service/swagger.json", strict_slashes=False)
+def swagger_json():
+    try:
+        return send_file("{}/swagger.json".format(STATIC_CONTENT), mimetype='application/json')
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+        return resp
 
 @app.route("/version", strict_slashes=False)
+@app.route("/allure-docker-service/version", strict_slashes=False)
 def version():
     f = None
     try:
@@ -105,6 +133,7 @@ def version():
     return resp
 
 @app.route("/latest-report", strict_slashes=False)
+@app.route("/allure-docker-service/latest-report", strict_slashes=False)
 def latest_report():
     try:
         project_id = resolve_project(request.args.get('project_id'))
@@ -132,6 +161,7 @@ def latest_report():
         return resp
 
 @app.route("/send-results", methods=['POST'], strict_slashes=False)
+@app.route("/allure-docker-service/send-results", methods=['POST'], strict_slashes=False)
 def send_results():
     try:
         content_type = request.content_type
@@ -283,6 +313,7 @@ def send_results():
     return resp
 
 @app.route("/generate-report", strict_slashes=False)
+@app.route("/allure-docker-service/generate-report", strict_slashes=False)
 def generate_report():
     try:
         project_id = resolve_project(request.args.get('project_id'))
@@ -365,6 +396,7 @@ def generate_report():
     return resp
 
 @app.route("/clean-history", strict_slashes=False)
+@app.route("/allure-docker-service/clean-history", strict_slashes=False)
 def clean_history():
     try:
         project_id = resolve_project(request.args.get('project_id'))
@@ -401,6 +433,7 @@ def clean_history():
     return resp
 
 @app.route("/clean-results", strict_slashes=False)
+@app.route("/allure-docker-service/clean-results", strict_slashes=False)
 def clean_results():
     try:
         project_id = resolve_project(request.args.get('project_id'))
@@ -438,6 +471,7 @@ def clean_results():
     return resp
 
 @app.route("/emailable-report/render", strict_slashes=False)
+@app.route("/allure-docker-service/emailable-report/render", strict_slashes=False)
 def emailable_report_render():
     try:
         project_id = resolve_project(request.args.get('project_id'))
@@ -496,6 +530,7 @@ def emailable_report_render():
         return report
 
 @app.route("/emailable-report/export", strict_slashes=False)
+@app.route("/allure-docker-service/emailable-report/export", strict_slashes=False)
 def emailable_report_export():
     try:
         project_id = resolve_project(request.args.get('project_id'))
@@ -530,6 +565,7 @@ def emailable_report_export():
         return report
 
 @app.route("/report/export", strict_slashes=False)
+@app.route("/allure-docker-service/report/export", strict_slashes=False)
 def report_export():
     try:
         project_id = resolve_project(request.args.get('project_id'))
@@ -586,6 +622,7 @@ def report_export():
         return report
 
 @app.route("/projects", methods=['POST'], strict_slashes=False)
+@app.route("/allure-docker-service/projects", methods=['POST'], strict_slashes=False)
 def create_project():
     try:
         if not request.is_json:
@@ -645,6 +682,7 @@ def create_project():
     return resp
 
 @app.route('/projects/<project_id>', methods=['DELETE'], strict_slashes=False)
+@app.route("/allure-docker-service/projects/<project_id>", methods=['DELETE'], strict_slashes=False)
 def delete_project(project_id):
     try:
         if project_id == 'default':
@@ -681,6 +719,7 @@ def delete_project(project_id):
     return resp
 
 @app.route('/projects/<project_id>', strict_slashes=False)
+@app.route("/allure-docker-service/projects/<project_id>", strict_slashes=False)
 def get_project(project_id):
     try:
         if is_existent_project(project_id) is False:
@@ -742,6 +781,7 @@ def get_project(project_id):
         return resp
 
 @app.route('/projects', strict_slashes=False)
+@app.route("/allure-docker-service/projects", strict_slashes=False)
 def get_projects():
     try:
         directories = os.listdir(PROJECTS_DIRECTORY)
@@ -775,6 +815,7 @@ def get_projects():
         return resp
 
 @app.route('/projects/<project_id>/reports/<path:path>')
+@app.route("/allure-docker-service/projects/<project_id>/reports/<path:path>")
 def get_reports(project_id, path):
     try:
         project_path = '{}/reports/{}'.format(project_id, path)

@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: allure-ingress-service-load-balancer
+  namespace: allure-docker-service
+spec:
+  tls:
+    - secretName: my-domain-com-tls
+      hosts:
+        - my-domain.com
+  rules:
+    - host: my-domain.com
+      http:
+        paths:
+          - path: /allure-docker-service
+            backend:
+              serviceName: allure-service-load-balancer
+              servicePort: 6060

@@ -45,8 +45,10 @@ request_body = {
 }
 json_request_body = json.dumps(request_body)
 
+ssl_verification = True
+
 print("------------------SEND-RESULTS------------------")
-response = requests.post(allure_server + '/send-results?project_id=' + project_id, headers=headers, data=json_request_body)
+response = requests.post(allure_server + '/allure-docker-service/send-results?project_id=' + project_id, headers=headers, data=json_request_body, verify=ssl_verification)
 print("STATUS CODE:")
 print(response.status_code)
 print("RESPONSE:")
@@ -62,7 +64,7 @@ print("------------------GENERATE-REPORT------------------")
 execution_name = 'execution from my script'
 execution_from = 'http://google.com'
 execution_type = 'teamcity'
-response = requests.get(allure_server + '/generate-report?project_id=' + project_id + '&execution_name=' + execution_name + '&execution_from=' + execution_from, '&execution_type=' + execution_type, headers=headers, data=json_request_body)
+response = requests.get(allure_server + '/allure-docker-service/generate-report?project_id=' + project_id + '&execution_name=' + execution_name + '&execution_from=' + execution_from, '&execution_type=' + execution_type, headers=headers, data=json_request_body, verify=ssl_verification)
 print("STATUS CODE:")
 print(response.status_code)
 print("RESPONSE:")

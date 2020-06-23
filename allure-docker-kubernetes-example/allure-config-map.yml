@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: allure-config-map
+  namespace: allure-docker-service
+data:
+  CHECK_RESULTS_EVERY_SECONDS: NONE
+  KEEP_HISTORY: "1"
+  TLS: "1"

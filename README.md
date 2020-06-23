@@ -46,6 +46,7 @@ Table of contents
               * [Develop a new template](#develop-a-new-template)
           * [Allure Customized Plugins](#allure-customized-plugins)
           * [Allure Options](#allure-options)
+      * [Deploy using Kubernetes](#deploy-using-kubernetes)
    * [SUPPORT](#SUPPORT)
       * [Gitter](#gitter)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
@@ -170,7 +171,7 @@ This option is recommended for local executions. You should attach the volume wh
 
 All the information related local executions will be stored in the `default` project what is created when you start the container. You can see the complete info using the `GET /projects/default` endpoint:
 
-- http://localhost:5050/projects/default
+- http://localhost:5050/allure-docker-service/projects/default
 
 ##### Single Project - Docker on Unix/Mac
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
@@ -317,12 +318,12 @@ NOTE FOR WINDOWS USERS:
 If we want to generate reports for this specific project we need to use the same [Action Endpoints](#action-endpoints) that we used for a single project, but the difference now is we need to use the query parameter `project_id` to specify our new project.
 
 For example if we want to get the `latest` report for a `single project`, generally we execute this command:
-- http://localhost:5050/latest-report/     >>      http://localhost:5050/projects/default/reports/latest/index.html?redirect=false
+- http://localhost:5050/allure-docker-service/latest-report    >>      http://localhost:5050/allure-docker-service/projects/default/reports/latest/index.html?redirect=false
 
 This command will return the `latest` report from the `default` project as you see in the url above
 
 If we want to get the `latest` report from our new project we need to execute this one:
-- http://localhost:5050/latest-report?project_id=my-project-id     >>      http://localhost:5050/projects/my-project-id/reports/latest/index.html?redirect=false
+- http://localhost:5050/allure-docker-service/latest-report?project_id=my-project-id     >>      http://localhost:5050/allure-docker-service/projects/my-project-id/reports/latest/index.html?redirect=false
 
 You can appreciate the difference in the path `/projects/{PROJECT_ID}/....`
 
@@ -376,18 +377,18 @@ The first versions of this container used port `4040` for Allure Report and port
 
 The latest version includes new features `Multiple Projects` & `Navigate detailed previous history/trends`. These improvements allow us to handle multiple projects and multiple history reports.
 
-The only change required from your side is start using only port `5050` and instead to use http://localhost:4040/ for rendering Allure report you should use http://localhost:5050/latest-report
+The only change required from your side is start using only port `5050` and instead to use http://localhost:4040/ for rendering Allure report you should use http://localhost:5050/allure-docker-service/latest-report
 
 If you are mounting your volume `-v ${PWD}/allure-results:/app/allure-results` your allure results are being used and stored in `default` project internally in the container, you don't need to change your volume path directory or do anything else. If you want to keep the history reports start to attach another path ` -v ${PWD}/allure-reports:/app/default-reports`.
 
 If you are already using port `4040`, NO WORRIES. The Allure Report exposed in port `4040` will still being rendered for avoiding compatibility problems.
 The only issue you will face will be when you try to navigate the HISTORY from the TREND chart or any other widget aiming to any historic data. The error you will see is `HTTP ERROR 404 NOT FOUND`
 
-|       **Version**     |  **Port**  |       **Volume Path**     |  **Container Volume Path**   |         **Get Latest Report**           |
-|-----------------------|------------|---------------------------|------------------------------|-----------------------------------------|
-|  Previous to 2.13.3   |    4040    |   ${PWD}/allure-results   |    /app/allure-results       |   http://localhost:4040/                |
-|  From 2.13.3          |    5050    |   ${PWD}/allure-results   |    /app/allure-results       |   http://localhost:5050/latest-report   |                                   |
-|                       |            |   ${PWD}/allure-reports   |    /app/default-reports      |                                         |
+|       **Version**     |  **Port**  |       **Volume Path**     |  **Container Volume Path**   |                     **Get Latest Report**                    |
+|-----------------------|------------|---------------------------|------------------------------|--------------------------------------------------------------|
+|  Previous to 2.13.3   |    4040    |   ${PWD}/allure-results   |    /app/allure-results       |   http://localhost:4040/                                     |
+|  From 2.13.3          |    5050    |   ${PWD}/allure-results   |    /app/allure-results       |   http://localhost:5050/allure-docker-service/latest-report  |
+|                       |            |   ${PWD}/allure-reports   |    /app/default-reports      |                                                              |
 
 Check the new commands to start the container for a single project or for multiple projects: [ALLURE DOCKER SERVICE](#allure-docker-service-1)
 
@@ -417,13 +418,13 @@ allure_1  | Status: 200
 
 To see your `latest` report simply open your browser and access to:
 
-- http://localhost:5050/latest-report
+- http://localhost:5050/allure-docker-service/latest-report
 
 The `latest` report is generated automatically and sometimes could be not available temporary until the new `latest` report has been generated. If you access to the `latest` report url when is not available you will see the `NOT FOUND` page. It will take a few seconds until the latest report be available again.
 
 When you use the `latest-report` will be redirected to the resource url:
 
-- http://localhost:5050/projects/default/reports/latest/index.html?redirect=false
+- http://localhost:5050/allure-docker-service/projects/default/reports/latest/index.html?redirect=false
 
 When you start the container for a single report, the `default` project will be created automatically, for that reason you are redirected to this endpoint to get information about `default` project, you can see this in the path `.../projects/default/...`
 
@@ -462,9 +463,13 @@ We can run the same test suite again and navigate the history:
 [![](images/allure08.png)](images/allure08.png)
 
 
-You can repeat these steps, but now executing the third test
+You can repeat these steps, but now execute the third and fourth test
  ```sh
 mvn test -Dtest=ThirdTest
+ ```
+
+ ```sh
+mvn test -Dtest=FourthTestFactory
  ```
 
 ### Extra options
@@ -510,6 +515,17 @@ Available endpoints:
 Access to http://localhost:5050 to see Swagger documentation with examples
 
 [![](images/allure-api.png)](images/allure-api.png)
+
+From version `2.13.4` you can request an endpoint using the base path (prefix) `/allure-docker-service/`:
+
+```sh
+curl http://localhost:5050/allure-docker-service/version
+```
+or you can request without the prefix like in previous versions
+
+```sh
+curl http://localhost:5050/version
+```
 
 #### Send results through API
 `Available from Allure Docker Service version 2.12.1`
@@ -647,6 +663,12 @@ Docker Compose example:
     environment:
       KEEP_HISTORY: "TRUE"
 ```
+From version `2.13.4` you can also use as value `1`
+```sh
+    environment:
+      KEEP_HISTORY: 1
+```
+ 
 If you want to clean the history use the [Allure API](#allure-api).
 
 Allure framework allow you to see the latest 20 executions in the history https://github.com/allure-framework/allure2/pull/1059
@@ -677,7 +699,7 @@ or you can reduce it
 
 [![](images/allure-docker-service-history-10.png)](images/allure-docker-service-history-10.png)
 
-The `latest` directory contains the report from the last execution. On this case, the `31` directory contains the same report in the `latest` directory: 
+The `latest` directory contains the report from the last execution. On this case, the `29` directory contains the same report in the `latest` directory:
 
 [![](images/allure-docker-service-history-latest-and-last-execution.png)](allure-docker-service-history-latest-and-last-execution.png)
 
@@ -790,7 +812,7 @@ If you want the Emailable Report to redirect to your Allure server, just you nee
 
 ```sh
     environment:
-      SERVER_URL: "http://allure-any-cloud.net/latest-report"
+      SERVER_URL: "http://my-domain.com/allure-docker-service/latest-report"
 ```
 
 [![](images/emailable-report-server-link.png)](images/emailable-report-server-link.png)
@@ -841,6 +863,10 @@ Reference:
 - https://docs.qameta.io/allure/#_configuration
 - https://docs.qameta.io/allure/#_config_samples
 - https://docs.qameta.io/allure/#_job_dsl_plugin
+
+### Deploy using Kubernetes
+Check yaml definitions here: [allure-docker-kubernetes-example](allure-docker-kubernetes-example)
+
 
 ## SUPPORT
 ### Gitter

@@ -2,7 +2,7 @@
 
 PROJECT_ID=$1
 
-if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ]; then
+if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ] || [ "$KEEP_HISTORY" == "1" ] ; then
     PROJECT_REPORTS_DIRECTORY=$STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports
     KEEP_LATEST="20"
     if echo $KEEP_HISTORY_LATEST | egrep -q '^[0-9]+$'; then

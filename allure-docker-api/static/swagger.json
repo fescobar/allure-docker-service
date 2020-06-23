@@ -12,6 +12,11 @@
          "url":"https://opensource.org/licenses/MIT"
       }
    },
+   "servers":[
+      {
+         "url":"/allure-docker-service"
+      }
+   ],
    "tags":[
       {
          "name":"Action",
