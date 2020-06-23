@@ -37,6 +37,7 @@ Table of contents
           * [Keep History and Trends](#keep-history-and-trends)
           * [Override User Container](#override-user-container)
           * [Start in DEV Mode](#start-in-dev-mode)
+          * [Enable TLS](#enable-tls)
           * [Export Native Full Report](#export-native-full-report)
           * [Customize Emailable Report](#customize-emailable-report)
               * [Override CSS](#override-css)
@@ -729,6 +730,17 @@ Docker Compose example:
 ```
 NOTE:
 - Don't use this mode for live/prod environments.
+
+#### Enable TLS
+`Available from Allure Docker Service version 2.13.4`
+
+Enable TLS, if you want to implement `https` protocol using the `TLS` environment variable.
+
+Docker Compose example:
+```sh
+    environment:
+      TLS: 1
+```
 
 #### Export Native Full Report
 `Available from Allure Docker Service version 2.13.1`

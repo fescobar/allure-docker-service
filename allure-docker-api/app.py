@@ -7,6 +7,11 @@ import waitress, os, uuid, glob, json, base64, zipfile, io, re, shutil, tempfile
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
+DEV_MODE = 0
+HOST = '0.0.0.0'
+PORT = os.environ['PORT']
+THREADS = 7
+URL_SCHEME = 'http'
 GENERATE_REPORT_PROCESS = '{}/generateAllureReport.sh'.format(os.environ['ROOT'])
 KEEP_HISTORY_PROCESS = '{}/keepAllureHistory.sh'.format(os.environ['ROOT'])
 CLEAN_HISTORY_PROCESS = '{}/cleanAllureHistory.sh'.format(os.environ['ROOT'])
@@ -35,7 +40,21 @@ if "API_RESPONSE_LESS_VERBOSE" in os.environ:
     try:
         API_RESPONSE_LESS_VERBOSE = int(os.environ['API_RESPONSE_LESS_VERBOSE'])
     except Exception as ex:
-        app.logger.error('Wrong env var value. Setting API_RESPONSE_LESS_VERBOSE by default')
+        app.logger.error('Wrong env var value. Setting API_RESPONSE_LESS_VERBOSE=0 by default')
+
+if "DEV_MODE" in os.environ:
+    try:
+        DEV_MODE = int(os.environ['DEV_MODE'])
+    except Exception as ex:
+        app.logger.error('Wrong env var value. Setting DEV_MODE=0 by default')
+
+if "TLS" in os.environ:
+    try:
+        is_tls = int(os.environ['TLS'])
+        if is_tls == 1:
+            URL_SCHEME = 'https'
+    except Exception as ex:
+        app.logger.error('Wrong env var value. Setting TLS=0 by default')
 
 ### swagger specific ###
 SWAGGER_URL = '/swagger'
@@ -787,16 +806,9 @@ def check_process(process_file, project_id):
     if proccount > 0:
         raise Exception("Processing files for project_id '{}'. Try later!".format(project_id))
 
-dev_mode = 0
-if "DEV_MODE" in os.environ:
-    try:
-        dev_mode = int(os.environ['DEV_MODE'])
-    except Exception as ex:
-        app.logger.error('Wrong env var value. Setting DEV_MODE by default')
-
 if __name__ == '__main__':
-    if dev_mode == 1:
+    if DEV_MODE == 1:
         app.logger.info('Stating in DEV_MODE')
-        app.run(host='0.0.0.0', port=os.environ['PORT'])
+        app.run(host=HOST, port=PORT)
     else:
-        waitress.serve(app, threads=6, host='0.0.0.0', port=os.environ['PORT'], url_scheme='http')
+        waitress.serve(app, threads=THREADS, host=HOST, port=PORT, url_scheme=URL_SCHEME)
