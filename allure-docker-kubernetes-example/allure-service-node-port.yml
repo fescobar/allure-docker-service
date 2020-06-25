@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: allure-service-node-port
+  namespace: allure-docker-service
+spec:
+  type: NodePort
+  ports:
+    - port: 2020
+      targetPort: 5050
+      nodePort: 30008
+  selector:
+    type: app

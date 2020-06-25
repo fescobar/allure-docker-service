@@ -61,7 +61,7 @@ fi
 echo "Generating report for PROJECT_ID: $PROJECT_ID"
 allure generate --clean $RESULTS_DIRECTORY -o $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest
 
-if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ]; then
+if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ] || [ "$KEEP_HISTORY" == "1" ] ; then
     if [[ "$EXEC_STORE_RESULTS_PROCESS" == "1" ]]; then
         $ROOT/storeAllureReport.sh $PROJECT_ID $BUILD_ORDER
     fi
