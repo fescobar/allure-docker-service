@@ -19,7 +19,15 @@
    ],
    "tags":[
       {
+         "name":"Info",
+         "description":""
+      },
+      {
          "name":"Action",
+         "description":""
+      },
+      {
+         "name":"Project",
          "description":""
       }
    ],
@@ -30,6 +38,54 @@
                "Info"
             ],
             "summary":"Get Allure version (from version 2.12.1)",
+            "responses":{
+               "200":{
+                  "description":"OK",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "400":{
+                  "description":"BAD_REQUEST",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               }
+            }
+         }
+      },
+      "/swagger":{
+         "get":{
+            "tags":[
+               "Info"
+            ],
+            "summary":"Get Swagger API Doc",
+            "responses":{
+               "200":{
+                  "description":"OK"
+               }
+            }
+         }
+      },
+      "/swagger.json":{
+         "get":{
+            "tags":[
+               "Info"
+            ],
+            "summary":"Get Swagger API Specification",
+            "responses":{
+               "200":{
+                  "description":"OK"
+               }
+            }
+         }
+      },
+      "/config":{
+         "get":{
+            "tags":[
+               "Action"
+            ],
+            "summary":"Get Allure config (from version 2.13.5)",
             "responses":{
                "200":{
                   "description":"OK",
@@ -58,8 +114,7 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "responses":{
@@ -94,13 +149,12 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "requestBody":{
                "description":"Files to send",
-               "required":true,
+               "required":"true",
                "content":{
                   "application/json":{
                      "schema":{
@@ -167,32 +221,28 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                },
                {
                   "in":"query",
                   "name":"execution_name",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                },
                {
                   "in":"query",
                   "name":"execution_from",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                },
                {
                   "in":"query",
                   "name":"execution_type",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "responses":{
@@ -229,8 +279,7 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "responses":{
@@ -267,8 +316,7 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "responses":{
@@ -305,8 +353,7 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "responses":{
@@ -343,8 +390,7 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "responses":{
@@ -381,8 +427,7 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "responses":{
@@ -417,7 +462,7 @@
                "application/json"
             ],
             "requestBody":{
-               "required":true,
+               "required":"true",
                "content":{
                   "application/json":{
                      "schema":{
@@ -485,7 +530,7 @@
                   "schema":{
                      "type":"string"
                   },
-                  "required":true
+                  "required":"true"
                }
             ],
             "produces":[
@@ -525,7 +570,7 @@
                   "schema":{
                      "type":"string"
                   },
-                  "required":true
+                  "required":"true"
                }
             ],
             "produces":[
@@ -567,7 +612,7 @@
                   "schema":{
                      "type":"string"
                   },
-                  "required":true
+                  "required":"true"
                },
                {
                   "in":"path",
@@ -576,7 +621,7 @@
                   "schema":{
                      "type":"string"
                   },
-                  "required":true
+                  "required":"true"
                },
                {
                   "in":"query",
@@ -584,8 +629,7 @@
                   "value":"false",
                   "schema":{
                      "type":"string"
-                  },
-                  "required":false
+                  }
                }
             ],
             "produces":[

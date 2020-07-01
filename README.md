@@ -38,6 +38,12 @@ Table of contents
           * [Override User Container](#override-user-container)
           * [Start in DEV Mode](#start-in-dev-mode)
           * [Enable TLS](#enable-tls)
+          * [Enable Security](#enable-security)
+            * [Login](#login)
+            * [X-CSRF-TOKEN](#x-csrf-token)
+            * [Refresh Access Token](#refresh-access-token)
+            * [Logout](#logout)
+            * [Scripts](#scripts)
           * [Add Custom URL Prefix](#add-custom-url-prefix)
           * [Export Native Full Report](#export-native-full-report)
           * [Customize Emailable Report](#customize-emailable-report)
@@ -482,7 +488,13 @@ Available endpoints:
 
 `'GET'      /version`
 
+`'GET'      /swagger`
+
+`'GET'      /swagger.json`
+
 ##### Action Endpoints
+
+`'GET'      /config`
 
 `'GET'      /latest-report`
 
@@ -513,6 +525,17 @@ Available endpoints:
 
 `'GET'      /projects/{id}/reports/{path}`
 
+##### Security Endpoints
+
+`'POST'     /login`
+
+`'POST'     /refresh`
+
+`'DELETE'    /logout`
+
+`'DELETE'    /logout-refresh-token`
+
+
 Access to http://localhost:5050 to see Swagger documentation with examples
 
 [![](images/allure-api.png)](images/allure-api.png)
@@ -527,6 +550,8 @@ or you can request without the prefix like in previous versions
 ```sh
 curl http://localhost:5050/version
 ```
+
+For accessing `Security Endpoints`, you have to enable the security. Check [Enable Security](#enable-security) section.
 
 #### Send results through API
 `Available from Allure Docker Service version 2.12.1`
@@ -560,6 +585,11 @@ python send_results.py
 ./send_results.sh
 ```
 
+- Bash script with security enabled: [allure-docker-api-usage/send_results_security.sh](allure-docker-api-usage/send_results_security.sh)
+
+```sh
+./send_results_security.sh
+```
 NOTE:
 
 - These scripts are sending these example results [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
@@ -769,6 +799,251 @@ Docker Compose example:
     environment:
       TLS: 1
 ```
+#### Enable Security
+`Available from Allure Docker Service version 2.13.5`
+
+This feature MUST BE USED TOGETHER with [Enable TLS](#enable-tls), otherwise, your tokens can be intercepted and your security could be vulnerable.
+
+It's recommended to use Allure Docker Service UI container https://github.com/fescobar/allure-docker-service-ui for accessing to the information without credentials problems.
+
+You can define the main user credentials with env vars 'SECURITY_USER' & 'SECURITY_PASS'
+Also you need to enable the security to protect the endpoints with env var 'SECURITY_ENABLED'.
+
+Docker Compose example:
+```sh
+    environment:
+      SECURITY_USER: "my_username"
+      SECURITY_PASS: "my_password"
+      SECURITY_ENABLED: 1
+```
+Where 'SECURITY_PASS' env var is case sensitive.
+
+When the security is enabled, you will see the Swagger documentation (http://localhost:5050/allure-docker-service/swagger) updated with new security endpoints and specifying the protected endpoints.
+
+If you try to use the endpoints `GET /projects`
+```sh
+curl -X GET http://localhost:5050/allure-docker-service/projects -ik
+```
+
+You will see this response
+```sh
+HTTP/1.1 401 UNAUTHORIZED
+Access-Control-Allow-Origin: *
+Content-Length: 67
+Content-Type: application/json
+Date: Tue, 11 Aug 2020 10:31:37 GMT
+Server: waitress
+
+{"meta_data":{"message":"Missing cookie \"access_token_cookie\""}}
+```
+
+##### Login
+To access to protected endpoints you need to use the endpoint `POST /login` with the credentials configured in the initial step.
+
+```sh
+curl -X POST http://localhost:5050/allure-docker-service/login \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "username": "my_username",
+    "password": "my_password"
+}' -c cookiesFile -ik
+```
+We are storing the cookies obtained in a file `cookiesFile` to use it in the next requests:
+
+Now we try to request the protected endpoints using the cookies obtained from `POST /login` endpoint.
+```sh
+curl -X GET http://localhost:5050/allure-docker-service/projects -b cookiesFile -ik
+```
+Using the security cookies we will have access to any endpoint protected.
+```sh
+HTTP/1.1 200 OK
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin:
+Content-Length: 606
+Content-Type: application/json
+Date: Sun, 16 Aug 2020 11:09:01 GMT
+Server: waitress
+
+{"data":{"projects":{"default":{"uri":"http://localhost:5050/allure-docker-service/projects/default"}}},"meta_data":{"message":"Projects successfully obtained"}}
+```
+
+[![](images/allure_security_login_cookies.png)](images/allure_security_login_cookies.png)
+
+##### X-CSRF-TOKEN
+For example, if you try to create a new project with the security enabled with the cookies obtained in the `POST /login` endpoint
+
+```sh
+curl -X POST "http://localhost:5050/allure-docker-service/projects" \
+-H "Content-Type: application/json" \
+-d '{
+  "id": "my-project-id"
+}' -b cookiesFile -ik
+```
+You will received a 401 asking for CSRF token
+
+```sh
+HTTP/1.1 401 UNAUTHORIZED
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin:
+Content-Length: 47
+Content-Type: application/json
+Date: Mon, 17 Aug 2020 07:46:51 GMT
+Server: waitress
+
+{"meta_data":{"message":"Missing CSRF token"}}
+```
+
+You need to pass the header `X-CSRF-TOKEN` (Cross-Site Request Forgery) if you request to endpoints with method type `POST`, `PUT`, `PATCH` & `DELETE`.
+
+You can get the `X-CSRF-TOKEN` value from the cookie `csrf_access_token` which is obtained from the `POST /login` successfully response (check your cookies section).
+
+Here we are extracting the value of `csrf_access_token` cookie from the `cookiesFile` file generated with the `POST /login`
+```sh
+CRSF_ACCESS_TOKEN_VALUE=$(cat cookiesFile | grep -o 'csrf_access_token.*' | cut -f2)
+echo "csrf_access_token value: $CRSF_ACCESS_TOKEN_VALUE"
+```
+
+Once you get the `csrf_access_token` value you need to send it as header named `X-CSRF-TOKEN`
+
+```sh
+curl -X POST "http://localhost:5050/allure-docker-service/projects" \
+-H "X-CSRF-TOKEN: $CRSF_ACCESS_TOKEN_VALUE" -H "Content-Type: application/json" \
+-d '{
+  "id": "my-project-id"
+}' -b cookiesFile -ik
+```
+
+```sh
+HTTP/1.1 201 CREATED
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin:
+Content-Length: 90
+Content-Type: application/json
+Date: Mon, 17 Aug 2020 07:51:37 GMT
+Server: waitress
+
+{"data":{"id":"my-project-id"},"meta_data":{"message":"Project successfully created"}}
+```
+
+[![](images/allure_security_create_project_cookies.png)](images/allure_security_create_project_cookies.png)
+
+
+##### Refresh Access Token
+If you want to avoid the user login each time the access token expired, you need to refresh your token
+
+For refreshing the access token, you have to use the `refresh_token_cookie` and `csrf_refresh_token`
+
+Here, we are extracting the value of `csrf_refresh_token` cookie from the `cookiesFile` file generated with the `POST /login` endpoint
+```sh
+CRSF_REFRESH_TOKEN_VALUE=$(cat cookiesFile | grep -o 'csrf_refresh_token.*' | cut -f2)
+echo "csrf_refresh_token value: $CRSF_REFRESH_TOKEN_VALUE"
+```
+After that, we need to send `csrf_refresh_token` as header `X-CSRF-TOKEN` and the cookies file with the `-b` option.
+```sh
+curl -X POST http://localhost:5050/allure-docker-service/refresh -H "X-CSRF-TOKEN: $CRSF_REFRESH_TOKEN_VALUE" -c cookiesFile -b cookiesFile -ik
+```
+With `-c` options we are overriding the cookies file with the new tokens provided for `POST /refresh` endpoint.
+```sh
+
+HTTP/1.1 200 OK
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin:
+Content-Length: 428
+Content-Type: application/json
+Date: Mon, 17 Aug 2020 08:25:21 GMT
+Server: waitress
+Set-Cookie: access_token_cookie=eyJ0eXAiOiJKV1Qi...; HttpOnly; Path=/
+Set-Cookie: csrf_access_token=d34c2eb1-dcc5-481c-a4ad-2c499a992f65; Path=/
+
+{"data":{"access_token":"eyJ0eXAiOiJKV1Qi..."},"meta_data":{"message":"Successfully token obtained"}}
+```
+
+[![](images/allure_security_refresh_cookies.png)](images/allure_security_refresh_cookies.png)
+
+
+The `Access Token` expires in 15 mins by default. You can change the default behaviour with env var `ACCESS_TOKEN_EXPIRES_IN_MINS`
+
+Docker Compose example:
+```sh
+    environment:
+      ACCESS_TOKEN_EXPIRES_IN_MINS: 30
+```
+
+Also for development purposes, you can use the env var `ACCESS_TOKEN_EXPIRES_IN_SECONDS`
+Docker Compose example:
+```sh
+    environment:
+      ACCESS_TOKEN_EXPIRES_IN_SECONDS: 30
+```
+You should use the `Refresh Token` to avoid the user login again.
+
+The `Refresh` token doesn't expire by default. You can change the default behaviour with env var `REFRESH_TOKEN_EXPIRES_IN_DAYS`
+Docker Compose example:
+```sh
+    environment:
+      REFRESH_TOKEN_EXPIRES_IN_DAYS: 60
+```
+
+Also for development purposes you can use the env var `REFRESH_TOKEN_EXPIRES_IN_SECONDS`
+Docker Compose example:
+```sh
+    environment:
+      REFRESH_TOKEN_EXPIRES_IN_SECONDS: 10
+```
+
+NOTE:
+- You can disable the expiration of any token using value 0.
+
+##### Logout
+We have 2 endpoints:
+
+With `DELETE /logout` your current `access_token` will be invalidated. You need to pass as header the `csrf_access_token` token.
+```sh
+CRSF_ACCESS_TOKEN_VALUE=$(cat cookiesFile | grep -o 'csrf_access_token.*' | cut -f2)
+echo "csrf_access_token value: $CRSF_ACCESS_TOKEN_VALUE"
+
+curl -X DELETE http://localhost:5050/allure-docker-service/logout -H "X-CSRF-TOKEN: $CRSF_ACCESS_TOKEN_VALUE" -b cookiesFile -ik
+```
+
+```sh
+HTTP/1.1 200 OK
+Access-Control-Allow-Credentials: true
+Content-Length: 52
+Content-Type: application/json
+Date: Fri, 21 Aug 2020 11:17:22 GMT
+Server: waitress
+
+{"meta_data":{"message":"Successfully logged out"}}
+```
+
+With `DELETE /logout-refresh-token` your current `refresh_token` will be invalidated and all cookies removed. You need to pass as header the `csrf_refresh_token` token:
+```sh
+CRSF_REFRESH_TOKEN_VALUE=$(cat cookiesFile | grep -o 'csrf_refresh_token.*' | cut -f2)
+echo "csrf_refresh_token value: $CRSF_REFRESH_TOKEN_VALUE"
+
+curl -X DELETE http://localhost:5050/allure-docker-service/logout-refresh-token -H "X-CSRF-TOKEN: $CRSF_REFRESH_TOKEN_VALUE" -b cookiesFile -ik
+```
+
+```sh
+HTTP/1.1 200 OK
+Access-Control-Allow-Credentials: true
+Content-Length: 52
+Content-Type: application/json
+Date: Fri, 21 Aug 2020 11:47:47 GMT
+Server: waitress
+Set-Cookie: access_token_cookie=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; HttpOnly; Path=/
+Set-Cookie: csrf_access_token=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Path=/
+Set-Cookie: refresh_token_cookie=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; HttpOnly; Path=/
+Set-Cookie: csrf_refresh_token=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Path=/
+
+{"meta_data":{"message":"Successfully logged out"}}
+```
+
+##### Scripts
+- Bash script with security enabled: [allure-docker-api-usage/send_results_security.sh](allure-docker-api-usage/send_results_security.sh)
+```sh
+./send_results_security.sh
+```
 
 #### Add Custom URL Prefix
 `Available from Allure Docker Service version 2.13.5`
@@ -925,7 +1200,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.5 .
+docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.13.5 .
 ```
 ### Run container
 ```sh

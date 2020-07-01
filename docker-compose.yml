@@ -8,9 +8,9 @@ services:
   allure-docker-service:
     build:
       context: ../allure-docker-service
-      dockerfile: docker/archive/Dockerfile
+      dockerfile: docker-custom/Dockerfile.bionic-custom
       args:
-        RELEASE: "2.13.5"
+        ALLURE_RELEASE: "2.13.5"
     environment:
       DEV_MODE: 1
       CHECK_RESULTS_EVERY_SECONDS: 5
@@ -20,4 +20,3 @@ services:
       - "5050:5050"
     volumes:
       - ./.data/allure-docker-service/allure-results:/app/allure-results
-      #- ./.data/allure-docker-service/projects:/app/projects

@@ -44,6 +44,8 @@ AllureDockerCSharpExample/AllureDockerCSharpExample/obj
 allure-docker-multi-project-example/projects/*
 allure-docker-kubernetes-example/tls.crt
 allure-docker-kubernetes-example/tls.key
+allure-docker-api/static/swagger/swagger_security.json
+allure-docker-api/static/ui
 .data/
 /.idea/
 /Dockerfile
