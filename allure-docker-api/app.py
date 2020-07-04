@@ -168,7 +168,7 @@ def send_results():
         if content_type is None:
             raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data'")
 
-        if content_type.startsWith('application/json') is False and content_type.startswith('multipart/form-data') is False:
+        if content_type.startswith('application/json') is False and content_type.startswith('multipart/form-data') is False:
             raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data'")
 
         project_id = resolve_project(request.args.get('project_id'))
@@ -188,7 +188,7 @@ def send_results():
         project_path = get_project_path(project_id)
         results_project='{}/results'.format(project_path)
 
-        if content_type.startsWith('application/json') is True:
+        if content_type.startswith('application/json') is True:
             json = request.get_json()
 
             if 'results' not in json:
