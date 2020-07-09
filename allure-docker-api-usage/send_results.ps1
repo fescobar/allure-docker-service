@@ -5,7 +5,7 @@ $ProjectId="default"
 # Url of allure reporting (without a trailing /)
 $BaseUrl = "http://localhost:5050"
 # Execution Name
-$ExecutionName ="mgtest"
+$ExecutionName ="test"
 # Exection From
 $ExecutionFrom ="local"
 
