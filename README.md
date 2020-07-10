@@ -544,6 +544,11 @@ python send_results.py
 
 - Declarative Pipeline script for JENKINS: [allure-docker-api-usage/send_results_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_jenkins_pipeline.groovy)
 
+- PowerShell script: [allure-docker-api-usage/send_results.ps1](allure-docker-api-usage/send_results.ps1)
+
+```sh
+./send_results.ps1
+```
 
 ##### Content-Type - multipart/form-data
 `Available from Allure Docker Service version 2.13.3`
