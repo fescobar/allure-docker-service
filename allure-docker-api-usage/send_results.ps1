@@ -1,22 +1,16 @@
-# Location of the report
-$ReportPath=".\allure-results-example"
-# Name of the project
-$ProjectId="default"
-# Url of allure reporting (without a trailing /)
+# This directory is where you have all your results locally, generally named as `allure-results`
+$ReportPath="allure-results-example"
+# This url is where the Allure container is deployed. We are using localhost as example
 $BaseUrl = "http://localhost:5050"
-# Execution Name
-$ExecutionName ="test"
-# Exection From
-$ExecutionFrom ="local"
-
-$SendResultsEndpoint="$BaseUrl/send-results?project_id=$ProjectId"
-$GenerateReportEndpoint="$BaseUrl/generate-report?project_id=$ProjectId"
+# Project ID according to existent projects in your Allure container - Check endpoint for project creation >> `[POST]/projects`
+$ProjectId="default"
+#$ProjectId="my-project-id"
 
 $Request = @{
   "results" = @()
 }
 
-$Files = (Get-ChildItem -File -Path $ReportPath)
+$Files = (Get-ChildItem -File -Path "$PSScriptRoot\$ReportPath")
 foreach ($Item in $Files) {    
     $Content = Get-Content -Path $Item.FullName
     if ($Content){
@@ -30,9 +24,21 @@ foreach ($Item in $Files) {
 
 $json = ConvertTo-Json -InputObject $Request
 
+Write-Output "------------------SEND-RESULTS------------------"
+$SendResultsEndpoint="$BaseUrl/send-results?project_id=$ProjectId"
 $result = Invoke-WebRequest -Uri $SendResultsEndpoint -ContentType 'application/json' -Method POST -Body $json -UseBasicParsing
+Write-Output "Status Code:" $result.StatusCode
+Write-Output "Response: " $result.Content
 
-$response = Invoke-RestMethod -Uri "$GenerateReportEndpoint&ExecutionName=$ExecutionName&execution_from=$ExecutionFrom&executionType=test"
+<#
+#If you want to generate reports on demand use the endpoint `GET /generate-report` and disable the Automatic Execution >> `CHECK_RESULTS_EVERY_SECONDS: NONE`
+Write-Output "------------------GENERATE-REPORT------------------"
+$ExecutionName ="execution_from_my_ps_script"
+$ExecutionFrom ="http://google.com"
+$ExecutionType = "bamboo"
+
+$GenerateReportEndpoint="$BaseUrl/generate-report?project_id=$ProjectId"
+$response = Invoke-RestMethod -Uri "$GenerateReportEndpoint&execution_name=$ExecutionName&execution_from=$ExecutionFrom&execution_type=$ExecutionType"
 $reportUrl = $response.data.report_url
 $testreport = @"
 _________________________________________________________________________________________________
@@ -45,9 +51,9 @@ ________________________________________________________________________________
                              | |                   
                              |_|                   
 _________________________________________________________________________________________________
-
 $reportUrl 
 _________________________________________________________________________________________________
 "@
 
 Write-Output $testreport
+#>
