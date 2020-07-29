@@ -53,7 +53,11 @@ EXECUTOR_JSON=$(cat <<EOF
 }
 EOF
 )
-    echo $EXECUTOR_JSON > $EXECUTOR_PATH
+    if [[ "$EXEC_STORE_RESULTS_PROCESS" == "1" ]]; then
+        echo $EXECUTOR_JSON > $EXECUTOR_PATH
+    else
+        echo '' > $EXECUTOR_PATH
+    fi
 else
     echo '' > $EXECUTOR_PATH
 fi
