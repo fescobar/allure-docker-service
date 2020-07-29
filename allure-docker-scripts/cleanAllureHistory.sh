@@ -27,6 +27,10 @@ if [ -e $EXECUTOR_PATH ]; then
     echo '' > $EXECUTOR_PATH
 fi
 
-$ROOT/keepAllureHistory.sh $PROJECT_ID
-$ROOT/generateAllureReport.sh $EXEC_STORE_RESULTS_PROCESS $PROJECT_ID
-$ROOT/renderEmailableReport.sh $PROJECT_ID
+if [ "$CHECK_RESULTS_EVERY_SECONDS" != "NONE" ] && [ "$CHECK_RESULTS_EVERY_SECONDS" != "none" ]; then
+    $ROOT/keepAllureHistory.sh $PROJECT_ID
+    $ROOT/generateAllureReport.sh $EXEC_STORE_RESULTS_PROCESS $PROJECT_ID
+    $ROOT/renderEmailableReport.sh $PROJECT_ID
+fi
+
+echo "History cleaned for PROJECT_ID: $PROJECT_ID"
