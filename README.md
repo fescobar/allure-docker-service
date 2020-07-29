@@ -83,9 +83,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.13.4                         | frankescobar/allure-docker-service:2.13.4-amd64   |
-|                                        | frankescobar/allure-docker-service:2.13.4-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.13.4-arm64v8 |
+| latest, 2.13.5                         | frankescobar/allure-docker-service:2.13.5-amd64   |
+|                                        | frankescobar/allure-docker-service:2.13.5-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.13.5-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -176,7 +176,7 @@ All the information related local executions will be stored in the `default` pro
 ##### Single Project - Docker on Unix/Mac
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 ```sh
-      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY=1 \
                  -v ${PWD}/allure-results:/app/allure-results \
                  -v ${PWD}/allure-reports:/app/default-reports \
                  frankescobar/allure-docker-service
@@ -185,7 +185,7 @@ From this directory [allure-docker-java-testng-example](allure-docker-java-testn
 ##### Single Project - Docker on Windows (Git Bash)
 From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
 ```sh
-      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY=1 \
                  -v "/$(pwd)/allure-results:/app/allure-results" \
                  -v "/$(pwd)/allure-reports:/app/default-reports" \
                  frankescobar/allure-docker-service
@@ -201,7 +201,7 @@ services:
     image: "frankescobar/allure-docker-service"
     environment:
       CHECK_RESULTS_EVERY_SECONDS: 1
-      KEEP_HISTORY: "TRUE"
+      KEEP_HISTORY: 1
     ports:
       - "5050:5050"
     volumes:
@@ -243,14 +243,14 @@ With this option you could generate multiple reports for multiple projects, you 
 
 ##### Multiple Project - Docker on Unix/Mac
 ```sh
-      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=NONE -e KEEP_HISTORY="TRUE" \
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=NONE -e KEEP_HISTORY=1 \
                  -v ${PWD}/projects:/app/projects \
                  frankescobar/allure-docker-service
 ```
 
 ##### Multiple Project - Docker on Windows (Git Bash)
 ```sh
-      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=NONE -e KEEP_HISTORY="TRUE" \
+      docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=NONE -e KEEP_HISTORY=1 \
                  -v "/$(pwd)/projects:/app/projects" \
                  frankescobar/allure-docker-service
 ```
@@ -265,7 +265,7 @@ services:
     image: "frankescobar/allure-docker-service"
     environment:
       CHECK_RESULTS_EVERY_SECONDS: NONE
-      KEEP_HISTORY: "TRUE"
+      KEEP_HISTORY: 1
       KEEP_HISTORY_LATEST: 25
     ports:
       - "5050:5050"
@@ -625,7 +625,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.13.3"
+    image: "frankescobar/allure-docker-service:2.13.5"
 ```
 or using latest version:
 
@@ -892,7 +892,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.4 .
+docker build -t allure-release -f docker/archive/Dockerfile --build-arg RELEASE=2.13.5 .
 ```
 ### Run container
 ```sh
@@ -943,5 +943,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.4
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.5
 ```

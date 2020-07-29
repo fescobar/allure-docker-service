@@ -285,7 +285,7 @@ kubectl logs -f ${POD_NAME} --namespace allure-docker-service
 Output:
 ```sh
 Not checking results automatically
-ALLURE_VERSION: 2.13.4
+ALLURE_VERSION: 2.13.5
 Generating default report
 Creating results directory for PROJECT_ID: default
 Creating executor.json for PROJECT_ID: default
@@ -624,7 +624,7 @@ content-type: application/json
 content-length: 86
 strict-transport-security: max-age=15724800; includeSubDomains
 
-{"data":{"version":"2.13.4"},"meta_data":{"message":"Version successfully obtained"}}
+{"data":{"version":"2.13.5"},"meta_data":{"message":"Version successfully obtained"}}
 ```
 
 
