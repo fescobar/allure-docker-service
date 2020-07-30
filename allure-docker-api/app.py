@@ -62,8 +62,8 @@ if "TLS" in os.environ:
 SWAGGER_URL = '/allure-docker-service/swagger'
 API_URL = '/allure-docker-service/swagger.json'
 SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
+    base_url = f'{URL_PREFIX}{SWAGGER_URL}' if URL_PREFIX else SWAGGER_URL ,
+    api_url = f'{URL_PREFIX}{API_URL}' if URL_PREFIX else API_URL ,
     config = {
         'app_name': "Allure Docker Service"
     }
