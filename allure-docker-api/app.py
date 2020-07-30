@@ -22,6 +22,7 @@ STATIC_CONTENT = os.environ['STATIC_CONTENT']
 PROJECTS_DIRECTORY = os.environ['STATIC_CONTENT_PROJECTS']
 EMAILABLE_REPORT_FILE_NAME = os.environ['EMAILABLE_REPORT_FILE_NAME']
 ORIGIN='api'
+URL_PREFIX = os.environ.get('URL_PREFIX', '')
 
 REPORT_INDEX_FILE = 'index.html'
 DEFAULT_TEMPLATE = 'default.html'
@@ -61,8 +62,8 @@ if "TLS" in os.environ:
 SWAGGER_URL = '/allure-docker-service/swagger'
 API_URL = '/allure-docker-service/swagger.json'
 SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
+    base_url = f'{URL_PREFIX}{SWAGGER_URL}',
+    api_url = f'{URL_PREFIX}{API_URL}',
     config = {
         'app_name': "Allure Docker Service"
     }
@@ -74,7 +75,7 @@ app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 @app.route("/allure-docker-service", strict_slashes=False)
 def index():
     try:
-        return render_template('index.html')
+        return render_template('index.html', url=f'{URL_PREFIX}/allure-docker-service/swagger')
     except Exception as ex:
         body = {
             'meta_data': {
@@ -89,7 +90,13 @@ def index():
 @app.route("/allure-docker-service/swagger.json", strict_slashes=False)
 def swagger_json():
     try:
-        return send_file("{}/swagger.json".format(STATIC_CONTENT), mimetype='application/json')
+        if URL_PREFIX:
+            with open("{}/swagger.json".format(STATIC_CONTENT), 'r') as f:
+                swagger_data = json.load(f)
+                swagger_data["servers"][0]["url"] = f'{URL_PREFIX}{swagger_data["servers"][0]["url"]}'
+                return jsonify(swagger_data)
+        else:
+            return send_file("{}/swagger.json".format(STATIC_CONTENT), mimetype='application/json')
     except Exception as ex:
         body = {
             'meta_data': {
@@ -852,4 +859,4 @@ if __name__ == '__main__':
         app.logger.info('Stating in DEV_MODE')
         app.run(host=HOST, port=PORT)
     else:
-        waitress.serve(app, threads=THREADS, host=HOST, port=PORT, url_scheme=URL_SCHEME)
+        waitress.serve(app, threads=THREADS, host=HOST, port=PORT, url_scheme=URL_SCHEME, url_prefix=URL_PREFIX)
