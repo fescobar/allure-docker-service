@@ -22,6 +22,7 @@ STATIC_CONTENT = os.environ['STATIC_CONTENT']
 PROJECTS_DIRECTORY = os.environ['STATIC_CONTENT_PROJECTS']
 EMAILABLE_REPORT_FILE_NAME = os.environ['EMAILABLE_REPORT_FILE_NAME']
 ORIGIN='api'
+URL_PREFIX = os.environ.get('URL_PREFIX', None)
 
 REPORT_INDEX_FILE = 'index.html'
 DEFAULT_TEMPLATE = 'default.html'
@@ -852,4 +853,4 @@ if __name__ == '__main__':
         app.logger.info('Stating in DEV_MODE')
         app.run(host=HOST, port=PORT)
     else:
-        waitress.serve(app, threads=THREADS, host=HOST, port=PORT, url_scheme=URL_SCHEME)
+        waitress.serve(app, threads=THREADS, host=HOST, port=PORT, url_scheme=URL_SCHEME, url_prefix=URL_PREFIX)

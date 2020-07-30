@@ -769,6 +769,26 @@ Docker Compose example:
       TLS: 1
 ```
 
+#### Configure URL Prefix
+`Available from Allure Docker Service version 2.13.X`
+
+Configure a url prefix if your deployment requires it (e.g. reverse proxy with nginx)
+```sh
+    environment:
+      URL_PREFIX: "/reporting"
+```
+
+Here's an example config for nginx where `allure` is the name of the docker container
+```
+server {
+    listen 443 ssl;
+    location /reporting/ {
+        proxy_pass http://allure:5050;
+    }
+}
+```
+
+
 #### Export Native Full Report
 `Available from Allure Docker Service version 2.13.1`
 
