@@ -22,7 +22,7 @@ STATIC_CONTENT = os.environ['STATIC_CONTENT']
 PROJECTS_DIRECTORY = os.environ['STATIC_CONTENT_PROJECTS']
 EMAILABLE_REPORT_FILE_NAME = os.environ['EMAILABLE_REPORT_FILE_NAME']
 ORIGIN='api'
-URL_PREFIX = os.environ.get('URL_PREFIX', None)
+URL_PREFIX = os.environ.get('URL_PREFIX', '')
 
 REPORT_INDEX_FILE = 'index.html'
 DEFAULT_TEMPLATE = 'default.html'
@@ -59,11 +59,20 @@ if "TLS" in os.environ:
         app.logger.error('Wrong env var value. Setting TLS=0 by default')
 
 ### swagger specific ###
+# Update swagger json file server with prefix at runtime
+if URL_PREFIX:
+    with open("{}/swagger.json".format(STATIC_CONTENT), 'r+') as f:
+        swagger_data = json.load(f)
+        swagger_data["servers"][0]["url"] = f'{URL_PREFIX}{swagger_data["servers"][0]["url"]}'
+        f.seek(0)
+        json.dump(swagger_data, f)
+        f.truncate()
+
 SWAGGER_URL = '/allure-docker-service/swagger'
 API_URL = '/allure-docker-service/swagger.json'
 SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
-    base_url = f'{URL_PREFIX}{SWAGGER_URL}' if URL_PREFIX else SWAGGER_URL ,
-    api_url = f'{URL_PREFIX}{API_URL}' if URL_PREFIX else API_URL ,
+    base_url = f'{URL_PREFIX}{SWAGGER_URL}',
+    api_url = f'{URL_PREFIX}{API_URL}',
     config = {
         'app_name': "Allure Docker Service"
     }
