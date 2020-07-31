@@ -782,8 +782,14 @@ Here's an example config for nginx where `allure` is the name of the docker cont
 ```
 server {
     listen 443 ssl;
+    ssl_certificate     /certificate.cer;
+    ssl_certificate_key /certificate.key;
     location /reporting/ {
         proxy_pass http://allure:5050;
+        proxy_set_header  Host $host;
+        proxy_set_header  X-Real-IP $remote_addr;
+        proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header  X-Forwarded-Host $server_name;
     }
 }
 ```
