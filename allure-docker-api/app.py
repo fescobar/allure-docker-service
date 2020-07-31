@@ -59,15 +59,6 @@ if "TLS" in os.environ:
         app.logger.error('Wrong env var value. Setting TLS=0 by default')
 
 ### swagger specific ###
-# Update swagger json file server with prefix at runtime
-if URL_PREFIX:
-    with open("{}/swagger.json".format(STATIC_CONTENT), 'r+') as f:
-        swagger_data = json.load(f)
-        swagger_data["servers"][0]["url"] = f'{URL_PREFIX}{swagger_data["servers"][0]["url"]}'
-        f.seek(0)
-        json.dump(swagger_data, f)
-        f.truncate()
-
 SWAGGER_URL = '/allure-docker-service/swagger'
 API_URL = '/allure-docker-service/swagger.json'
 SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
@@ -84,7 +75,7 @@ app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 @app.route("/allure-docker-service", strict_slashes=False)
 def index():
     try:
-        return render_template('index.html')
+        return render_template('index.html', url=f'{URL_PREFIX}/allure-docker-service/swagger')
     except Exception as ex:
         body = {
             'meta_data': {
@@ -99,7 +90,13 @@ def index():
 @app.route("/allure-docker-service/swagger.json", strict_slashes=False)
 def swagger_json():
     try:
-        return send_file("{}/swagger.json".format(STATIC_CONTENT), mimetype='application/json')
+        if URL_PREFIX:
+            with open("{}/swagger.json".format(STATIC_CONTENT), 'r') as f:
+                swagger_data = json.load(f)
+                swagger_data["servers"][0]["url"] = f'{URL_PREFIX}{swagger_data["servers"][0]["url"]}'
+                return jsonify(swagger_data)
+        else:
+            return send_file("{}/swagger.json".format(STATIC_CONTENT), mimetype='application/json')
     except Exception as ex:
         body = {
             'meta_data': {
