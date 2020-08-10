@@ -38,6 +38,7 @@ Table of contents
           * [Override User Container](#override-user-container)
           * [Start in DEV Mode](#start-in-dev-mode)
           * [Enable TLS](#enable-tls)
+          * [Add Custom URL Prefix](#add-custom-url-prefix)
           * [Export Native Full Report](#export-native-full-report)
           * [Customize Emailable Report](#customize-emailable-report)
               * [Override CSS](#override-css)
@@ -769,13 +770,18 @@ Docker Compose example:
       TLS: 1
 ```
 
-#### Configure URL Prefix
-`Available from Allure Docker Service version 2.13.X`
+#### Add Custom URL Prefix
+`Available from Allure Docker Service version 2.13.5`
 
 Configure a url prefix if your deployment requires it (e.g. reverse proxy with nginx)
 ```sh
     environment:
-      URL_PREFIX: "/reporting"
+      URL_PREFIX: "/my-prefix"
+```
+
+With this configuration you can request the API in this way too:
+```sh
+curl http://localhost:5050/my-prefix/allure-docker-service/version
 ```
 
 Here's an example config for nginx where `allure` is the name of the docker container
@@ -784,7 +790,7 @@ server {
     listen 443 ssl;
     ssl_certificate     /certificate.cer;
     ssl_certificate_key /certificate.key;
-    location /reporting/ {
+    location /my-prefix/ {
         proxy_pass http://allure:5050;
         proxy_set_header  Host $host;
         proxy_set_header  X-Real-IP $remote_addr;
@@ -793,7 +799,8 @@ server {
     }
 }
 ```
-
+NOTE:
+- This feature is not supported when DEV_MODE is enabled.
 
 #### Export Native Full Report
 `Available from Allure Docker Service version 2.13.1`

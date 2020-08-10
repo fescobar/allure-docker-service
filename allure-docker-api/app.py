@@ -22,7 +22,6 @@ STATIC_CONTENT = os.environ['STATIC_CONTENT']
 PROJECTS_DIRECTORY = os.environ['STATIC_CONTENT_PROJECTS']
 EMAILABLE_REPORT_FILE_NAME = os.environ['EMAILABLE_REPORT_FILE_NAME']
 ORIGIN='api'
-URL_PREFIX = os.environ.get('URL_PREFIX', '')
 
 REPORT_INDEX_FILE = 'index.html'
 DEFAULT_TEMPLATE = 'default.html'
@@ -58,6 +57,18 @@ if "TLS" in os.environ:
     except Exception as ex:
         app.logger.error('Wrong env var value. Setting TLS=0 by default')
 
+URL_PREFIX = ''
+if "URL_PREFIX" in os.environ:
+    prefix = str(os.environ['URL_PREFIX'])
+    if DEV_MODE == 1:
+        app.logger.info('URL_PREFIX is not supported when DEV_MODE is enabled')
+    else:
+        if prefix.startswith('/') is False:
+            app.logger.info('Adding slash at the beginning of URL_PREFIX')
+            prefix = '/{}'.format(''.join(prefix))
+        app.logger.info('Setting URL_PREFIX')
+        URL_PREFIX = prefix
+
 ### swagger specific ###
 SWAGGER_URL = '/allure-docker-service/swagger'
 API_URL = '/allure-docker-service/swagger.json'
@@ -75,7 +86,7 @@ app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 @app.route("/allure-docker-service", strict_slashes=False)
 def index():
     try:
-        return render_template('index.html', url=f'{URL_PREFIX}/allure-docker-service/swagger')
+        return render_template('index.html', url=f'{URL_PREFIX}{SWAGGER_URL}')
     except Exception as ex:
         body = {
             'meta_data': {
