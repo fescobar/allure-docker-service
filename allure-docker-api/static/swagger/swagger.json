@@ -656,6 +656,48 @@
                }
             }
          }
+      },
+      "/projects/search":{
+         "get":{
+            "tags":[
+               "Project"
+            ],
+            "summary":"Search projects (from version 2.13.5)",
+            "parameters":[
+               {
+                  "in":"query",
+                  "name":"id",
+                  "value":"my-project-id",
+                  "schema":{
+                     "type":"string"
+                  },
+                  "required":"true"
+               }
+            ],
+            "produces":[
+               "application/json"
+            ],
+            "responses":{
+               "200":{
+                  "description":"OK",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "400":{
+                  "description":"BAD_REQUEST",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "404":{
+                  "description":"NOT_FOUND",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               }
+            }
+         }
       }
    },
    "components":{

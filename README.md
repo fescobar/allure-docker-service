@@ -1,5 +1,5 @@
-[![](images/allure.png)](http://allure.qatools.ru/)
-[![](images/docker.png)](https://docs.docker.com/)
+[![](resources/allure.png)](http://allure.qatools.ru/)
+[![](resources/docker.png)](https://docs.docker.com/)
 
 # ALLURE DOCKER SERVICE
 Table of contents
@@ -21,6 +21,8 @@ Table of contents
             * [Creating our first project](#creating-our-first-project)
       * [PORT 4040 Deprecated](#port-4040-deprecated)
       * [Opening & Refreshing Report](#opening--refreshing-report)
+      * [New User Interface](#new-user-interface)
+      * [Deploy using Kubernetes](#deploy-using-kubernetes)
       * [Extra options](#extra-options)
           * [Allure API](#allure-api)
             * [Info Endpoints](#info-endpoints)
@@ -53,7 +55,6 @@ Table of contents
               * [Develop a new template](#develop-a-new-template)
           * [Allure Customized Plugins](#allure-customized-plugins)
           * [Allure Options](#allure-options)
-      * [Deploy using Kubernetes](#deploy-using-kubernetes)
    * [SUPPORT](#SUPPORT)
       * [Gitter](#gitter)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
@@ -98,20 +99,22 @@ The following table shows the provided Manifest Lists.
 ### Generate Allure Results
 First at all it's important to be clear. This container only generates reports based on results. You have to generate allure results according to the technology what are you using.
 
+Reference: https://github.com/fescobar/allure-docker-service-examples
+
 We have some examples projects:
-- [allure-docker-java-testng-example](allure-docker-java-testng-example)
-- [allure-docker-java-junit4-example](allure-docker-java-junit4-example)
-- [allure-docker-java-cucumber-jvm-example](allure-docker-java-cucumber-jvm-example)
-- [allure-docker-nodejs-cucumber-example](allure-docker-nodejs-cucumber-example)
-- [allure-docker-nodejs-typescript-cucumber-example](allure-docker-nodejs-typescript-cucumber-example)
-- [allure-docker-nodejs-typescript-mocha-example](allure-docker-nodejs-typescript-mocha-example)
-- [allure-docker-python-behave-example](allure-docker-python-behave-example)
-- [allure-docker-python-pytest-example](allure-docker-python-pytest-example)
-- [AllureDockerCSharpExample](AllureDockerCSharpExample)
+- [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example)
+- [allure-docker-java-junit4-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-junit4-example)
+- [allure-docker-java-cucumber-jvm-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-cucumber-jvm-example)
+- [allure-docker-nodejs-cucumber-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-nodejs-cucumber-example)
+- [allure-docker-nodejs-typescript-cucumber-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-nodejs-typescript-cucumber-example)
+- [allure-docker-nodejs-typescript-mocha-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-nodejs-typescript-mocha-example)
+- [allure-docker-python-behave-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-python-behave-example)
+- [allure-docker-python-pytest-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-python-pytest-example)
+- [AllureDockerCSharpExample](https://github.com/fescobar/allure-docker-service-examples/tree/master/AllureDockerCSharpExample)
 
-In this case we are going to generate results using the java project [allure-docker-java-testng-example](allure-docker-java-testng-example) of this repository.
+In this case we are going to generate results using the java project [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example) of this repository.
 
-Go to directory [allure-docker-java-testng-example](allure-docker-java-testng-example) via command line:
+Go to directory [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example) via command line:
 
 ```sh
 cd allure-docker-java-testng-example
@@ -153,7 +156,7 @@ java.lang.AssertionError: FAILURE ON PURPOSE
 [INFO] ------------------------------------------------------------------------
 ```
 
-There are 2 tests, one of them failed. Now you can see the `allure-results` diretory was created inside of [allure-docker-java-testng-example](allure-docker-java-testng-example) project.
+There are 2 tests, one of them failed. Now you can see the `allure-results` diretory was created inside of [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example) project.
 
 Just it has left 1 step more. You have to run `allure-docker-service` mounting your `allure-results` directory.
 
@@ -172,6 +175,8 @@ To improve the navigability is recommended to install an Extension/AddOn in your
 - Google Chrome >  JSONView > https://chrome.google.com/webstore/detail/jsonview/chklaanhfefbnpoihckbnefhakgolnmc?hl=en
 - Mozilla Firefox > JSONView > https://addons.mozilla.org/en-US/firefox/addon/jsonview/
 
+NOTE:
+- Check the [New User Interface](#new-user-interface)
 
 #### SINGLE PROJECT - LOCAL REPORTS
 This option is recommended for local executions. You should attach the volume where your results are being generated locally for your automation project. 
@@ -181,7 +186,7 @@ All the information related local executions will be stored in the `default` pro
 - http://localhost:5050/allure-docker-service/projects/default
 
 ##### Single Project - Docker on Unix/Mac
-From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
+From this directory [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example) execute next command:
 ```sh
       docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY=1 \
                  -v ${PWD}/allure-results:/app/allure-results \
@@ -190,7 +195,7 @@ From this directory [allure-docker-java-testng-example](allure-docker-java-testn
 ```
 
 ##### Single Project - Docker on Windows (Git Bash)
-From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
+From this directory [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example) execute next command:
 ```sh
       docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY=1 \
                  -v "/$(pwd)/allure-results:/app/allure-results" \
@@ -199,7 +204,7 @@ From this directory [allure-docker-java-testng-example](allure-docker-java-testn
 ```
 
 ##### Single Project - Docker Compose
-Using docker-compose is the best way to manage containers: [allure-docker-java-testng-example/docker-compose.yml](allure-docker-java-testng-example/docker-compose.yml)
+Using docker-compose is the best way to manage containers: [allure-docker-java-testng-example/docker-compose.yml](https://github.com/fescobar/allure-docker-service-examples/blob/master/allure-docker-java-testng-example/docker-compose.yml)
 
 ```sh
 version: '3'
@@ -216,7 +221,7 @@ services:
       - ${PWD}/allure-reports:/app/default-reports
 ```
 
-From this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) execute next command:
+From this directory [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example) execute next command:
 
 ```sh
 docker-compose up allure
@@ -235,6 +240,7 @@ docker-compose logs -f allure
 ```
 
 NOTE:
+- Check the [New User Interface](#new-user-interface)
 - Read about [PORT 4040 Deprecated](#port-4040-deprecated) in case you are using previous versions.
 - The `${PWD}/allure-results` directory could be in anywhere on your machine. Your project must generate results in that directory.
 - The `/app/allure-results` directory is inside of the container. You MUST NOT change this directory, otherwise, the container won't detect the new changes.
@@ -263,7 +269,7 @@ With this option you could generate multiple reports for multiple projects, you 
 ```
 
 ##### Multiple Project - Docker Compose
-Using docker-compose is the best way to manage containers: [allure-docker-multi-project-example/docker-compose.yml](allure-docker-multi-project-example/docker-compose.yml)
+Using docker-compose is the best way to manage containers: [allure-docker-multi-project-example/docker-compose.yml](https://github.com/fescobar/allure-docker-service-examples/blob/master/allure-docker-multi-project-example/docker-compose.yml)
 
 ```sh
 version: '3'
@@ -297,6 +303,8 @@ docker-compose logs -f allure
 ```
 
 NOTE:
+- Check the [New User Interface](#new-user-interface)
+- Check [Deploy using Kubernetes](#deploy-using-kubernetes)
 - Read about [PORT 4040 Deprecated](#port-4040-deprecated) in case you are using previous versions.
 - The `/app/projects` directory is inside of the container. You MUST NOT change this directory, otherwise, the information about projects won't be stored.
 
@@ -308,18 +316,18 @@ NOTE FOR WINDOWS USERS:
 
 - Creating the project `my-project-id` using the endpoint `POST /projects`:
 
-[![](images/allure-mp00.png)](images/allure-mp00.png)
+[![](resources/allure-mp00.png)](resources/allure-mp00.png)
 
 
 - You can see all the existent projects using the endpoint `GET /projects`:
 
-[![](images/allure-mp01.png)](images/allure-mp01.png)
+[![](resources/allure-mp01.png)](resources/allure-mp01.png)
 
 - The `default` project is always created automatically, it shouldn't be removed.
 
 - And get specific information using the endpoint `GET /projects/{id}`
 
-[![](images/allure-mp02.png)](images/allure-mp02.png)
+[![](resources/allure-mp02.png)](resources/allure-mp02.png)
 
 
 If we want to generate reports for this specific project we need to use the same [Action Endpoints](#action-endpoints) that we used for a single project, but the difference now is we need to use the query parameter `project_id` to specify our new project.
@@ -438,15 +446,15 @@ When you start the container for a single report, the `default` project will be 
 The `redirect=false` parameter is used to avoid be redirected to the `GET /projects/{id}` endpoint (default behaviour)
 
 
-[![](images/allure01.png)](images/allure01.png)
+[![](resources/allure01.png)](resources/allure01.png)
 
-[![](images/allure02.png)](images/allure02.png)
+[![](resources/allure02.png)](resources/allure02.png)
 
-[![](images/allure03.png)](images/allure03.png)
+[![](resources/allure03.png)](resources/allure03.png)
 
 Now we can run other tests without being worried about Allure server. You don't need to restart or execute any Allure command.
 
-Just go again to this directory [allure-docker-java-testng-example](allure-docker-java-testng-example) via command line:
+Just go again to this directory [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example) via command line:
 ```sh
 cd allure-docker-java-testng-example
 ```
@@ -457,17 +465,17 @@ mvn test -Dtest=SecondTest
 ```
 When this second test finished, refresh your browser and you will see there is a new report including last results tests.
 
-[![](images/allure04.png)](images/allure04.png)
+[![](resources/allure04.png)](resources/allure04.png)
 
-[![](images/allure05.png)](images/allure05.png)
+[![](resources/allure05.png)](resources/allure05.png)
 
 We can run the same test suite again and navigate the history:
 
-[![](images/allure06.png)](images/allure06.png)
+[![](resources/allure06.png)](resources/allure06.png)
 
-[![](images/allure07.png)](images/allure07.png)
+[![](resources/allure07.png)](resources/allure07.png)
 
-[![](images/allure08.png)](images/allure08.png)
+[![](resources/allure08.png)](resources/allure08.png)
 
 
 You can repeat these steps, but now execute the third and fourth test
@@ -478,6 +486,21 @@ mvn test -Dtest=ThirdTest
  ```sh
 mvn test -Dtest=FourthTestFactory
  ```
+
+### New User Interface
+Check the new UI
+- [https://github.com/fescobar/allure-docker-service-ui](https://github.com/fescobar/allure-docker-service-ui)
+
+[![](https://github.com/fescobar/allure-docker-service-ui/blob/master/resources/signin-allure-docker-service-ui.png?raw=true)](https://github.com/fescobar/allure-docker-service-ui/blob/master/resources/signin-allure-docker-service-ui.png?raw=true)
+
+[![](https://github.com/fescobar/allure-docker-service-ui/blob/master/resources/allure-docker-service-ui.png?raw=true)](https://github.com/fescobar/allure-docker-service-ui/blob/master/resources/allure-docker-service-ui.png?raw=true)
+
+### Deploy using Kubernetes
+[![](https://github.com/fescobar/allure-docker-service-examples/blob/master/resources/kubernetes.png?raw=true)](https://github.com/fescobar/allure-docker-service-examples/blob/master/resources/kubernetes.png?raw=true)
+
+Check yaml definitions here:
+- [allure-docker-kubernetes-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-kubernetes-example)
+
 
 ### Extra options
 
@@ -525,6 +548,8 @@ Available endpoints:
 
 `'GET'      /projects/{id}/reports/{path}`
 
+`'GET'      /projects/search`
+
 ##### Security Endpoints
 
 `'POST'     /login`
@@ -538,7 +563,7 @@ Available endpoints:
 
 Access to http://localhost:5050 to see Swagger documentation with examples
 
-[![](images/allure-api.png)](images/allure-api.png)
+[![](resources/allure-api.png)](resources/allure-api.png)
 
 From version `2.13.4` you can request an endpoint using the base path (prefix) `/allure-docker-service/`:
 
@@ -602,12 +627,12 @@ NOTE:
 
 When you use the `GET /generate-report`, you will see this in your report:
 
-[![](images/executor00.png)](images/executor00.png)
+[![](resources/executor00.png)](resources/executor00.png)
 
 If you want to change the `execution name`, you need to pass a parameter named `execution_name` with the value. Example:
 `GET /generate-report?execution_name=my-execution-name`
 
-[![](images/executor01.png)](images/executor01.png)
+[![](resources/executor01.png)](resources/executor01.png)
 
 
 If you want to change the `execution from` (by default is empty), you need to pass a parameter named `execution_from` with the value. Example:
@@ -615,7 +640,7 @@ If you want to change the `execution from` (by default is empty), you need to pa
 
 This option allow you to come back to your executor server.
 
-[![](images/executor02.png)](images/executor02.png)
+[![](resources/executor02.png)](resources/executor02.png)
 
 
 If you want to change the `execution icon` (default is empty), you need to pass a parameter named `execution_type` with the value. Example:
@@ -624,17 +649,17 @@ If you want to change the `execution icon` (default is empty), you need to pass 
 If the type is not recognized it will take the default icon. You can use different types like:
 - jenkins
 
-[![](images/executor03.png)](images/executor03.png)
+[![](resources/executor03.png)](resources/executor03.png)
 
 
 - teamcity
 
-[![](images/executor04.png)](images/executor04.png)
+[![](resources/executor04.png)](resources/executor04.png)
 
 
 - bamboo
 
-[![](images/executor05.png)](images/executor05.png)
+[![](resources/executor05.png)](resources/executor05.png)
 
 
 The icons are based on the native Allure2 Framework:
@@ -709,13 +734,13 @@ If you want to clean the history use the [Allure API](#allure-api).
 
 Allure framework allow you to see the latest 20 executions in the history https://github.com/allure-framework/allure2/pull/1059
 
-[![](images/allure-history-visually-limited-01.png)](images/allure-history-visually-limited-01.png)
+[![](resources/allure-history-visually-limited-01.png)](resources/allure-history-visually-limited-01.png)
 
 `Available from Allure Docker Service version 2.13.3`
 
 You can access to previous history clicking on the Allure image in the report. If the report is not available you will be redirected to the endpoint `GET /projects/{id}`
 
-[![](images/allure-history-visually-limited-02.png)](images/allure-history-visually-limited-02.png)
+[![](resources/allure-history-visually-limited-02.png)](resources/allure-history-visually-limited-02.png)
 
 
 Also, `Allure Docker Service` by default keeps the latest 20 executions in the history, but you can extend that limit:
@@ -724,7 +749,7 @@ Also, `Allure Docker Service` by default keeps the latest 20 executions in the h
       KEEP_HISTORY_LATEST: 28
 ```
 
-[![](images/allure-docker-service-history-28.png)](images/allure-docker-service-history-28.png)
+[![](resources/allure-docker-service-history-28.png)](resources/allure-docker-service-history-28.png)
 
 
 or you can reduce it
@@ -733,11 +758,11 @@ or you can reduce it
       KEEP_HISTORY_LATEST: 10
 ```
 
-[![](images/allure-docker-service-history-10.png)](images/allure-docker-service-history-10.png)
+[![](resources/allure-docker-service-history-10.png)](resources/allure-docker-service-history-10.png)
 
 The `latest` directory contains the report from the last execution. On this case, the `29` directory contains the same report in the `latest` directory:
 
-[![](images/allure-docker-service-history-latest-and-last-execution.png)](allure-docker-service-history-latest-and-last-execution.png)
+[![](resources/allure-docker-service-history-latest-and-last-execution.png)](allure-docker-service-history-latest-and-last-execution.png)
 
 
 #### Override User Container
@@ -802,9 +827,9 @@ Docker Compose example:
 #### Enable Security
 `Available from Allure Docker Service version 2.13.5`
 
-This feature MUST BE USED TOGETHER with [Enable TLS](#enable-tls), otherwise, your tokens can be intercepted and your security could be vulnerable.
+If you are going to publish this API, this feature MUST BE USED TOGETHER with [Enable TLS](#enable-tls), otherwise, your tokens can be intercepted and your security could be vulnerable. When you enable TLS, the cookies credentials will be stored as `SECURE`.
 
-It's recommended to use Allure Docker Service UI container https://github.com/fescobar/allure-docker-service-ui for accessing to the information without credentials problems.
+It's recommended to use Allure Docker Service UI container [New User Interface](#new-user-interface) for accessing to the information without credentials problems.
 
 You can define the main user credentials with env vars 'SECURITY_USER' & 'SECURITY_PASS'
 Also you need to enable the security to protect the endpoints with env var 'SECURITY_ENABLED'.
@@ -867,7 +892,7 @@ Server: waitress
 {"data":{"projects":{"default":{"uri":"http://localhost:5050/allure-docker-service/projects/default"}}},"meta_data":{"message":"Projects successfully obtained"}}
 ```
 
-[![](images/allure_security_login_cookies.png)](images/allure_security_login_cookies.png)
+[![](resources/allure_security_login_cookies.png)](resources/allure_security_login_cookies.png)
 
 ##### X-CSRF-TOKEN
 For example, if you try to create a new project with the security enabled with the cookies obtained in the `POST /login` endpoint
@@ -925,7 +950,7 @@ Server: waitress
 {"data":{"id":"my-project-id"},"meta_data":{"message":"Project successfully created"}}
 ```
 
-[![](images/allure_security_create_project_cookies.png)](images/allure_security_create_project_cookies.png)
+[![](resources/allure_security_create_project_cookies.png)](resources/allure_security_create_project_cookies.png)
 
 
 ##### Refresh Access Token
@@ -958,7 +983,7 @@ Set-Cookie: csrf_access_token=d34c2eb1-dcc5-481c-a4ad-2c499a992f65; Path=/
 {"data":{"access_token":"eyJ0eXAiOiJKV1Qi..."},"meta_data":{"message":"Successfully token obtained"}}
 ```
 
-[![](images/allure_security_refresh_cookies.png)](images/allure_security_refresh_cookies.png)
+[![](resources/allure_security_refresh_cookies.png)](resources/allure_security_refresh_cookies.png)
 
 
 The `Access Token` expires in 15 mins by default. You can change the default behaviour with env var `ACCESS_TOKEN_EXPIRES_IN_MINS`
@@ -1048,7 +1073,7 @@ Set-Cookie: csrf_refresh_token=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Path=/
 #### Add Custom URL Prefix
 `Available from Allure Docker Service version 2.13.5`
 
-Configure a url prefix if your deployment requires it (e.g. reverse proxy with nginx)
+Configure an url prefix if your deployment requires it (e.g. reverse proxy with nginx)
 ```sh
     environment:
       URL_PREFIX: "/my-prefix"
@@ -1082,7 +1107,7 @@ NOTE:
 
 You can export the native full report using the endpoint `GET /report/export` [Allure API](#allure-api).
 
-[![](images/native-full-report.png)](images/native-full-report.png)
+[![](resources/native-full-report.png)](resources/native-full-report.png)
 
 
 
@@ -1091,7 +1116,7 @@ You can export the native full report using the endpoint `GET /report/export` [A
 
 You can render and export the emailable report using the endpoints `GET /emailable-report/render` and `GET ​/emailable-report​/export` [Allure API](#allure-api).
 
-[![](images/emailable-report.png)](images/emailable-report.png)
+[![](resources/emailable-report.png)](resources/emailable-report.png)
 
 ##### Override CSS
 By default this report template is using Bootstrap css. If you want to override the css, just you need to pass the enviroment variable `EMAILABLE_REPORT_CSS_CDN`. Docker Compose example:
@@ -1101,7 +1126,7 @@ By default this report template is using Bootstrap css. If you want to override 
       EMAILABLE_REPORT_CSS_CDN: "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/sketchy/bootstrap.css"
 ```
 
-[![](images/emailable-report-custom.png)](images/emailable-report-custom.png)
+[![](resources/emailable-report-custom.png)](resources/emailable-report-custom.png)
 
 You can use all these themes: https://bootswatch.com/ or any other boostrap css like https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.css
 
@@ -1113,7 +1138,7 @@ If you want override the title of the Emailable Report, just you need to pass th
       EMAILABLE_REPORT_TITLE: "My Title"
 ```
 
-[![](images/emailable-report-title.png)](images/emailable-report-title.png)
+[![](resources/emailable-report-title.png)](resources/emailable-report-title.png)
 
 ##### Override server link
 `Functionality Deprecated`
@@ -1128,7 +1153,7 @@ If you want the Emailable Report to redirect to your Allure server, just you nee
       SERVER_URL: "http://my-domain.com/allure-docker-service/latest-report"
 ```
 
-[![](images/emailable-report-server-link.png)](images/emailable-report-server-link.png)
+[![](resources/emailable-report-server-link.png)](resources/emailable-report-server-link.png)
 
 
 ##### Develop a new template
@@ -1176,10 +1201,6 @@ Reference:
 - https://docs.qameta.io/allure/#_configuration
 - https://docs.qameta.io/allure/#_config_samples
 - https://docs.qameta.io/allure/#_job_dsl_plugin
-
-### Deploy using Kubernetes
-Check yaml definitions here: [allure-docker-kubernetes-example](allure-docker-kubernetes-example)
-
 
 ## SUPPORT
 ### Gitter

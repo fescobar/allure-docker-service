@@ -78,7 +78,10 @@ SECURITY_SPECS_PATH = 'swagger/security_specs'
 
 REPORT_INDEX_FILE = 'index.html'
 DEFAULT_TEMPLATE = 'default.html'
-EMAILABLE_REPORT_CSS = "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstrap.css"
+LANGUAGE_TEMPLATE = 'select_language.html'
+LANGUAGES = ["en", "ru", "zh", "de", "he", "br", "pl", "ja", "es", "kr"]
+GLOBAL_CSS = "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstrap.css"
+EMAILABLE_REPORT_CSS = GLOBAL_CSS
 EMAILABLE_REPORT_TITLE = "Emailable Report"
 API_RESPONSE_LESS_VERBOSE = 0
 
@@ -268,16 +271,31 @@ def generate_security_swagger_spec():
         LOGGER.error(str(ex))
 
 ### swagger specific ###
-SWAGGER_URL = '/allure-docker-service/swagger'
-API_URL = '/allure-docker-service/swagger.json'
+NATIVE_PREFIX = '/allure-docker-service'
+SWAGGER_ENDPOINT = '/swagger'
+SWAGGER_SPEC_FILE = '/swagger.json'
+
+SWAGGER_ENDPOINT_PATH = '{}{}'.format(NATIVE_PREFIX, SWAGGER_ENDPOINT)
+SWAGGER_SPEC = '{}{}'.format(NATIVE_PREFIX, SWAGGER_SPEC_FILE)
+
+if URL_PREFIX:
+    SWAGGER_ENDPOINT_PATH = '{}{}{}'.format(URL_PREFIX, NATIVE_PREFIX, SWAGGER_ENDPOINT)
+    SWAGGER_SPEC = '{}{}{}'.format(URL_PREFIX, NATIVE_PREFIX, SWAGGER_SPEC_FILE)
+
 SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
-    base_url='{}{}'.format(URL_PREFIX, SWAGGER_URL),
-    api_url='{}{}'.format(URL_PREFIX, API_URL),
+    base_url=SWAGGER_ENDPOINT_PATH,
+    api_url=SWAGGER_SPEC,
     config={
         'app_name': "Allure Docker Service"
     }
 )
-app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
+app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix="/")
+app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=NATIVE_PREFIX)
+app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_ENDPOINT)
+app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_ENDPOINT_PATH)
+if URL_PREFIX:
+    app.register_blueprint(SWAGGERUI_BLUEPRINT,
+        url_prefix='{}{}'.format(NATIVE_PREFIX, SWAGGER_ENDPOINT))
 ### end swagger specific ###
 
 ### Security Section
@@ -512,22 +530,6 @@ def refresh_endpoint():
         return resp, 400
 ### end Security Endpoints Section
 
-@app.route("/", strict_slashes=False)
-@app.route("/allure-docker-service", strict_slashes=False)
-def index_endpoint():
-    try:
-        url = '{}{}'.format(URL_PREFIX, SWAGGER_URL)
-        return render_template('index.html', url=url)
-    except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
-
 @app.route("/swagger.json")
 @app.route("/allure-docker-service/swagger.json", strict_slashes=False)
 def swagger_json_endpoint():
@@ -611,6 +613,30 @@ def config_endpoint():
         resp = jsonify(body)
         resp.status_code = 200
         return resp
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+        return resp
+
+@app.route("/select-language", strict_slashes=False)
+@app.route("/allure-docker-service/select-language", strict_slashes=False)
+@jwt_required
+def select_language_endpoint():
+    try:
+        code = request.args.get('code')
+        if code is None:
+            raise Exception("'code' query parameter is required")
+        code = code.lower()
+
+        if code not in LANGUAGES:
+            raise Exception("'code' not supported. Use values: {}".format(LANGUAGES))
+
+        return render_template(LANGUAGE_TEMPLATE, languageCode=code, css=GLOBAL_CSS)
     except Exception as ex:
         body = {
             'meta_data': {
@@ -1074,6 +1100,9 @@ def create_project_endpoint():
         if not json_body['id'].strip():
             raise Exception("'id' should not be empty")
 
+        if len(json_body['id']) > 100:
+            raise Exception("'id' should not contains more than 100 characters.")
+
         project_id_pattern = re.compile('^[a-z\\d]([a-z\\d -]*[a-z\\d])?$')
         match = project_id_pattern.match(json_body['id'])
         if  match is None:
@@ -1226,16 +1255,8 @@ def get_project_endpoint(project_id):
 @jwt_required
 def get_projects_endpoint():
     try:
-        directories = os.listdir(PROJECTS_DIRECTORY)
-        projects = {}
-        for project_name in directories:
-            is_dir = os.path.isdir('{}/{}'.format(PROJECTS_DIRECTORY, project_name))
-            if is_dir is True:
-                project = {}
-                project['uri'] = url_for('get_project_endpoint',
-                                         project_id=project_name,
-                                         _external=True)
-                projects[project_name] = project
+        projects_dirs = os.listdir(PROJECTS_DIRECTORY)
+        projects = get_projects(projects_dirs)
 
         body = {
             'data': {
@@ -1243,6 +1264,43 @@ def get_projects_endpoint():
             },
             'meta_data': {
                 'message' : "Projects successfully obtained"
+                }
+            }
+        resp = jsonify(body)
+        resp.status_code = 200
+        return resp
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+        return resp
+
+@app.route('/projects/search', strict_slashes=False)
+@app.route("/allure-docker-service/projects/search", strict_slashes=False)
+@jwt_required
+def get_projects_search_endpoint():
+    try:
+        project_id = request.args.get('id')
+        if project_id is None:
+            raise Exception("'id' query parameter is required")
+
+        project_id = project_id.lower()
+        projects_filtered = get_projects_filtered_by_id(project_id, os.listdir(PROJECTS_DIRECTORY))
+        projects = get_projects(projects_filtered)
+
+        if len(projects) == 0:
+            return jsonify({'meta_data': {'message': 'Project not found'}}), 404
+
+        body = {
+            'data': {
+                'projects': projects,
+            },
+            'meta_data': {
+                'message' : "Project/s successfully obtained"
                 }
             }
         resp = jsonify(body)
@@ -1351,6 +1409,25 @@ def is_existent_project(project_id):
     if not project_id.strip():
         return False
     return os.path.isdir(get_project_path(project_id))
+
+def get_projects(projects_dirs):
+    projects = {}
+    for project_name in projects_dirs:
+        is_dir = os.path.isdir('{}/{}'.format(PROJECTS_DIRECTORY, project_name))
+        if is_dir is True:
+            project = {}
+            project['uri'] = url_for('get_project_endpoint',
+                                     project_id=project_name,
+                                     _external=True)
+            projects[project_name] = project
+    return projects
+
+def get_projects_filtered_by_id(project_id, projects):
+    filtered_projects = []
+    for project_name in projects:
+        if project_id in project_name:
+            filtered_projects.append(project_name)
+    return filtered_projects
 
 def get_project_path(project_id):
     return '{}/{}'.format(PROJECTS_DIRECTORY, project_id)
