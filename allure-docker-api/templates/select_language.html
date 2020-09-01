@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <title>Allure Docker Service</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ css }}" />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='favicon') }}"
+    />
+  </head>
+
+  <body>
+    <script>
+      const languageCode = "{{ languageCode }}";
+      const allureReportSettings = {
+        language: languageCode,
+        sidebarCollapsed: true,
+        sideBySidePosition: [50, 50],
+      };
+
+      localStorage.setItem(
+        "ALLURE_REPORT_SETTINGS",
+        JSON.stringify(allureReportSettings)
+      );
+    </script>
+    <div class="container jumbotron">
+      <div class="display-4 lead">
+        Language "{{ languageCode }}" setted successfully
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+{
+    "description":"UNAUTHORIZED",
+    "schema":{
+       "$ref":"#/components/schemas/response"
+    }
+ }

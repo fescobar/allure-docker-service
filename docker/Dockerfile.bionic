@@ -1,8 +1,5 @@
 ARG ARCH=amd64
 ARG JDK=adoptopenjdk:11-jre-openj9-bionic
-
-FROM $ARCH/$JDK
-
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
@@ -12,6 +9,36 @@ ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-comm
 ARG QEMU_ARCH
 ARG UID=1000
 ARG GID=1000
+
+######
+
+FROM python:3.6-alpine AS dev_stage
+RUN apk update
+RUN apk add build-base
+RUN pip install -U pylint && \
+    pip install -U flask-cors
+RUN pip install -Iv setuptools==47.1.1 wheel==0.34.2 waitress==1.4.4 && \
+    pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.24.1 flask-swagger-ui==3.25.0 requests==2.23.0
+
+ENV ROOT_DIR=/code
+RUN mkdir -p $ROOT_DIR
+WORKDIR $ROOT_DIR
+COPY allure-docker-api $ROOT_DIR/allure-docker-api
+RUN pylint --rcfile=allure-docker-api/.pylintrc allure-docker-api
+
+######
+FROM $ARCH/$JDK
+ARG ARCH
+ARG JDK
+ARG BUILD_DATE
+ARG BUILD_VERSION
+ARG BUILD_REF
+ARG ARCH
+ARG ALLURE_RELEASE
+ARG ALLURE_REPO
+ARG QEMU_ARCH
+ARG UID
+ARG GID
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.docker.dockerfile="docker/Dockerfile.bionic" \
@@ -35,11 +62,13 @@ RUN apt-get update && \
       nano \
       python3 \
       python3-pip \
+      python3-dev \
       unzip && \
     ln -s `which python3` /usr/bin/python && \
     pip3 install --upgrade pip && \
     pip install -Iv setuptools==47.1.1 wheel==0.34.2 waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 flask-swagger-ui==3.25.0 requests==2.23.0 && \
+    pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.24.1 flask-swagger-ui==3.25.0 requests==2.23.0 && \
+    pip install -U flask-cors && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
