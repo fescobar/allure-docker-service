@@ -1,0 +1,10 @@
+{
+   "in":"header",
+   "name":"X-CSRF-TOKEN",
+   "description":"csrf_access_token cookie value",
+   "schema":{
+      "type":"string",
+      "format":"uuid"
+   },
+   "required":"true"
+}

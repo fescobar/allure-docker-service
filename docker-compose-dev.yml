@@ -1,0 +1,26 @@
+version: '3'
+
+volumes:
+  allure-docker-service:
+    driver: local
+
+services:
+  allure-docker-service:
+    build:
+      context: ../allure-docker-service
+      dockerfile: docker-custom/Dockerfile.bionic-custom
+      args:
+        ALLURE_RELEASE: "2.13.5"
+    environment:
+      DEV_MODE: 0
+      CHECK_RESULTS_EVERY_SECONDS: NONE
+      KEEP_HISTORY: 1
+      KEEP_HISTORY_LATEST: 5
+      #URL_PREFIX: "/my-prefix"
+      SECURITY_USER: "my_username"
+      SECURITY_PASS: "my_password"
+      SECURITY_ENABLED: 0
+    ports:
+      - "7272:5050"
+    volumes:
+      - ./.data/allure-docker-service/allure-results:/app/allure-results

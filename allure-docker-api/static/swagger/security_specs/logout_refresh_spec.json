@@ -1,0 +1,50 @@
+{
+   "delete":{
+      "tags":[
+         "Security"
+      ],
+      "summary":"Logout Refresh Token (from version 2.13.5)",
+      "parameters":[
+         {
+            "in":"header",
+            "name":"X-CSRF-TOKEN",
+            "description": "csrf_refresh_token cookie value",
+            "schema":{
+               "type":"string",
+               "format":"uuid"
+            },
+            "required": "true"
+         }
+      ],
+      "produces":[
+         "application/json"
+      ],
+      "responses":{
+         "200":{
+            "description":"OK",
+            "schema":{
+               "$ref":"#/components/schemas/response"
+            }
+         },
+         "401":{
+            "description":"UNAUTHORIZED",
+            "schema":{
+               "$ref":"#/components/schemas/response"
+            }
+         },
+         "404":{
+            "description":"NOT_FOUND",
+            "schema":{
+               "$ref":"#/components/schemas/response"
+            }
+         }
+      },
+      "security":[
+         {
+            "cookieAuth":[
+
+            ]
+         }
+      ]
+   }
+}
