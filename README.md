@@ -20,6 +20,7 @@ Table of contents
             * [Multiple Project - Docker Compose](#multiple-project---docker-compose)
             * [Creating our first project](#creating-our-first-project)
       * [PORT 4040 Deprecated](#port-4040-deprecated)
+      * [Known Issues](#known-issues)
       * [Opening & Refreshing Report](#opening--refreshing-report)
       * [New User Interface](#new-user-interface)
       * [Deploy using Kubernetes](#deploy-using-kubernetes)
@@ -407,6 +408,8 @@ The only issue you will face will be when you try to navigate the HISTORY from t
 
 Check the new commands to start the container for a single project or for multiple projects: [ALLURE DOCKER SERVICE](#allure-docker-service-1)
 
+### Known Issues
+- `Permission denied` --> https://github.com/fescobar/allure-docker-service/issues/108
 
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
@@ -593,7 +596,16 @@ You have 2 options to send results:
 python send_results.py
 ```
 
+- Python script with security enabled: [allure-docker-api-usage/send_results_security.py](allure-docker-api-usage/send_results_security.py)
+
+```sh
+python send_results_security.py
+```
+
 - Declarative Pipeline script for JENKINS: [allure-docker-api-usage/send_results_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_jenkins_pipeline.groovy)
+
+- Declarative Pipeline script for JENKINS with security enabled: [allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy)
+
 
 - PowerShell script: [allure-docker-api-usage/send_results.ps1](allure-docker-api-usage/send_results.ps1)
 
@@ -1069,6 +1081,15 @@ Set-Cookie: csrf_refresh_token=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Path=/
 ```sh
 ./send_results_security.sh
 ```
+
+- Python script with security enabled: [allure-docker-api-usage/send_results_security.py](allure-docker-api-usage/send_results_security.py)
+
+```sh
+python send_results_security.py
+```
+
+- Declarative Pipeline script for JENKINS with security enabled: [allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy)
+
 
 #### Add Custom URL Prefix
 `Available from Allure Docker Service version 2.13.5`
