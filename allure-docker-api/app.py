@@ -680,7 +680,7 @@ def latest_report_endpoint():
 @app.route("/send-results", methods=['POST'], strict_slashes=False)
 @app.route("/allure-docker-service/send-results", methods=['POST'], strict_slashes=False)
 @jwt_required
-def send_results_endpoint():
+def send_results_endpoint(): #pylint: disable=too-many-branches
     try:
         content_type = str(request.content_type)
         if content_type is None:
@@ -694,14 +694,17 @@ def send_results_endpoint():
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
+            if request.args.get('force_project_creation') == 'true':
+                project_id = create_project({ "id": project_id })
+            else:
+                body = {
+                    'meta_data': {
+                        'message' : "project_id '{}' not found".format(project_id)
+                    }
                 }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+                resp = jsonify(body)
+                resp.status_code = 404
+                return resp
 
         validated_results = []
         processed_files = []
@@ -956,6 +959,7 @@ def emailable_report_render_endpoint():
         tcs_latest_report_project = "{}/reports/latest/data/test-cases/*.json".format(project_path)
 
         files = glob.glob(tcs_latest_report_project)
+        files.sort(key=os.path.getmtime, reverse=True)
         test_cases = []
         for file_name in files:
             with open(file_name) as file:
@@ -1089,41 +1093,7 @@ def create_project_endpoint():
         if not request.is_json:
             raise Exception("Header 'Content-Type' is not 'application/json'")
 
-        json_body = request.get_json()
-
-        if 'id' not in json_body:
-            raise Exception("'id' is required in the body")
-
-        if isinstance(json_body['id'], str) is False:
-            raise Exception("'id' should be string")
-
-        if not json_body['id'].strip():
-            raise Exception("'id' should not be empty")
-
-        if len(json_body['id']) > 100:
-            raise Exception("'id' should not contains more than 100 characters.")
-
-        project_id_pattern = re.compile('^[a-z\\d]([a-z\\d -]*[a-z\\d])?$')
-        match = project_id_pattern.match(json_body['id'])
-        if  match is None:
-            raise Exception("'id' should contains alphanumeric lowercase characters or hyphens. For example: 'my-project-id'") #pylint: disable=line-too-long
-
-        project_id = json_body['id']
-        if is_existent_project(project_id) is True:
-            raise Exception("project_id '{}' is existent".format(project_id))
-
-        if project_id == 'default':
-            raise Exception("The id 'default' is not allowed. Try with another project_id")
-
-        project_path = get_project_path(project_id)
-        latest_report_project = '{}/reports/latest'.format(project_path)
-        results_project = '{}/results'.format(project_path)
-
-        if not os.path.exists(latest_report_project):
-            os.makedirs(latest_report_project)
-
-        if not os.path.exists(results_project):
-            os.makedirs(results_project)
+        project_id = create_project(request.get_json())
     except Exception as ex:
         body = {
             'meta_data': {
@@ -1404,6 +1374,42 @@ def send_json_results(results_project, validated_results, processed_files, faile
             if file is not None:
                 file.close()
 
+def create_project(json_body):
+    if 'id' not in json_body:
+        raise Exception("'id' is required in the body")
+
+    if isinstance(json_body['id'], str) is False:
+        raise Exception("'id' should be string")
+
+    if not json_body['id'].strip():
+        raise Exception("'id' should not be empty")
+
+    if len(json_body['id']) > 100:
+        raise Exception("'id' should not contains more than 100 characters.")
+
+    project_id_pattern = re.compile('^[a-z\\d]([a-z\\d -]*[a-z\\d])?$')
+    match = project_id_pattern.match(json_body['id'])
+    if  match is None:
+        raise Exception("'id' should contains alphanumeric lowercase characters or hyphens. For example: 'my-project-id'") #pylint: disable=line-too-long
+
+    project_id = json_body['id']
+    if is_existent_project(project_id) is True:
+        raise Exception("project_id '{}' is existent".format(project_id))
+
+    if project_id == 'default':
+        raise Exception("The id 'default' is not allowed. Try with another project_id")
+
+    project_path = get_project_path(project_id)
+    latest_report_project = '{}/reports/latest'.format(project_path)
+    results_project = '{}/results'.format(project_path)
+
+    if not os.path.exists(latest_report_project):
+        os.makedirs(latest_report_project)
+
+    if not os.path.exists(results_project):
+        os.makedirs(results_project)
+
+    return project_id
 
 def is_existent_project(project_id):
     if not project_id.strip():
