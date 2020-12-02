@@ -32,6 +32,7 @@ Table of contents
           * [Send results through API](#send-results-through-api)
             * [Content-Type - application/json](#content-type---applicationjson)
             * [Content-Type - multipart/form-data](#content-type---multipartform-data)
+            * [Force Project Creation Option](#force-project-creation-option)
           * [Customize Executors Configuration](#customize-executors-configuration)
           * [API Response Less Verbose](#api-response-less-verbose)
           * [Switching version](#switching-version)
@@ -92,9 +93,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.13.5                         | frankescobar/allure-docker-service:2.13.5-amd64   |
-|                                        | frankescobar/allure-docker-service:2.13.5-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.13.5-arm64v8 |
+| latest, 2.13.6                         | frankescobar/allure-docker-service:2.13.6-amd64   |
+|                                        | frankescobar/allure-docker-service:2.13.6-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.13.6-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -112,6 +113,7 @@ We have some examples projects:
 - [allure-docker-python-behave-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-python-behave-example)
 - [allure-docker-python-pytest-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-python-pytest-example)
 - [AllureDockerCSharpExample](https://github.com/fescobar/allure-docker-service-examples/tree/master/AllureDockerCSharpExample)
+- [AllureDockerCSharpSpecFlow3Example](https://github.com/fescobar/allure-docker-service-examples/tree/master/AllureDockerCSharpSpecFlow3Example)
 
 In this case we are going to generate results using the java project [allure-docker-java-testng-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-java-testng-example) of this repository.
 
@@ -254,6 +256,10 @@ NOTE FOR WINDOWS USERS:
 `Available from Allure Docker Service version 2.13.3`
 
 With this option you could generate multiple reports for multiple projects, you can create, delete and get projects using [Project Endpoints](#project-endpoints). You can use Swagger documentation to help you.
+
+IMPORTANT NOTE:
+- For multiple projects configuration you must use `CHECK_RESULTS_EVERY_SECONDS` with value `NONE`. Otherwise, your performance machine would be affected, it could consume high memory, processors and storage. Use the endpoint `GET /generate-report` on demand after sending the results `POST /send-results`.
+- If you use automatic reports a daemom is created and it will be listening any change in the `results` directory it will generate a new report each time find a new file. The same will happen for every project. For that reason, it's convenient disable the automatic reports using the value `NONE` in `CHECK_RESULTS_EVERY_SECONDS`.
 
 ##### Multiple Project - Docker on Unix/Mac
 ```sh
@@ -633,6 +639,11 @@ NOTE:
 
 - If you want to clean the results use the endpoint `GET /clean-results` ([Allure API](#allure-api)).
 
+##### Force Project Creation Option
+`Available from Allure Docker Service version 2.13.6`
+If you use the query parameter `force_project_creation` with value `true`, the project where you want to send the results will be created automatically in case doesn't exist.
+
+`POST /send-results?project_id=any-unexistent-project&force_project_creation=true`
 
 #### Customize Executors Configuration
 `Available from Allure Docker Service version 2.13.3`
@@ -693,7 +704,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.13.5"
+    image: "frankescobar/allure-docker-service:2.13.6"
 ```
 or using latest version:
 
@@ -1242,7 +1253,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.13.5 .
+docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.13.6 .
 ```
 ### Run container
 ```sh
@@ -1293,5 +1304,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.5
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.6
 ```

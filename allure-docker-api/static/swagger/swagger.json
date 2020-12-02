@@ -150,6 +150,14 @@
                   "schema":{
                      "type":"string"
                   }
+               },
+               {
+                  "in":"query",
+                  "name":"force_project_creation",
+                  "schema":{
+                     "type":"string"
+                  },
+                  "value": "false"
                }
             ],
             "requestBody":{
