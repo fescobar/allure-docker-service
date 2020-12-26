@@ -49,6 +49,7 @@ Table of contents
             * [Logout](#logout)
             * [Scripts](#scripts)
           * [Add Custom URL Prefix](#add-custom-url-prefix)
+          * [Optimize Storage](#optimize-storage)
           * [Export Native Full Report](#export-native-full-report)
           * [Customize Emailable Report](#customize-emailable-report)
               * [Override CSS](#override-css)
@@ -1133,6 +1134,41 @@ server {
 ```
 NOTE:
 - This feature is not supported when DEV_MODE is enabled.
+
+#### Optimize Storage
+`Available from Allure Docker Service version 2.13.7`
+
+When Allure generates reports, commonly created these files per report:
+```sh
+projects
+   |-- default
+   |   |-- results
+   |   |-- reports
+   |   |   |-- latest
+   |   |   |   |-- data
+   |   |   |   |-- export
+   |   |   |   |-- history
+   |   |   |   |-- plugins
+   |   |   |   |-- widgets
+   |   |   |   |-- favicon.icon
+   |   |   |   |-- index.html
+   |   |   |   |-- app.js
+   |   |   |   |-- styles.css
+   |   |   |-- ..
+```
+The heaviest files are `app.js` & `styles.css`. They never changed their content.
+When you enable the option `OPTIMIZE_STORAGE` those files are not stored in your `reports` directory, but they are consumed from a common location inside the container.
+
+Docker Compose example:
+```sh
+    environment:
+      OPTIMIZE_STORAGE: 1
+```
+Using this feature, your storage consumption will be reduce drastically.
+
+NOTE:
+- This feature doesn't have a warranty to work with reports generated with different Allure native versions. For example, if any code is removed from `app.js` or `styles.css` (from a newer version of the native Allure application) that you need to render your reports generated with previous versions, your report couldn't be rendered, you will see a javascript error finding for a component that doesn't exist anymore.
+
 
 #### Export Native Full Report
 `Available from Allure Docker Service version 2.13.1`

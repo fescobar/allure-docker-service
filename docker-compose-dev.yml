@@ -20,6 +20,7 @@ services:
       SECURITY_USER: "my_username"
       SECURITY_PASS: "my_password"
       SECURITY_ENABLED: 0
+      OPTIMIZE_STORAGE: 0
     ports:
       - "${ALLURE_DOCKER_SERVICE_API_PORT}:5050"
     volumes:

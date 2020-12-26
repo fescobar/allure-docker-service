@@ -60,6 +60,7 @@ PORT = os.environ['PORT']
 THREADS = 7
 URL_SCHEME = 'http'
 URL_PREFIX = ''
+OPTIMIZE_STORAGE = 0
 ENABLE_SECURITY_LOGIN = False
 SECURITY_USER = None
 SECURITY_PASS = None
@@ -132,6 +133,13 @@ if "URL_PREFIX" in os.environ:
             LOGGER.info('Setting URL_PREFIX=%s', URL_PREFIX)
         else:
             LOGGER.info("URL_PREFIX is empty. It won't be applied")
+
+if "OPTIMIZE_STORAGE" in os.environ:
+    try:
+        OPTIMIZE_STORAGE = int(os.environ['OPTIMIZE_STORAGE'])
+        LOGGER.info('Overriding OPTIMIZE_STORAGE=%s', OPTIMIZE_STORAGE)
+    except Exception as ex:
+        LOGGER.error('Wrong env var value. Setting OPTIMIZE_STORAGE=0 by default')
 
 if "SECURITY_USER" in os.environ:
     SECURITY_USER_TMP = os.environ['SECURITY_USER']
@@ -604,7 +612,8 @@ def config_endpoint():
                 'tls': tls,
                 'security_enabled': security_enabled,
                 'url_prefix': URL_PREFIX,
-                'api_response_less_verbose': API_RESPONSE_LESS_VERBOSE
+                'api_response_less_verbose': API_RESPONSE_LESS_VERBOSE,
+                'optimize_storage': OPTIMIZE_STORAGE
             },
             'meta_data': {
                 'message' : "Config successfully obtained"
