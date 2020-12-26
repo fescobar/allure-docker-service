@@ -19,6 +19,8 @@ services:
       #URL_PREFIX: "/my-prefix"
       SECURITY_USER: "my_username"
       SECURITY_PASS: "my_password"
+      SECURITY_VIEWER_USER: "view_user"
+      SECURITY_VIEWER_PASS: "view_pass"
       SECURITY_ENABLED: 0
       OPTIMIZE_STORAGE: 0
     ports:

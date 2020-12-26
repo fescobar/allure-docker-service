@@ -47,6 +47,7 @@ Table of contents
             * [X-CSRF-TOKEN](#x-csrf-token)
             * [Refresh Access Token](#refresh-access-token)
             * [Logout](#logout)
+            * [Roles](#roles)
             * [Scripts](#scripts)
           * [Add Custom URL Prefix](#add-custom-url-prefix)
           * [Optimize Storage](#optimize-storage)
@@ -531,13 +532,13 @@ Available endpoints:
 
 `'GET'      /latest-report`
 
-`'POST'     /send-results`
+`'POST'     /send-results` (admin role)
 
-`'GET'      /generate-report`
+`'GET'      /generate-report` (admin role)
 
-`'GET'      /clean-results`
+`'GET'      /clean-results` (admin role)
 
-`'GET'      /clean-history`
+`'GET'      /clean-history` (admin role)
 
 `'GET'      /emailable-report/render`
 
@@ -548,11 +549,11 @@ Available endpoints:
 
 ##### Project Endpoints
 
-`'POST'     /projects`
+`'POST'     /projects` (admin role)
 
 `'GET'      /projects`
 
-`'DELETE'   /projects/{id}`
+`'DELETE'   /projects/{id}` (admin role)
 
 `'GET'      /projects/{id}`
 
@@ -855,7 +856,7 @@ If you are going to publish this API, this feature MUST BE USED TOGETHER with [E
 
 It's recommended to use Allure Docker Service UI container [New User Interface](#new-user-interface) for accessing to the information without credentials problems.
 
-You can define the main user credentials with env vars 'SECURITY_USER' & 'SECURITY_PASS'
+You can define the `ADMIN` user credentials with env vars 'SECURITY_USER' & 'SECURITY_PASS'
 Also you need to enable the security to protect the endpoints with env var 'SECURITY_ENABLED'.
 
 Docker Compose example:
@@ -866,6 +867,8 @@ Docker Compose example:
       SECURITY_ENABLED: 1
 ```
 Where 'SECURITY_PASS' env var is case sensitive.
+
+Note: Check [Roles](#roles) section if you want to handle different roles.
 
 When the security is enabled, you will see the Swagger documentation (http://localhost:5050/allure-docker-service/swagger) updated with new security endpoints and specifying the protected endpoints.
 
@@ -1087,6 +1090,26 @@ Set-Cookie: csrf_refresh_token=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Path=/
 
 {"meta_data":{"message":"Successfully logged out"}}
 ```
+
+##### Roles
+`Available from Allure Docker Service version 2.13.7`
+
+`SECURITY_USER` & `SECURITY_PASS` env vars are used to define the `ADMIN` user credentials who will have access to every endpoint. Also, there is another kind of user just with enough access to check the reports, this is the `VIEWER` user.
+
+You can add this kind of user using `SECURITY_VIEWER_USER` & `SECURITY_VIEWER_PASS` env variables
+Docker Compose example:
+```sh
+    environment:
+      SECURITY_USER: "my_username"
+      SECURITY_PASS: "my_password"
+      SECURITY_VIEWER_USER: "view_user"
+      SECURITY_VIEWER_PASS: "view_pass"
+      SECURITY_ENABLED: 1
+```
+Note:
+- Always you need to define the `ADMIN` user.
+- `SECURITY_USER` & `SECURITY_VIEWER_USER` always need to be different.
+- Check [Allure API](#allure-api) to see what endpoints are exclusively for the `ADMIN` role.
 
 ##### Scripts
 - Bash script with security enabled: [allure-docker-api-usage/send_results_security.sh](allure-docker-api-usage/send_results_security.sh)

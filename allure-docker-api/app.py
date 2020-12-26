@@ -22,7 +22,7 @@ from flask import (
 from flask.logging import create_logger
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token, create_refresh_token,
+    JWTManager, jwt_required, create_access_token, create_refresh_token, current_user,
     get_jwt_identity, verify_jwt_in_request, jwt_refresh_token_required, get_raw_jwt,
     set_access_cookies, set_refresh_cookies, unset_jwt_cookies, verify_jwt_refresh_token_in_request
 )
@@ -42,6 +42,25 @@ dictConfig({
         'handlers': ['wsgi']
     }
 })
+
+class UserAccess:
+    """Object used for determining roles"""
+    def __init__(self, username, roles):
+        """
+        :param username: username
+        :param roles: roles
+        """
+        self.username = username
+        self.roles = roles
+
+    def get_username(self):
+        return self.username
+
+    def get_roles(self):
+        return self.roles
+
+    def __str__(self):
+        return self.__class__.__name__
 
 app = Flask(__name__) #pylint: disable=invalid-name
 
@@ -64,6 +83,11 @@ OPTIMIZE_STORAGE = 0
 ENABLE_SECURITY_LOGIN = False
 SECURITY_USER = None
 SECURITY_PASS = None
+SECURITY_VIEWER_USER = None
+SECURITY_VIEWER_PASS = None
+USERS_INFO = {}
+ADMIN_ROLE_NAME = 'admin'
+VIEWER_ROLE_NAME = 'viewer'
 
 GENERATE_REPORT_PROCESS = '{}/generateAllureReport.sh'.format(os.environ['ROOT'])
 KEEP_HISTORY_PROCESS = '{}/keepAllureHistory.sh'.format(os.environ['ROOT'])
@@ -153,14 +177,38 @@ if "SECURITY_PASS" in os.environ:
         SECURITY_PASS = SECURITY_PASS_TMP
         LOGGER.info('Setting SECURITY_PASS')
 
+if "SECURITY_VIEWER_USER" in os.environ:
+    SECURITY_VIEWER_USER_TMP = os.environ['SECURITY_VIEWER_USER']
+    if SECURITY_VIEWER_USER_TMP and SECURITY_VIEWER_USER_TMP.strip():
+        SECURITY_VIEWER_USER = SECURITY_VIEWER_USER_TMP.lower()
+        LOGGER.info('Setting SECURITY_VIEWER_USER')
+
+if "SECURITY_VIEWER_PASS" in os.environ:
+    SECURITY_VIEWER_PASS_TMP = os.environ['SECURITY_VIEWER_PASS']
+    if SECURITY_VIEWER_PASS_TMP and SECURITY_VIEWER_PASS_TMP.strip():
+        SECURITY_VIEWER_PASS = SECURITY_VIEWER_PASS_TMP
+        LOGGER.info('Setting SECURITY_VIEWER_PASS')
+
 if "SECURITY_ENABLED" in os.environ:
     try:
         ENABLE_SECURITY_LOGIN_TMP = int(os.environ['SECURITY_ENABLED'])
         if SECURITY_USER and SECURITY_PASS:
-            if ENABLE_SECURITY_LOGIN_TMP == 1:
-                ENABLE_SECURITY_LOGIN = True
-                LOGGER.info('Enabling Security Login. SECURITY_ENABLED=1')
+            if SECURITY_USER != SECURITY_VIEWER_USER:
+                if ENABLE_SECURITY_LOGIN_TMP == 1:
+                    ENABLE_SECURITY_LOGIN = True
+                    LOGGER.info('Enabling Security Login. SECURITY_ENABLED=1')
+                    USERS_INFO[SECURITY_USER] = {
+                                                    'pass': SECURITY_PASS,
+                                                    'roles': [ADMIN_ROLE_NAME]
+                                                }
+                    USERS_INFO[SECURITY_VIEWER_USER] = {
+                                                            'pass': SECURITY_VIEWER_PASS,
+                                                            'roles': [VIEWER_ROLE_NAME]
+                                                       }
+                else:
+                    LOGGER.info('Setting SECURITY_ENABLED=0 by default')
             else:
+                LOGGER.info('SECURITY_USER and SECURITY_VIEWER_USER should be different')
                 LOGGER.info('Setting SECURITY_ENABLED=0 by default')
         else:
             LOGGER.info("To enable security you need SECURITY_USER' & 'SECURITY_PASS' env vars")
@@ -258,13 +306,15 @@ def generate_security_swagger_spec():
 
             ensure_tags = ['Action', 'Project']
             security_type = security_specs['security_type.json']
-            security_response = security_specs['security_response.json']
+            security_401_response = security_specs['security_unauthorized_response.json']
+            security_403_response = security_specs['security_forbidden_response.json']
             security_crsf = security_specs['security_csrf.json']
             for path in data['paths']:
                 for method in data['paths'][path]:
                     if set(ensure_tags) & set(data['paths'][path][method]['tags']):
                         data['paths'][path][method]['security'] = security_type
-                        data['paths'][path][method]['responses']['401'] = security_response
+                        data['paths'][path][method]['responses']['401'] = security_401_response
+                        data['paths'][path][method]['responses']['403'] = security_403_response
                         if method in ['post', 'put', 'patch', 'delete']:
                             if 'parameters' in data['paths'][path][method]:
                                 params = data['paths'][path][method]['parameters']
@@ -367,6 +417,15 @@ def jwt_refresh_token_required(fn): #pylint: disable=invalid-name, function-rede
             verify_jwt_refresh_token_in_request()
         return fn(*args, **kwargs)
     return wrapper
+
+@jwt.user_loader_callback_loader
+def user_loader_callback(identity):
+    if identity not in USERS_INFO:
+        return None
+    return UserAccess(
+        username=identity,
+        roles=USERS_INFO[identity]['roles']
+    )
 ### end Security Section
 
 ### CORS section
@@ -414,23 +473,28 @@ def login_endpoint():
         username = request.json.get('username', None)
         if not username:
             raise Exception("Missing 'username' attribute")
+        username = username.lower()
+
+        if username not in USERS_INFO:
+            return jsonify({'meta_data': {'message' : 'Invalid username/password'}}), 401
 
         password = request.json.get('password', None)
         if not password:
             raise Exception("Missing 'password' attribute")
 
-        if SECURITY_USER != username.lower() or SECURITY_PASS != password:
+        if USERS_INFO[username]['pass'] != password:
             return jsonify({'meta_data': {'message' : 'Invalid username/password'}}), 401
 
-        access_token = create_access_token(identity=SECURITY_USER)
-        refresh_token = create_refresh_token(identity=SECURITY_USER)
+        access_token = create_access_token(identity=username)
+        refresh_token = create_refresh_token(identity=username)
         access_token_expires = app.config['JWT_ACCESS_TOKEN_EXPIRES']
         expires_in = access_token_expires.total_seconds() if access_token_expires else 0
         json_body = {
             'data': {
                 'access_token': access_token,
                 'refresh_token': refresh_token,
-                'expires_in': expires_in
+                'expires_in': expires_in,
+                'roles': USERS_INFO[username]['roles']
             },
             'meta_data': {'message' : 'Successfully logged'}
         }
@@ -512,14 +576,15 @@ def refresh_endpoint():
         resp = jsonify(body)
         return resp, 404
     try:
-        current_user = get_jwt_identity()
-        access_token = create_access_token(identity=current_user)
+        username = get_jwt_identity()
+        access_token = create_access_token(identity=username)
         access_token_expires = app.config['JWT_ACCESS_TOKEN_EXPIRES']
         expires_in = access_token_expires.total_seconds() if access_token_expires else 0
         json_body = {
             'data': {
                 'access_token': access_token,
-                'expires_in': expires_in
+                'expires_in': expires_in,
+                'roles': USERS_INFO[username]['roles']
             },
             'meta_data': {
                 'message' : 'Successfully token obtained'
@@ -691,6 +756,9 @@ def latest_report_endpoint():
 @jwt_required
 def send_results_endpoint(): #pylint: disable=too-many-branches
     try:
+        if check_access(ADMIN_ROLE_NAME) is False:
+            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+
         content_type = str(request.content_type)
         if content_type is None:
             raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data'") #pylint: disable=line-too-long
@@ -784,6 +852,9 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
 @jwt_required
 def generate_report_endpoint():
     try:
+        if check_access(ADMIN_ROLE_NAME) is False:
+            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
             body = {
@@ -874,6 +945,9 @@ def generate_report_endpoint():
 @jwt_required
 def clean_history_endpoint():
     try:
+        if check_access(ADMIN_ROLE_NAME) is False:
+            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
             body = {
@@ -912,6 +986,9 @@ def clean_history_endpoint():
 @jwt_required
 def clean_results_endpoint():
     try:
+        if check_access(ADMIN_ROLE_NAME) is False:
+            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
             body = {
@@ -1099,6 +1176,9 @@ def report_export_endpoint():
 @jwt_required
 def create_project_endpoint():
     try:
+        if check_access(ADMIN_ROLE_NAME) is False:
+            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+
         if not request.is_json:
             raise Exception("Header 'Content-Type' is not 'application/json'")
 
@@ -1129,6 +1209,9 @@ def create_project_endpoint():
 @jwt_required
 def delete_project_endpoint(project_id):
     try:
+        if check_access(ADMIN_ROLE_NAME) is False:
+            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+
         if project_id == 'default':
             raise Exception("You must not remove project_id 'default'. Try with other projects")
 
@@ -1452,6 +1535,15 @@ def resolve_project(project_id_param):
     if project_id_param is not None:
         project_id = project_id_param
     return project_id
+
+def check_access(role):
+    if ENABLE_SECURITY_LOGIN is False:
+        return True
+
+    granted = False
+    if role in current_user.roles:
+        granted = True
+    return granted
 
 def check_process(process_file, project_id):
     tmp = os.popen('ps -Af | grep -w {}'.format(project_id)).read()
