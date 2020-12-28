@@ -3,7 +3,6 @@ ARG JDK=adoptopenjdk:11-jre-openj9-bionic
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
-ARG ARCH
 ARG ALLURE_RELEASE=NONE
 ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
 ARG QEMU_ARCH
@@ -15,8 +14,7 @@ ARG GID=1000
 FROM python:3.6-alpine AS dev_stage
 RUN apk update
 RUN apk add build-base
-RUN pip install -U pylint && \
-    pip install -U flask-cors
+RUN pip install -U pylint
 RUN pip install -Iv setuptools==47.1.1 wheel==0.34.2 waitress==1.4.4 && \
     pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.24.1 flask-swagger-ui==3.36.0 requests==2.23.0
 
@@ -33,7 +31,6 @@ ARG JDK
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
-ARG ARCH
 ARG ALLURE_RELEASE
 ARG ALLURE_REPO
 ARG QEMU_ARCH
@@ -67,8 +64,7 @@ RUN apt-get update && \
     ln -s `which python3` /usr/bin/python && \
     pip3 install --upgrade pip && \
     pip install -Iv setuptools==47.1.1 wheel==0.34.2 waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.24.1 flask-swagger-ui==3.36.0 requests==2.23.0 && \
-    pip install -U flask-cors && \
+    pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.25.0 flask-swagger-ui==3.36.0 requests==2.23.0 && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
@@ -84,6 +80,7 @@ ENV ROOT=/app
 ENV ALLURE_HOME=/allure-$ALLURE_RELEASE
 ENV ALLURE_HOME_SL=/allure
 ENV PATH=$PATH:$ALLURE_HOME/bin
+ENV ALLURE_RESOURCES=$ROOT/resources
 ENV RESULTS_DIRECTORY=$ROOT/allure-results
 ENV REPORT_DIRECTORY=$ROOT/allure-report
 ENV RESULTS_HISTORY=$RESULTS_DIRECTORY/history
@@ -98,7 +95,7 @@ ENV DEFAULT_PROJECT_RESULTS=$DEFAULT_PROJECT_ROOT/results
 ENV DEFAULT_PROJECT_REPORTS=$DEFAULT_PROJECT_ROOT/reports
 ENV EXECUTOR_FILENAME=executor.json
 
-RUN echo $(allure --version) > ${ALLURE_VERSION} && \
+RUN echo -n $(allure --version) > ${ALLURE_VERSION} && \
     echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION}) && \
     mkdir $ALLURE_HOME_SL && \
     ln -s $ALLURE_HOME/* $ALLURE_HOME_SL && \
@@ -112,7 +109,11 @@ RUN chmod +x $ROOT/*.sh && \
     mkdir $RESULTS_DIRECTORY && \
     mkdir -p $DEFAULT_PROJECT_REPORTS/latest && \
     ln -sf $RESULTS_DIRECTORY $DEFAULT_PROJECT_RESULTS && \
-    ln -sf $DEFAULT_PROJECT_REPORTS/latest $REPORT_DIRECTORY
+    ln -sf $DEFAULT_PROJECT_REPORTS/latest $REPORT_DIRECTORY && \
+    allure generate -c -o /tmp/resources && \
+    mkdir $ALLURE_RESOURCES && \
+    cp /tmp/resources/app.js $ALLURE_RESOURCES && \
+    cp /tmp/resources/styles.css $ALLURE_RESOURCES
 
 RUN chown -R allure:allure $ROOT
 
