@@ -1,0 +1,6 @@
+{
+    "description":"FORBIDDEN",
+    "schema":{
+       "$ref":"#/components/schemas/response"
+    }
+ }

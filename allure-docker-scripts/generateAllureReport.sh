@@ -64,6 +64,10 @@ fi
 
 echo "Generating report for PROJECT_ID: $PROJECT_ID"
 allure generate --clean $RESULTS_DIRECTORY -o $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest
+if [ "$OPTIMIZE_STORAGE" == "1" ] ; then
+    ln -sf $ALLURE_RESOURCES/app.js $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/app.js
+    ln -sf $ALLURE_RESOURCES/styles.css $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/styles.css
+fi
 
 if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ] || [ "$KEEP_HISTORY" == "1" ] ; then
     if [[ "$EXEC_STORE_RESULTS_PROCESS" == "1" ]]; then
