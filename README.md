@@ -1161,6 +1161,8 @@ NOTE:
 #### Optimize Storage
 `Available from Allure Docker Service version 2.13.7`
 
+`---EXPERIMENTAL FEATURE---`
+
 When Allure generates reports, commonly created these files per report:
 ```sh
 projects
