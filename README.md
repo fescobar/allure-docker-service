@@ -48,6 +48,7 @@ Table of contents
             * [Refresh Access Token](#refresh-access-token)
             * [Logout](#logout)
             * [Roles](#roles)
+            * [Make Viewer endpoints public](#make-viewer-endpoints-public)
             * [Scripts](#scripts)
           * [Add Custom URL Prefix](#add-custom-url-prefix)
           * [Optimize Storage](#optimize-storage)
@@ -1110,6 +1111,21 @@ Note:
 - Always you need to define the `ADMIN` user.
 - `SECURITY_USER` & `SECURITY_VIEWER_USER` always need to be different.
 - Check [Allure API](#allure-api) to see what endpoints are exclusively for the `ADMIN` role.
+
+##### Make Viewer endpoints public
+`Available from Allure Docker Service version 2.13.8`
+If you only want to protect the `Admin` endpoints and make public the viewer endpoints, then you can use the environment variable `MAKE_VIEWER_ENDPOINTS_PUBLIC` to make accessible the endpoints:
+
+Docker Compose example:
+```sh
+    environment:
+      SECURITY_USER: "my_username"
+      SECURITY_PASS: "my_password"
+      SECURITY_ENABLED: 1
+      MAKE_VIEWER_ENDPOINTS_PUBLIC: 1
+```
+Note:
+- With `MAKE_VIEWER_ENDPOINTS_PUBLIC` enabled, your `viewer` user (if you have someone defined) won't have effect.
 
 ##### Scripts
 - Bash script with security enabled: [allure-docker-api-usage/send_results_security.sh](allure-docker-api-usage/send_results_security.sh)
