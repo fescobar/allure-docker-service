@@ -95,9 +95,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.13.7                         | frankescobar/allure-docker-service:2.13.7-amd64   |
-|                                        | frankescobar/allure-docker-service:2.13.7-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.13.7-arm64v8 |
+| latest, 2.13.8                         | frankescobar/allure-docker-service:2.13.8-amd64   |
+|                                        | frankescobar/allure-docker-service:2.13.8-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.13.8-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -706,7 +706,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.13.7"
+    image: "frankescobar/allure-docker-service:2.13.8"
 ```
 or using latest version:
 
@@ -1314,7 +1314,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.13.7 .
+docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.13.8 .
 ```
 ### Run container
 ```sh
@@ -1365,5 +1365,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.7
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.8
 ```
