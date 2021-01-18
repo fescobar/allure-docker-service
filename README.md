@@ -688,12 +688,12 @@ If the type is not recognized it will take the default icon. You can use differe
 [![](resources/executor05.png)](resources/executor05.png)
 
 
-- github
+- gitlab
 
 [![](resources/executor06.png)](resources/executor06.png)
 
 
-- gitlab
+- github
 
 [![](resources/executor07.png)](resources/executor07.png)
 
