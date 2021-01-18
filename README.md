@@ -688,6 +688,16 @@ If the type is not recognized it will take the default icon. You can use differe
 [![](resources/executor05.png)](resources/executor05.png)
 
 
+- github
+
+[![](resources/executor06.png)](resources/executor06.png)
+
+
+- gitlab
+
+[![](resources/executor07.png)](resources/executor07.png)
+
+
 The icons are based on the native Allure2 Framework:
 - https://github.com/allure-framework/allure2/tree/master/allure-generator/src/main/javascript/blocks/executor-icon
 
