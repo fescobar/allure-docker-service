@@ -1,0 +1,11 @@
+#!/bin/bash
+
+MAX=40000;
+COUNTER=1;
+PROJECT_RESULTS_DIRECTORY=$STATIC_CONTENT_PROJECTS/default/results
+
+while ((COUNTER<=MAX)); do 
+    touch $PROJECT_RESULTS_DIRECTORY/$((COUNTER));
+    COUNTER=$((COUNTER+1));
+done
+mkdir -p $PROJECT_RESULTS_DIRECTORY/history

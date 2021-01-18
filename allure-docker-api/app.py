@@ -81,6 +81,7 @@ URL_SCHEME = 'http'
 URL_PREFIX = ''
 OPTIMIZE_STORAGE = 0
 ENABLE_SECURITY_LOGIN = False
+MAKE_VIEWER_ENDPOINTS_PUBLIC = False
 SECURITY_USER = None
 SECURITY_PASS = None
 SECURITY_VIEWER_USER = None
@@ -88,6 +89,53 @@ SECURITY_VIEWER_PASS = None
 USERS_INFO = {}
 ADMIN_ROLE_NAME = 'admin'
 VIEWER_ROLE_NAME = 'viewer'
+PROTECTED_ENDPOINTS = [
+    {
+        "method": "post",
+        "path": "/refresh",
+        "endpoint": "refresh_endpoint"
+    },
+    {
+        "method": "delete",
+        "path": "/logout",
+        "endpoint": "logout_endpoint"
+    },
+    {
+        "method": "delete",
+        "path": "/logout-refresh-token",
+        "endpoint": "logout_refresh_token_endpoint"
+    },
+    {
+        "method": "post",
+        "path": "/send-results",
+        "endpoint": "send_results_endpoint"
+    },
+    {
+        "method": "get",
+        "path": "/generate-report",
+        "endpoint": "generate_report_endpoint"
+    },
+    {
+        "method": "get",
+        "path": "/clean-results",
+        "endpoint": "clean_results_endpoint"
+    },
+    {
+        "method": "get",
+        "path": "/clean-history",
+        "endpoint": "clean_history_endpoint"
+    },
+    {
+        "method": "post",
+        "path": "/projects",
+        "endpoint": "create_project_endpoint"
+    },
+    {
+        "method": "delete",
+        "path": "/projects/{id}",
+        "endpoint": "delete_project_endpoint"
+    }
+]
 
 GENERATE_REPORT_PROCESS = '{}/generateAllureReport.sh'.format(os.environ['ROOT'])
 KEEP_HISTORY_PROCESS = '{}/keepAllureHistory.sh'.format(os.environ['ROOT'])
@@ -122,15 +170,23 @@ if "EMAILABLE_REPORT_TITLE" in os.environ:
 
 if "API_RESPONSE_LESS_VERBOSE" in os.environ:
     try:
-        API_RESPONSE_LESS_VERBOSE = int(os.environ['API_RESPONSE_LESS_VERBOSE'])
-        LOGGER.info('Overriding API_RESPONSE_LESS_VERBOSE=%s', API_RESPONSE_LESS_VERBOSE)
+        API_RESPONSE_LESS_VERBOSE_TMP = int(os.environ['API_RESPONSE_LESS_VERBOSE'])
+        if API_RESPONSE_LESS_VERBOSE_TMP in (1, 0):
+            API_RESPONSE_LESS_VERBOSE = API_RESPONSE_LESS_VERBOSE_TMP
+            LOGGER.info('Overriding API_RESPONSE_LESS_VERBOSE=%s', API_RESPONSE_LESS_VERBOSE)
+        else:
+            LOGGER.error('Wrong env var value. Setting API_RESPONSE_LESS_VERBOSE=0 by default')
     except Exception as ex:
         LOGGER.error('Wrong env var value. Setting API_RESPONSE_LESS_VERBOSE=0 by default')
 
 if "DEV_MODE" in os.environ:
     try:
-        DEV_MODE = int(os.environ['DEV_MODE'])
-        LOGGER.info('Overriding DEV_MODE=%s', DEV_MODE)
+        DEV_MODE_TMP = int(os.environ['DEV_MODE'])
+        if DEV_MODE_TMP in (1, 0):
+            DEV_MODE = DEV_MODE_TMP
+            LOGGER.info('Overriding DEV_MODE=%s', DEV_MODE)
+        else:
+            LOGGER.error('Wrong env var value. Setting DEV_MODE=0 by default')
     except Exception as ex:
         LOGGER.error('Wrong env var value. Setting DEV_MODE=0 by default')
 
@@ -147,7 +203,7 @@ if "TLS" in os.environ:
 if "URL_PREFIX" in os.environ:
     PREFIX = str(os.environ['URL_PREFIX'])
     if DEV_MODE == 1:
-        LOGGER.info('URL_PREFIX is not supported when DEV_MODE is enabled')
+        LOGGER.warning('URL_PREFIX is not supported when DEV_MODE is enabled')
     else:
         if PREFIX and PREFIX.strip():
             if PREFIX.startswith('/') is False:
@@ -160,10 +216,23 @@ if "URL_PREFIX" in os.environ:
 
 if "OPTIMIZE_STORAGE" in os.environ:
     try:
-        OPTIMIZE_STORAGE = int(os.environ['OPTIMIZE_STORAGE'])
-        LOGGER.info('Overriding OPTIMIZE_STORAGE=%s', OPTIMIZE_STORAGE)
+        OPTIMIZE_STORAGE_TMP = int(os.environ['OPTIMIZE_STORAGE'])
+        if OPTIMIZE_STORAGE_TMP in (1, 0):
+            OPTIMIZE_STORAGE = OPTIMIZE_STORAGE_TMP
+            LOGGER.info('Overriding OPTIMIZE_STORAGE=%s', OPTIMIZE_STORAGE)
+        else:
+            LOGGER.error('Wrong env var value. Setting OPTIMIZE_STORAGE=0 by default')
     except Exception as ex:
         LOGGER.error('Wrong env var value. Setting OPTIMIZE_STORAGE=0 by default')
+
+if "MAKE_VIEWER_ENDPOINTS_PUBLIC" in os.environ:
+    try:
+        VIEWER_ENDPOINTS_PUBLIC_TMP = int(os.environ['MAKE_VIEWER_ENDPOINTS_PUBLIC'])
+        if VIEWER_ENDPOINTS_PUBLIC_TMP == 1:
+            MAKE_VIEWER_ENDPOINTS_PUBLIC = True
+            LOGGER.info('Overriding MAKE_VIEWER_ENDPOINTS_PUBLIC=%s', VIEWER_ENDPOINTS_PUBLIC_TMP)
+    except Exception as ex:
+        LOGGER.error('Wrong env var value. Setting VIEWER_ENDPOINTS_PUBLIC=0 by default')
 
 if "SECURITY_USER" in os.environ:
     SECURITY_USER_TMP = os.environ['SECURITY_USER']
@@ -177,17 +246,18 @@ if "SECURITY_PASS" in os.environ:
         SECURITY_PASS = SECURITY_PASS_TMP
         LOGGER.info('Setting SECURITY_PASS')
 
-if "SECURITY_VIEWER_USER" in os.environ:
-    SECURITY_VIEWER_USER_TMP = os.environ['SECURITY_VIEWER_USER']
-    if SECURITY_VIEWER_USER_TMP and SECURITY_VIEWER_USER_TMP.strip():
-        SECURITY_VIEWER_USER = SECURITY_VIEWER_USER_TMP.lower()
-        LOGGER.info('Setting SECURITY_VIEWER_USER')
+if MAKE_VIEWER_ENDPOINTS_PUBLIC is False:
+    if "SECURITY_VIEWER_USER" in os.environ:
+        SECURITY_VIEWER_USER_TMP = os.environ['SECURITY_VIEWER_USER']
+        if SECURITY_VIEWER_USER_TMP and SECURITY_VIEWER_USER_TMP.strip():
+            SECURITY_VIEWER_USER = SECURITY_VIEWER_USER_TMP.lower()
+            LOGGER.info('Setting SECURITY_VIEWER_USER')
 
-if "SECURITY_VIEWER_PASS" in os.environ:
-    SECURITY_VIEWER_PASS_TMP = os.environ['SECURITY_VIEWER_PASS']
-    if SECURITY_VIEWER_PASS_TMP and SECURITY_VIEWER_PASS_TMP.strip():
-        SECURITY_VIEWER_PASS = SECURITY_VIEWER_PASS_TMP
-        LOGGER.info('Setting SECURITY_VIEWER_PASS')
+    if "SECURITY_VIEWER_PASS" in os.environ:
+        SECURITY_VIEWER_PASS_TMP = os.environ['SECURITY_VIEWER_PASS']
+        if SECURITY_VIEWER_PASS_TMP and SECURITY_VIEWER_PASS_TMP.strip():
+            SECURITY_VIEWER_PASS = SECURITY_VIEWER_PASS_TMP
+            LOGGER.info('Setting SECURITY_VIEWER_PASS')
 
 if "SECURITY_ENABLED" in os.environ:
     try:
@@ -201,10 +271,11 @@ if "SECURITY_ENABLED" in os.environ:
                                                     'pass': SECURITY_PASS,
                                                     'roles': [ADMIN_ROLE_NAME]
                                                 }
-                    USERS_INFO[SECURITY_VIEWER_USER] = {
-                                                            'pass': SECURITY_VIEWER_PASS,
-                                                            'roles': [VIEWER_ROLE_NAME]
-                                                       }
+                    if SECURITY_VIEWER_USER is not None and SECURITY_VIEWER_PASS is not None:
+                        USERS_INFO[SECURITY_VIEWER_USER] = {
+                                                                'pass': SECURITY_VIEWER_PASS,
+                                                                'roles': [VIEWER_ROLE_NAME]
+                                                           }
                 else:
                     LOGGER.info('Setting SECURITY_ENABLED=0 by default')
             else:
@@ -292,6 +363,24 @@ def get_security_specs():
         security_specs[file] = eval(get_file_as_string(file_path)) #pylint: disable=eval-used
     return security_specs
 
+def is_endpoint_protected(endpoint):
+    if MAKE_VIEWER_ENDPOINTS_PUBLIC is False:
+        return True
+
+    for info in PROTECTED_ENDPOINTS:
+        if endpoint == info['endpoint']:
+            return True
+    return False
+
+def is_endpoint_swagger_protected(method, path):
+    if MAKE_VIEWER_ENDPOINTS_PUBLIC is False:
+        return True
+
+    for info in PROTECTED_ENDPOINTS:
+        if info['method'] == method and path == info['path']:
+            return True
+    return False
+
 def generate_security_swagger_spec():
     try:
         security_specs = get_security_specs()
@@ -309,20 +398,20 @@ def generate_security_swagger_spec():
             security_401_response = security_specs['security_unauthorized_response.json']
             security_403_response = security_specs['security_forbidden_response.json']
             security_crsf = security_specs['security_csrf.json']
-            for path in data['paths']:
+            for path in data['paths']: #pylint: disable=too-many-nested-blocks
                 for method in data['paths'][path]:
-                    if set(ensure_tags) & set(data['paths'][path][method]['tags']):
-                        data['paths'][path][method]['security'] = security_type
-                        data['paths'][path][method]['responses']['401'] = security_401_response
-                        data['paths'][path][method]['responses']['403'] = security_403_response
-                        if method in ['post', 'put', 'patch', 'delete']:
-                            if 'parameters' in data['paths'][path][method]:
-                                params = data['paths'][path][method]['parameters']
-                                params.append(security_crsf)
-                                data['paths'][path][method]['parameters'] = params
-                            else:
-                                data['paths'][path][method]['parameters'] = [security_crsf]
-
+                    if is_endpoint_swagger_protected(method, path):
+                        if set(ensure_tags) & set(data['paths'][path][method]['tags']):
+                            data['paths'][path][method]['security'] = security_type
+                            data['paths'][path][method]['responses']['401'] = security_401_response
+                            data['paths'][path][method]['responses']['403'] = security_403_response
+                            if method in ['post', 'put', 'patch', 'delete']:
+                                if 'parameters' in data['paths'][path][method]:
+                                    params = data['paths'][path][method]['parameters']
+                                    params.append(security_crsf)
+                                    data['paths'][path][method]['parameters'] = params
+                                else:
+                                    data['paths'][path][method]['parameters'] = [security_crsf]
         with open("{}/swagger/swagger_security.json".format(STATIC_CONTENT), 'w') as outfile:
             json.dump(data, outfile)
     except Exception as ex:
@@ -406,7 +495,8 @@ def jwt_required(fn): #pylint: disable=invalid-name, function-redefined
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if ENABLE_SECURITY_LOGIN:
-            verify_jwt_in_request()
+            if is_endpoint_protected(request.endpoint):
+                verify_jwt_in_request()
         return fn(*args, **kwargs)
     return wrapper
 
@@ -414,7 +504,8 @@ def jwt_refresh_token_required(fn): #pylint: disable=invalid-name, function-rede
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if ENABLE_SECURITY_LOGIN:
-            verify_jwt_refresh_token_in_request()
+            if is_endpoint_protected(request.endpoint):
+                verify_jwt_refresh_token_in_request()
         return fn(*args, **kwargs)
     return wrapper
 
@@ -665,12 +756,14 @@ def config_endpoint():
         check_results_every_seconds = os.getenv('CHECK_RESULTS_EVERY_SECONDS', '1')
         keep_history = os.getenv('KEEP_HISTORY', '0')
         keep_history_latest = os.getenv('KEEP_HISTORY_LATEST', '20')
-        tls = os.getenv('TLS', '0')
+        tls = int(app.config['JWT_COOKIE_SECURE'])
         security_enabled = int(ENABLE_SECURITY_LOGIN)
+        make_viewer_endpoints_public = int(MAKE_VIEWER_ENDPOINTS_PUBLIC)
 
         body = {
             'data': {
                 'version': version,
+                'dev_mode': DEV_MODE,
                 'check_results_every_seconds': check_results_every_seconds,
                 'keep_history': keep_history,
                 'keep_history_latest': keep_history_latest,
@@ -678,7 +771,8 @@ def config_endpoint():
                 'security_enabled': security_enabled,
                 'url_prefix': URL_PREFIX,
                 'api_response_less_verbose': API_RESPONSE_LESS_VERBOSE,
-                'optimize_storage': OPTIMIZE_STORAGE
+                'optimize_storage': OPTIMIZE_STORAGE,
+                "make_viewer_endpoints_public": make_viewer_endpoints_public
             },
             'meta_data': {
                 'message' : "Config successfully obtained"
@@ -756,7 +850,7 @@ def latest_report_endpoint():
 @jwt_required
 def send_results_endpoint(): #pylint: disable=too-many-branches
     try:
-        if check_access(ADMIN_ROLE_NAME) is False:
+        if check_admin_access(current_user) is False:
             return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
 
         content_type = str(request.content_type)
@@ -852,7 +946,7 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
 @jwt_required
 def generate_report_endpoint():
     try:
-        if check_access(ADMIN_ROLE_NAME) is False:
+        if check_admin_access(current_user) is False:
             return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
 
         project_id = resolve_project(request.args.get('project_id'))
@@ -945,7 +1039,7 @@ def generate_report_endpoint():
 @jwt_required
 def clean_history_endpoint():
     try:
-        if check_access(ADMIN_ROLE_NAME) is False:
+        if check_admin_access(current_user) is False:
             return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
 
         project_id = resolve_project(request.args.get('project_id'))
@@ -986,7 +1080,7 @@ def clean_history_endpoint():
 @jwt_required
 def clean_results_endpoint():
     try:
-        if check_access(ADMIN_ROLE_NAME) is False:
+        if check_admin_access(current_user) is False:
             return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
 
         project_id = resolve_project(request.args.get('project_id'))
@@ -1176,7 +1270,7 @@ def report_export_endpoint():
 @jwt_required
 def create_project_endpoint():
     try:
-        if check_access(ADMIN_ROLE_NAME) is False:
+        if check_admin_access(current_user) is False:
             return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
 
         if not request.is_json:
@@ -1209,7 +1303,7 @@ def create_project_endpoint():
 @jwt_required
 def delete_project_endpoint(project_id):
     try:
-        if check_access(ADMIN_ROLE_NAME) is False:
+        if check_admin_access(current_user) is False:
             return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
 
         if project_id == 'default':
@@ -1536,14 +1630,20 @@ def resolve_project(project_id_param):
         project_id = project_id_param
     return project_id
 
-def check_access(role):
+def check_admin_access(user):
     if ENABLE_SECURITY_LOGIN is False:
         return True
 
-    granted = False
-    if role in current_user.roles:
-        granted = True
-    return granted
+    return check_access(ADMIN_ROLE_NAME, user)
+
+def check_access(role, user):
+    if user.roles is None:
+        return False
+
+    if role in user.roles:
+        return True
+
+    return False
 
 def check_process(process_file, project_id):
     tmp = os.popen('ps -Af | grep -w {}'.format(project_id)).read()

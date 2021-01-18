@@ -1,9 +1,9 @@
 ARG ARCH=amd64
 ARG JDK=adoptopenjdk:11-jre-openj9-bionic
 ARG BUILD_DATE
-ARG BUILD_VERSION=2.13.7-custom
+ARG BUILD_VERSION=2.13.8-custom
 ARG BUILD_REF=na
-ARG ALLURE_RELEASE=2.13.7
+ARG ALLURE_RELEASE=2.13.8
 ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
 ARG UID=1000
 ARG GID=1000
