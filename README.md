@@ -48,6 +48,7 @@ Table of contents
             * [Refresh Access Token](#refresh-access-token)
             * [Logout](#logout)
             * [Roles](#roles)
+            * [Make Viewer endpoints public](#make-viewer-endpoints-public)
             * [Scripts](#scripts)
           * [Add Custom URL Prefix](#add-custom-url-prefix)
           * [Optimize Storage](#optimize-storage)
@@ -95,9 +96,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.13.7                         | frankescobar/allure-docker-service:2.13.7-amd64   |
-|                                        | frankescobar/allure-docker-service:2.13.7-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.13.7-arm64v8 |
+| latest, 2.13.8                         | frankescobar/allure-docker-service:2.13.8-amd64   |
+|                                        | frankescobar/allure-docker-service:2.13.8-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.13.8-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -687,6 +688,16 @@ If the type is not recognized it will take the default icon. You can use differe
 [![](resources/executor05.png)](resources/executor05.png)
 
 
+- github
+
+[![](resources/executor06.png)](resources/executor06.png)
+
+
+- gitlab
+
+[![](resources/executor07.png)](resources/executor07.png)
+
+
 The icons are based on the native Allure2 Framework:
 - https://github.com/allure-framework/allure2/tree/master/allure-generator/src/main/javascript/blocks/executor-icon
 
@@ -706,7 +717,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.13.7"
+    image: "frankescobar/allure-docker-service:2.13.8"
 ```
 or using latest version:
 
@@ -1111,6 +1122,21 @@ Note:
 - `SECURITY_USER` & `SECURITY_VIEWER_USER` always need to be different.
 - Check [Allure API](#allure-api) to see what endpoints are exclusively for the `ADMIN` role.
 
+##### Make Viewer endpoints public
+`Available from Allure Docker Service version 2.13.8`
+If you only want to protect the `Admin` endpoints and make public the viewer endpoints, then you can use the environment variable `MAKE_VIEWER_ENDPOINTS_PUBLIC` to make accessible the endpoints:
+
+Docker Compose example:
+```sh
+    environment:
+      SECURITY_USER: "my_username"
+      SECURITY_PASS: "my_password"
+      SECURITY_ENABLED: 1
+      MAKE_VIEWER_ENDPOINTS_PUBLIC: 1
+```
+Note:
+- With `MAKE_VIEWER_ENDPOINTS_PUBLIC` enabled, your `viewer` user (if you have someone defined) won't have effect.
+
 ##### Scripts
 - Bash script with security enabled: [allure-docker-api-usage/send_results_security.sh](allure-docker-api-usage/send_results_security.sh)
 ```sh
@@ -1314,7 +1340,7 @@ If you want to use docker without sudo, read following links:
 
 ### Build image
 ```sh
-docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.13.7 .
+docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.13.8 .
 ```
 ### Run container
 ```sh
@@ -1365,5 +1391,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.7
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.8
 ```
