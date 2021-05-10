@@ -161,7 +161,7 @@
                }
             ],
             "requestBody":{
-               "description":"Files to send",
+               "description":"Results files to send. Can either be individual results files or a zip file",
                "required":"true",
                "content":{
                   "application/json":{

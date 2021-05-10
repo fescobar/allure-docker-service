@@ -893,7 +893,10 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
 
         if content_type.startswith('multipart/form-data') is True:
             validated_results = validate_files_array(request.files.getlist('files[]'))
-            send_files_results(results_project, validated_results, processed_files, failed_files)
+            if len(validated_results) == 1 and zipfile.is_zipfile(validated_results[0]):
+                send_compressed_results(results_project, validated_results[0], processed_files, failed_files)
+            else:
+                send_files_results(results_project, validated_results, processed_files, failed_files)
 
         failed_files_count = len(failed_files)
         if failed_files_count > 0:
@@ -1540,6 +1543,18 @@ def send_files_results(results_project, validated_results, processed_files, fail
             failed_files.append(error)
         else:
             processed_files.append(file_name)
+
+def send_compressed_results(results_project, zip_file, processed_files, failed_files):
+    try:
+        compressed_file = zipfile.ZipFile(zip_file)
+        compressed_file.extractall('{}/'.format(results_project))
+    except Exception as ex:
+        error = {}
+        error['message'] = str(ex)
+        error['file_name'] = zip_file.filename
+        failed_files.append(error)
+    else:
+        processed_files.append(zip_file.filename)
 
 def send_json_results(results_project, validated_results, processed_files, failed_files):
     for result in validated_results:

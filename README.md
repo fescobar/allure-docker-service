@@ -31,9 +31,11 @@ Table of contents
             * [Project Endpoints](#project-endpoints)
           * [Send results through API](#send-results-through-api)
             * [Content-Type - application/json](#content-type---applicationjson)
-            * [Content-Type - multipart/form-data](#content-type---multipartform-data)
+            * [Content-Type - multipart/form-data (Uncompressed files)](#content-type---multipartform-data-(Uncompressed-files))
+            * [Content-Type - multipart/form-data (Compressed files)](#content-type---multipartform-data-(Compressed-files))
             * [Force Project Creation Option](#force-project-creation-option)
-          * [Customize Executors Configuration](#customize-executors-configuration)
+            * [Customize Executors Configuration](#customize-executors-configuration)
+            * [Sending Results With Security Enabled](#sending-results-with-security-enabled)
           * [API Response Less Verbose](#api-response-less-verbose)
           * [Switching version](#switching-version)
           * [Switching port](#switching-port)
@@ -595,58 +597,68 @@ For accessing `Security Endpoints`, you have to enable the security. Check [Enab
 
 After running your tests, you can execute any script to send the generated results from any node/agent/machine to the Allure Docker server container using the [Allure API](#allure-api). Use the endpoint `POST /send-results`.
 
-You have 2 options to send results:
+You have 3 options to send results:
 
 ##### Content-Type - application/json
 
+- Bash script: [allure-docker-api-usage/send_results.sh](allure-docker-api-usage/send_results.sh)
+
+```sh
+./send_results.sh -r <Path to results> -a <allure server URL> -j
+```
 - Python script: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
 
 ```sh
-python send_results.py
-```
-
-- Python script with security enabled: [allure-docker-api-usage/send_results_security.py](allure-docker-api-usage/send_results_security.py)
-
-```sh
-python send_results_security.py
+python send_results.py -r <Path to results> -a <allure server URL> -j
 ```
 
 - Declarative Pipeline script for JENKINS: [allure-docker-api-usage/send_results_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_jenkins_pipeline.groovy)
 
-- Declarative Pipeline script for JENKINS with security enabled: [allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy)
-
-
 - PowerShell script: [allure-docker-api-usage/send_results.ps1](allure-docker-api-usage/send_results.ps1)
 
 ```sh
-./send_results.ps1
+./send_results.ps1 -ResultsDir <Path to results> -AllureServer <allure server URL>
 ```
 
-##### Content-Type - multipart/form-data
+##### Content-Type - multipart/form-data (Uncompressed files)
 `Available from Allure Docker Service version 2.13.3`
 
 - Bash script: [allure-docker-api-usage/send_results.sh](allure-docker-api-usage/send_results.sh)
 
 ```sh
-./send_results.sh
+./send_results.sh -r <Path to results> -a <allure server URL>
 ```
 
-- Bash script with security enabled: [allure-docker-api-usage/send_results_security.sh](allure-docker-api-usage/send_results_security.sh)
+- Python script: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
 
 ```sh
-./send_results_security.sh
+python send_results.py -r <Path to results> -a <allure server URL>
 ```
-NOTE:
 
-- These scripts are sending these example results [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
+##### Content-Type - multipart/form-data (Compressed files)
+`Available from Allure Docker Service version 2.13.3 UPDATE ME TO RELEASE VERSION` 
 
-- If you want to clean the results use the endpoint `GET /clean-results` ([Allure API](#allure-api)).
+- Bash script: [allure-docker-api-usage/send_results.sh](allure-docker-api-usage/send_results.sh)
+
+```sh
+./send_results.sh -r <Path to results> -a <allure server URL> -c
+```
+
+- Python script: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
+
+```sh
+python send_results.py -r <Path to results> -a <allure server URL> -c
+```
 
 ##### Force Project Creation Option
 `Available from Allure Docker Service version 2.13.6`
 If you use the query parameter `force_project_creation` with value `true`, the project where you want to send the results will be created automatically in case doesn't exist.
 
 `POST /send-results?project_id=any-unexistent-project&force_project_creation=true`
+
+The force parameter can be enabled in the scripts by:
+- Using the -f|--force flag for Bash and Python scripts
+- Using the -Force flag for the Powershell script
 
 #### Customize Executors Configuration
 `Available from Allure Docker Service version 2.13.3`
@@ -700,6 +712,44 @@ If the type is not recognized it will take the default icon. You can use differe
 
 The icons are based on the native Allure2 Framework:
 - https://github.com/allure-framework/allure2/tree/master/allure-generator/src/main/javascript/blocks/executor-icon
+
+Report generation can now be triggered from the provided Bash, Python and PowerShell scripts:
+- For Python and Bash use the -g|--generate flag
+- For PowerShell use -Generate
+
+Additionally you can specify the custom executors configuration now too from the Bash, Python and PowerShell scripts when specifying the generate option:
+- For Python and Bash use the --exec-from, --exec-type and --exec-name flags to specify the different values
+- For PowerShell please use the -ExecFrom, -ExecType and -ExecName flags
+
+#### Sending Results With Security Enabled
+If you have enabled security for your instance of the Allure Docker Service then please use the following for uploading results
+
+- Bash script: [allure-docker-api-usage/send_results.sh](allure-docker-api-usage/send_results.sh)
+
+```sh
+./send_results.sh -r <Path to results> -a <allure server URL> -s --username <username> --password <password>
+```
+- Python script: [allure-docker-api-usage/send_results.py](allure-docker-api-usage/send_results.py)
+
+```sh
+python send_results.py -r <Path to results> -a <allure server URL> -s --username <username> --password <password>
+```
+
+- Declarative Pipeline script for JENKINS with security enabled: [allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy)
+
+- PowerShell script: [allure-docker-api-usage/send_results.ps1](allure-docker-api-usage/send_results.ps1)
+
+```sh
+./send_results.ps1 -ResultsDir <Path to results> -AllureServer <allure server URL> -Secure -Username <username> -Password <password>
+```
+
+NOTE:
+
+- All of the provided scripts feature a help message
+  - For Python and Bash use the -h|--help flag
+  - For PowerShell run "Get-Help .\send_results.ps1"
+
+- If you want to clean the results use the endpoint `GET /clean-results` ([Allure API](#allure-api)).
 
 #### API Response Less Verbose
 `Available from Allure Docker Service version 2.13.1`
