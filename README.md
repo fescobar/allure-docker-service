@@ -715,11 +715,25 @@ The icons are based on the native Allure2 Framework:
 
 Report generation can now be triggered from the provided Bash, Python and PowerShell scripts:
 - For Python and Bash use the -g|--generate flag
+  ```sh
+  ./send_results.sh -r <Path to results> -a <allure server URL> -g
+  ./send_results.py -r <Path to results> -a <allure server URL> -g
+  ```
 - For PowerShell use -Generate
+  ```sh
+  ./send_results.ps1 -ResultsDir <Path to results> -AllureServer <allure server URL> -Generate
+  ```
 
 Additionally you can specify the custom executors configuration now too from the Bash, Python and PowerShell scripts when specifying the generate option:
 - For Python and Bash use the --exec-from, --exec-type and --exec-name flags to specify the different values
+  ```sh
+  ./send_results.sh -r <Path to results> -a <allure server URL> -g --exec-from <execution server URL> --exec-type <excecution type> --exec-name <name of the execution>
+  ./send_results.py -r <Path to results> -a <allure server URL> -g --exec-from <execution server URL> --exec-type <excecution type> --exec-name <name of the execution>
+  ```
 - For PowerShell please use the -ExecFrom, -ExecType and -ExecName flags
+  ```sh
+  ./send_results.ps1 -ResultsDir <Path to results> -AllureServer <allure server URL> -Generate <execution server URL> -ExecFrom <execution server URL> -ExecType <excecution type> -ExecName <name of the execution>
+  ```
 
 #### Sending Results With Security Enabled
 If you have enabled security for your instance of the Allure Docker Service then please use the following for uploading results
@@ -747,7 +761,14 @@ NOTE:
 
 - All of the provided scripts feature a help message
   - For Python and Bash use the -h|--help flag
-  - For PowerShell run "Get-Help .\send_results.ps1"
+    ```sh
+    ./send_results.sh -h
+    python send_results.py -h
+    ```
+  - For PowerShell use Get-Help
+    ```sh
+    Get-Help .\send_results.ps1 -full
+    ```
 
 - If you want to clean the results use the endpoint `GET /clean-results` ([Allure API](#allure-api)).
 
