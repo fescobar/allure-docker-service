@@ -1214,7 +1214,7 @@ def emailable_report_export_endpoint():
         prefix_report_nro = ''
         if report_param != 'latest':
             prefix_report_nro = '{}_'.format(report_param)
-        
+
         emailable_report_path = '{}/reports/{}{}'.format(project_path,
                                                          prefix_report_nro,
                                                          EMAILABLE_REPORT_FILE_NAME)
