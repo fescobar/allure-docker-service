@@ -362,6 +362,14 @@
                   "schema":{
                      "type":"string"
                   }
+               },
+               {
+                  "in":"query",
+                  "name":"report",
+                  "schema":{
+                     "type":"string",
+                     "default": "latest"
+                  }
                }
             ],
             "responses":{
@@ -398,6 +406,14 @@
                   "name":"project_id",
                   "schema":{
                      "type":"string"
+                  }
+               },
+               {
+                  "in":"query",
+                  "name":"report",
+                  "schema":{
+                     "type":"string",
+                     "default": "latest"
                   }
                }
             ],
