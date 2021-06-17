@@ -1137,7 +1137,8 @@ def emailable_report_render_endpoint():
         check_process(GENERATE_REPORT_PROCESS, project_id)
 
         project_path = get_project_path(project_id)
-        tcs_report_project = "{}/reports/{}/data/test-cases/*.json".format(project_path, report_param)
+        tcs_report_project = "{}/reports/{}/data/test-cases/*.json".format(project_path,
+                                                                           report_param)
 
         files = glob.glob(tcs_report_project)
         files.sort(key=os.path.getmtime, reverse=True)
@@ -1165,7 +1166,14 @@ def emailable_report_render_endpoint():
                                  title=EMAILABLE_REPORT_TITLE, projectId=project_id,
                                  serverUrl=server_url, testCases=test_cases)
 
-        emailable_report_path = '{}/reports/{}_{}'.format(project_path, report_param, EMAILABLE_REPORT_FILE_NAME)
+        if report_param == 'latest':
+            emailable_report_path = '{}/reports/{}'.format(project_path,
+                                                           EMAILABLE_REPORT_FILE_NAME)
+        else:
+            emailable_report_path = '{}/reports/{}_{}'.format(project_path,
+                                                              report_param,
+                                                              EMAILABLE_REPORT_FILE_NAME)
+
         file = None
         try:
             file = open(emailable_report_path, "w")
@@ -1205,7 +1213,14 @@ def emailable_report_export_endpoint():
         check_process(GENERATE_REPORT_PROCESS, project_id)
 
         project_path = get_project_path(project_id)
-        emailable_report_path = '{}/reports/{}_{}'.format(project_path, report_param, EMAILABLE_REPORT_FILE_NAME)
+
+        if report_param == 'latest':
+            emailable_report_path = '{}/reports/{}'.format(project_path,
+                                                           EMAILABLE_REPORT_FILE_NAME)
+        else:
+            emailable_report_path = '{}/reports/{}_{}'.format(project_path,
+                                                              report_param,
+                                                              EMAILABLE_REPORT_FILE_NAME)
 
         report = send_file(emailable_report_path, as_attachment=True)
     except Exception as ex:
