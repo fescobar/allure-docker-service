@@ -1154,10 +1154,15 @@ def emailable_report_render_endpoint():
 
         if report_param == "latest":
             server_url = url_for('latest_report_endpoint', project_id=project_id, _external=True)
+            emailable_report_path = '{}/reports/{}'.format(project_path,
+                                                           EMAILABLE_REPORT_FILE_NAME)
         else:
             project_report_path = '{}/{}'.format(report_param, REPORT_INDEX_FILE)
             server_url = url_for('get_reports_endpoint', project_id=project_id,
                                  path=project_report_path, _external=True)
+            emailable_report_path = '{}/reports/{}_{}'.format(project_path,
+                                                              report_param,
+                                                              EMAILABLE_REPORT_FILE_NAME)
 
         if "SERVER_URL" in os.environ:
             server_url = os.environ['SERVER_URL']
@@ -1165,14 +1170,6 @@ def emailable_report_render_endpoint():
         report = render_template(DEFAULT_TEMPLATE, css=EMAILABLE_REPORT_CSS,
                                  title=EMAILABLE_REPORT_TITLE, projectId=project_id,
                                  serverUrl=server_url, testCases=test_cases)
-
-        if report_param == 'latest':
-            emailable_report_path = '{}/reports/{}'.format(project_path,
-                                                           EMAILABLE_REPORT_FILE_NAME)
-        else:
-            emailable_report_path = '{}/reports/{}_{}'.format(project_path,
-                                                              report_param,
-                                                              EMAILABLE_REPORT_FILE_NAME)
 
         file = None
         try:
@@ -1214,13 +1211,13 @@ def emailable_report_export_endpoint():
 
         project_path = get_project_path(project_id)
 
-        if report_param == 'latest':
-            emailable_report_path = '{}/reports/{}'.format(project_path,
-                                                           EMAILABLE_REPORT_FILE_NAME)
-        else:
-            emailable_report_path = '{}/reports/{}_{}'.format(project_path,
-                                                              report_param,
-                                                              EMAILABLE_REPORT_FILE_NAME)
+        prefix_report_nro = ''
+        if report_param != 'latest':
+            prefix_report_nro = '{}_'.format(report_param)
+        
+        emailable_report_path = '{}/reports/{}{}'.format(project_path,
+                                                         prefix_report_nro,
+                                                         EMAILABLE_REPORT_FILE_NAME)
 
         report = send_file(emailable_report_path, as_attachment=True)
     except Exception as ex:
