@@ -1120,7 +1120,7 @@ def clean_results_endpoint():
 @app.route("/emailable-report/render", strict_slashes=False)
 @app.route("/allure-docker-service/emailable-report/render", strict_slashes=False)
 @jwt_required
-def emailable_report_render_endpoint():
+def emailable_report_render_endpoint(): #pylint: disable=too-many-locals
     try:
         project_id = resolve_project(request.args.get('project_id'))
         report_param = resolve_project(request.args.get('report', 'latest'))
