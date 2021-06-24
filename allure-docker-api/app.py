@@ -348,12 +348,8 @@ if "REFRESH_TOKEN_EXPIRES_IN_DAYS" in os.environ:
 def get_file_as_string(path_file):
     file = None
     content = None
-    try:
-        file = open(path_file, "r")
+    with open(path_file, "r") as file:
         content = file.read()
-    finally:
-        if file is not None:
-            file.close()
     return content
 
 def get_security_specs():
@@ -1171,13 +1167,8 @@ def emailable_report_render_endpoint(): #pylint: disable=too-many-locals
                                  title=EMAILABLE_REPORT_TITLE, projectId=project_id,
                                  serverUrl=server_url, testCases=test_cases)
 
-        file = None
-        try:
-            file = open(emailable_report_path, "w")
+        with open(emailable_report_path, "w") as file:
             file.write(report)
-        finally:
-            if file is not None:
-                file.close()
     except Exception as ex:
         body = {
             'meta_data': {
@@ -1564,20 +1555,15 @@ def send_json_results(results_project, validated_results, processed_files, faile
     for result in validated_results:
         file_name = secure_filename(result.get('file_name'))
         content_base64 = result.get('content_base64')
-        file = None
         try:
-            file = open("%s/%s" % (results_project, file_name), "wb")
-            file.write(content_base64)
+            with open("%s/%s" % (results_project, file_name), "wb") as file:
+                file.write(content_base64)
+            processed_files.append(file_name)
         except Exception as ex:
             error = {}
             error['message'] = str(ex)
             error['file_name'] = file_name
             failed_files.append(error)
-        else:
-            processed_files.append(file_name)
-        finally:
-            if file is not None:
-                file.close()
 
 def create_project(json_body):
     if 'id' not in json_body:
