@@ -21,15 +21,16 @@ print('RESULTS DIRECTORY PATH: ' + results_directory)
 
 def get_file_as_result(filename):
     file_path = results_directory + "/" + filename
-    result = {}
 
     if os.path.isfile(file_path):
         with open(file_path, "rb") as f:
             content = f.read()
             if content.strip():
                 b64_content = base64.b64encode(content)
-                result['file_name'] = filename
-                result['content_base64'] = b64_content.decode('UTF-8')
+                result = {
+                    'file_name': filename,
+                    'content_base64': b64_content.decode('UTF-8')
+                }
                 print(f'Successfully encoded result for {file_path}')
                 return result
             else:
@@ -41,7 +42,7 @@ def get_file_as_result(filename):
 def gather_result_files():
     files = os.listdir(results_directory)
     print('FILES:')
-    results = list(filter(lambda f: f is not None, [get_file_as_result(file) for file in files]))
+    results = [get_file_as_result(file) for file in files if get_file_as_result(file)]
     return results
 
 
