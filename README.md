@@ -96,9 +96,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.13.8                         | frankescobar/allure-docker-service:2.13.8-amd64   |
-|                                        | frankescobar/allure-docker-service:2.13.8-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.13.8-arm64v8 |
+| latest, 2.17.0                         | frankescobar/allure-docker-service:2.17.0-amd64   |
+|                                        | frankescobar/allure-docker-service:2.17.0-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.17.0-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -717,7 +717,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.13.8"
+    image: "frankescobar/allure-docker-service:2.17.0"
 ```
 or using latest version:
 
@@ -748,6 +748,49 @@ If you use this option, the only way to generate a new report up to date it's us
 ```sh
     environment:
       CHECK_RESULTS_EVERY_SECONDS: NONE
+```
+
+- `CHECK_RESULTS_EVERY_SECONDS=3` It's only useful for executions in your`LOCAL` machine. With this option ENABLED the container detects any changes in the `allure-results` directory. Every time detects a new file, the container will generate a new report. The workflow will be the next:
+
+1. Start `allure-docker-service` via docker-compose mounting the `allure-results` volume that your project will use to storage the results files. It's recommended to use this configuration [SINGLE PROJECT - LOCAL REPORTS](#SINGLE-PROJECT---LOCAL-REPORTS)
+2. Generate your allure results with any Allure Framework according technology (Allure/Cucumber/Java, Allure/Specflow/C#, Allure/CucumberJS/NodeJS, etc). Your results will be stored in a directory named `allure-results` in any directory inside your project. Remember to use the same location that you are mounting when you start the docker container in the previous step. Also, never remove that `allure-results` directory, otherwise docker will lose the reference to that volume.
+3. Every time new results files are generated during every test execution, automatically the containers will detects those changes and it will generate a new report.
+4. You will see the report generated
+5. If you see multiple reports that it doesn't represent the real quantity of executions it's because the report is generated each time detects changes in the `allure-results` directory including existing previous results files in that directory. That's the reason is only useful locally.
+
+- `CHECK_RESULTS_EVERY_SECONDS=NONE`. This option is useful when you deploy `allure-docker-service` in a server and you are planning to feed results from any CI tool. With this option DISABLED the container won't detect any changes in the `allure-results` directory (Otherwise, it's higly cost if you handle multiple projects in terms of processor comsuption). The report won't be generated until you generate the report on demand using the API `GET /generate-report`. This will be the workflow:
+
+From any server machine:
+1. Deploy `allure-docker-service` using [Kubernetes](#deploy-using-kubernetes) or any other tool in any server. It's recommended to use this configuration [MULTIPLE PROJECTS - REMOTE REPORTS](#MULTIPLE-PROJECTS---REMOTE-REPORTS).
+2. Make sure the server is accessible from where your scripts are requesting the API.
+
+From your automation tests project:
+1. Request endpoint `GET /clean-results` (specify project if it's needed) to clean all existing results. This will be `BEFORE` starting any test execution.
+2. Execute your tests and generate your allure results with any Allure Framework according technology (Allure/Cucumber/Java, Allure/Specflow/C#, Allure/CucumberJS/NodeJS, etc).
+3. Once all your tests were executed, send all your results generated recently using the endpoint `POST /send-results` (specify project if it's needed).
+4. You won't see any report generated because at the moment you have only your results stored in the container.
+5. Now that you have all the info (allure results files) in the server, you can request the endpoint `GET /generate-report`. This action will build the report to be show.
+
+
+NOTE:
+- Scripts to interact with the API:  [Send results through API](#send-results-through-api) (Check commented code in the scripts).
+
+- If you execute `GET /generate-report` endpoint after every test execution, you will see multiple reports that doesn't represent your executions, that is because the container is building the report taking in count existing results files. For that reason, we use the `GET /clean-results` endpoint before starting any new execution to delete all results not related the current execution.
+
+Resume:
+```sh
+---EXECUTION 1---
+1. Clean results files to avoid data from previous results files - GET /clean-results
+2. Execute Suite1
+3. Execute Suite2
+4. Execute Suite3
+5. Wait for all suites to finish
+6. Send results using endpoints - POST /send-results
+7. Generate report using endpoint - GET /generate-report
+Report will include all suites results from this execution.
+
+---EXECUTION 2---
+Same steps from previous execution (don't forget to clean results first)
 ```
 
 #### Keep History and Trends
@@ -1338,9 +1381,13 @@ If you want to use docker without sudo, read following links:
 - https://docs.docker.com/engine/installation/linux/linux-postinstall/#manage-docker-as-a-non-root-user
 - https://stackoverflow.com/questions/21871479/docker-cant-connect-to-docker-daemon
 
+### Develop locally with Docker-Compose
+```sh
+docker-compose -f docker-compose-dev.yml up --build
+```
 ### Build image
 ```sh
-docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.13.8 .
+docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.17.0 .
 ```
 ### Run container
 ```sh
@@ -1391,5 +1438,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.13.8
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.17.0
 ```
