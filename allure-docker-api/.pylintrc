@@ -3,4 +3,8 @@ disable=
     missing-module-docstring,
     missing-function-docstring,
     broad-except,
-    raise-missing-from
+    raise-missing-from,
+    consider-using-f-string,
+    consider-using-with,
+    unspecified-encoding,
+    redefined-outer-name

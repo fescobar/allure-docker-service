@@ -4,7 +4,7 @@ ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
 ARG ALLURE_RELEASE=NONE
-ARG ALLURE_REPO=https://dl.bintray.com/qameta/maven/io/qameta/allure/allure-commandline
+ARG ALLURE_REPO=https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline
 ARG QEMU_ARCH
 ARG UID=1000
 ARG GID=1000
