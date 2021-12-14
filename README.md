@@ -99,9 +99,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.17.1                         | frankescobar/allure-docker-service:2.17.1-amd64   |
-|                                        | frankescobar/allure-docker-service:2.17.1-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.17.1-arm64v8 |
+| latest, 2.17.2                         | frankescobar/allure-docker-service:2.17.2-amd64   |
+|                                        | frankescobar/allure-docker-service:2.17.2-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.17.2-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -720,7 +720,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.17.1"
+    image: "frankescobar/allure-docker-service:2.17.2"
 ```
 or using latest version:
 
@@ -1390,7 +1390,7 @@ docker-compose -f docker-compose-dev.yml up --build
 ```
 ### Build image
 ```sh
-docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.17.1 .
+docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.17.2 .
 ```
 ### Run container
 ```sh
@@ -1441,5 +1441,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.17.1
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.17.2
 ```
