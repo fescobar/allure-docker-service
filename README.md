@@ -65,6 +65,7 @@ Table of contents
           * [Allure Options](#allure-options)
    * [SUPPORT](#SUPPORT)
       * [Gitter](#gitter)
+   * [GitHub Actions](#GitHub_Actions)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
 
 ## FEATURES
@@ -1442,4 +1443,23 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ### Download specific tagged image registered (Example)
 ```sh
 docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.17.2
+```
+
+## GitHub_Actions
+
+GitHub Action to send Allure Reports: [send-to-allure-server-action](https://github.com/unickq/send-to-allure-docker-service-action) by @unickq
+
+### [Example](https://github.com/unickq/send-to-allure-docker-service-action): 
+
+```yml
+    env:
+      ALLURE_SERVER_URL: ${{ secrets.ALLURE_SERVER_URL }}
+      ALLURE_SERVER_USER: ${{ secrets.ALLURE_SERVER_USER }}
+      ALLURE_SERVER_PASSWORD: ${{ secrets.ALLURE_SERVER_PASSWORD }}
+    steps:
+      - uses: unickq/send-to-allure-docker-service-action@v1
+        with:
+          allure_results: allure-results
+          project_id: actions
+          auth: true
 ```
