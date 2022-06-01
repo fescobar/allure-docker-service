@@ -1,4 +1,4 @@
-#pylint: disable=too-many-lines
+# pylint: disable=too-many-lines
 from logging.config import dictConfig
 from functools import wraps
 from subprocess import call
@@ -43,8 +43,10 @@ dictConfig({
     }
 })
 
+
 class UserAccess:
     """Object used for determining roles"""
+
     def __init__(self, username, roles):
         """
         :param username: username
@@ -62,7 +64,8 @@ class UserAccess:
     def __str__(self):
         return self.__class__.__name__
 
-app = Flask(__name__) #pylint: disable=invalid-name
+
+app = Flask(__name__)  # pylint: disable=invalid-name
 
 LOGGER = create_logger(app)
 app.config['JWT_SECRET_KEY'] = os.urandom(16)
@@ -138,6 +141,7 @@ PROTECTED_ENDPOINTS = [
 ]
 
 GENERATE_REPORT_PROCESS = '{}/generateAllureReport.sh'.format(os.environ['ROOT'])
+COMBINE_PROCESS = '{}/combine.sh'.format(os.environ['ROOT'])
 KEEP_HISTORY_PROCESS = '{}/keepAllureHistory.sh'.format(os.environ['ROOT'])
 CLEAN_HISTORY_PROCESS = '{}/cleanAllureHistory.sh'.format(os.environ['ROOT'])
 CLEAN_RESULTS_PROCESS = '{}/cleanAllureResults.sh'.format(os.environ['ROOT'])
@@ -268,14 +272,14 @@ if "SECURITY_ENABLED" in os.environ:
                     ENABLE_SECURITY_LOGIN = True
                     LOGGER.info('Enabling Security Login. SECURITY_ENABLED=1')
                     USERS_INFO[SECURITY_USER] = {
-                                                    'pass': SECURITY_PASS,
-                                                    'roles': [ADMIN_ROLE_NAME]
-                                                }
+                        'pass': SECURITY_PASS,
+                        'roles': [ADMIN_ROLE_NAME]
+                    }
                     if SECURITY_VIEWER_USER is not None and SECURITY_VIEWER_PASS is not None:
                         USERS_INFO[SECURITY_VIEWER_USER] = {
-                                                                'pass': SECURITY_VIEWER_PASS,
-                                                                'roles': [VIEWER_ROLE_NAME]
-                                                           }
+                            'pass': SECURITY_VIEWER_PASS,
+                            'roles': [VIEWER_ROLE_NAME]
+                        }
                 else:
                     LOGGER.info('Setting SECURITY_ENABLED=0 by default')
             else:
@@ -345,6 +349,7 @@ if "REFRESH_TOKEN_EXPIRES_IN_DAYS" in os.environ:
     except Exception as ex:
         LOGGER.error('Wrong env var value. Setting REFRESH_TOKEN_EXPIRES_IN_DAYS keeps disabled')
 
+
 def get_file_as_string(path_file):
     file = None
     content = None
@@ -356,12 +361,14 @@ def get_file_as_string(path_file):
             file.close()
     return content
 
+
 def get_security_specs():
     security_specs = {}
     for file in os.listdir("{}/{}/".format(STATIC_CONTENT, SECURITY_SPECS_PATH)):
         file_path = "{}/{}/{}".format(STATIC_CONTENT, SECURITY_SPECS_PATH, file)
-        security_specs[file] = eval(get_file_as_string(file_path)) #pylint: disable=eval-used
+        security_specs[file] = eval(get_file_as_string(file_path))  # pylint: disable=eval-used
     return security_specs
+
 
 def is_endpoint_protected(endpoint):
     if MAKE_VIEWER_ENDPOINTS_PUBLIC is False:
@@ -372,6 +379,7 @@ def is_endpoint_protected(endpoint):
             return True
     return False
 
+
 def is_endpoint_swagger_protected(method, path):
     if MAKE_VIEWER_ENDPOINTS_PUBLIC is False:
         return True
@@ -380,6 +388,7 @@ def is_endpoint_swagger_protected(method, path):
         if info['method'] == method and path == info['path']:
             return True
     return False
+
 
 def generate_security_swagger_spec():
     try:
@@ -398,7 +407,7 @@ def generate_security_swagger_spec():
             security_401_response = security_specs['security_unauthorized_response.json']
             security_403_response = security_specs['security_forbidden_response.json']
             security_crsf = security_specs['security_csrf.json']
-            for path in data['paths']: #pylint: disable=too-many-nested-blocks
+            for path in data['paths']:  # pylint: disable=too-many-nested-blocks
                 for method in data['paths'][path]:
                     if is_endpoint_swagger_protected(method, path):
                         if set(ensure_tags) & set(data['paths'][path][method]['tags']):
@@ -416,6 +425,7 @@ def generate_security_swagger_spec():
             json.dump(data, outfile)
     except Exception as ex:
         LOGGER.error(str(ex))
+
 
 ### swagger specific ###
 NATIVE_PREFIX = '/allure-docker-service'
@@ -442,20 +452,22 @@ app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_ENDPOINT)
 app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_ENDPOINT_PATH)
 if URL_PREFIX:
     app.register_blueprint(SWAGGERUI_BLUEPRINT,
-        url_prefix='{}{}'.format(NATIVE_PREFIX, SWAGGER_ENDPOINT))
+                           url_prefix='{}{}'.format(NATIVE_PREFIX, SWAGGER_ENDPOINT))
 ### end swagger specific ###
 
 ### Security Section
 if ENABLE_SECURITY_LOGIN:
     generate_security_swagger_spec()
 
-blacklist = set() #pylint: disable=invalid-name
-jwt = JWTManager(app) #pylint: disable=invalid-name
+blacklist = set()  # pylint: disable=invalid-name
+jwt = JWTManager(app)  # pylint: disable=invalid-name
+
 
 @jwt.token_in_blacklist_loader
 def check_if_token_in_blacklist(decrypted_token):
     jti = decrypted_token['jti']
     return jti in blacklist
+
 
 @jwt.invalid_token_loader
 def invalid_token_loader(msg):
@@ -465,6 +477,7 @@ def invalid_token_loader(msg):
         }
     }), 401
 
+
 @jwt.unauthorized_loader
 def unauthorized_loader(msg):
     return jsonify({
@@ -472,6 +485,7 @@ def unauthorized_loader(msg):
             'message': msg
         }
     }), 401
+
 
 @jwt.expired_token_loader
 def my_expired_token_callback(expired_token):
@@ -483,6 +497,7 @@ def my_expired_token_callback(expired_token):
         }
     }), 401
 
+
 @jwt.revoked_token_loader
 def revoked_token_loader():
     return jsonify({
@@ -491,23 +506,28 @@ def revoked_token_loader():
         }
     }), 401
 
-def jwt_required(fn): #pylint: disable=invalid-name, function-redefined
+
+def jwt_required(fn):  # pylint: disable=invalid-name, function-redefined
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if ENABLE_SECURITY_LOGIN:
             if is_endpoint_protected(request.endpoint):
                 verify_jwt_in_request()
         return fn(*args, **kwargs)
+
     return wrapper
 
-def jwt_refresh_token_required(fn): #pylint: disable=invalid-name, function-redefined
+
+def jwt_refresh_token_required(fn):  # pylint: disable=invalid-name, function-redefined
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if ENABLE_SECURITY_LOGIN:
             if is_endpoint_protected(request.endpoint):
                 verify_jwt_refresh_token_in_request()
         return fn(*args, **kwargs)
+
     return wrapper
+
 
 @jwt.user_loader_callback_loader
 def user_loader_callback(identity):
@@ -517,6 +537,8 @@ def user_loader_callback(identity):
         username=identity,
         roles=USERS_INFO[identity]['roles']
     )
+
+
 ### end Security Section
 
 ### CORS section
@@ -538,6 +560,8 @@ def after_request_func(response):
             response.headers.add('Access-Control-Allow-Origin', origin)
 
     return response
+
+
 ### end CORS section
 
 ### Security Endpoints Section
@@ -548,7 +572,7 @@ def login_endpoint():
         if ENABLE_SECURITY_LOGIN is False:
             body = {
                 'meta_data': {
-                    'message' : 'SECURITY is not enabled'
+                    'message': 'SECURITY is not enabled'
                 }
             }
             resp = jsonify(body)
@@ -567,14 +591,14 @@ def login_endpoint():
         username = username.lower()
 
         if username not in USERS_INFO:
-            return jsonify({'meta_data': {'message' : 'Invalid username/password'}}), 401
+            return jsonify({'meta_data': {'message': 'Invalid username/password'}}), 401
 
         password = request.json.get('password', None)
         if not password:
             raise Exception("Missing 'password' attribute")
 
         if USERS_INFO[username]['pass'] != password:
-            return jsonify({'meta_data': {'message' : 'Invalid username/password'}}), 401
+            return jsonify({'meta_data': {'message': 'Invalid username/password'}}), 401
 
         access_token = create_access_token(identity=username)
         refresh_token = create_refresh_token(identity=username)
@@ -587,7 +611,7 @@ def login_endpoint():
                 'expires_in': expires_in,
                 'roles': USERS_INFO[username]['roles']
             },
-            'meta_data': {'message' : 'Successfully logged'}
+            'meta_data': {'message': 'Successfully logged'}
         }
         resp = jsonify(json_body)
         set_access_cookies(resp, access_token)
@@ -596,11 +620,12 @@ def login_endpoint():
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
         return resp, 400
+
 
 @app.route('/logout', methods=['DELETE'], strict_slashes=False)
 @app.route('/allure-docker-service/logout', methods=['DELETE'], strict_slashes=False)
@@ -609,7 +634,7 @@ def logout_endpoint():
     if ENABLE_SECURITY_LOGIN is False:
         body = {
             'meta_data': {
-                'message' : 'SECURITY is not enabled'
+                'message': 'SECURITY is not enabled'
             }
         }
         resp = jsonify(body)
@@ -617,15 +642,16 @@ def logout_endpoint():
     try:
         jti = get_raw_jwt()['jti']
         blacklist.add(jti)
-        return jsonify({'meta_data': {'message' : 'Successfully logged out'}}), 200
+        return jsonify({'meta_data': {'message': 'Successfully logged out'}}), 200
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
         return resp, 400
+
 
 @app.route('/logout-refresh-token', methods=['DELETE'], strict_slashes=False)
 @app.route('/allure-docker-service/logout-refresh-token', methods=['DELETE'], strict_slashes=False)
@@ -634,7 +660,7 @@ def logout_refresh_token_endpoint():
     if ENABLE_SECURITY_LOGIN is False:
         body = {
             'meta_data': {
-                'message' : 'SECURITY is not enabled'
+                'message': 'SECURITY is not enabled'
             }
         }
         resp = jsonify(body)
@@ -642,17 +668,18 @@ def logout_refresh_token_endpoint():
     try:
         jti = get_raw_jwt()['jti']
         blacklist.add(jti)
-        resp = jsonify({'meta_data': {'message' : 'Successfully logged out'}})
+        resp = jsonify({'meta_data': {'message': 'Successfully logged out'}})
         unset_jwt_cookies(resp)
         return resp, 200
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
         return resp, 400
+
 
 @app.route('/refresh', methods=['POST'], strict_slashes=False)
 @app.route('/allure-docker-service/refresh', methods=['POST'], strict_slashes=False)
@@ -661,7 +688,7 @@ def refresh_endpoint():
     if ENABLE_SECURITY_LOGIN is False:
         body = {
             'meta_data': {
-                'message' : 'SECURITY is not enabled'
+                'message': 'SECURITY is not enabled'
             }
         }
         resp = jsonify(body)
@@ -678,7 +705,7 @@ def refresh_endpoint():
                 'roles': USERS_INFO[username]['roles']
             },
             'meta_data': {
-                'message' : 'Successfully token obtained'
+                'message': 'Successfully token obtained'
             }
         }
         resp = jsonify(json_body)
@@ -687,11 +714,13 @@ def refresh_endpoint():
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
         return resp, 400
+
+
 ### end Security Endpoints Section
 
 @app.route("/swagger.json")
@@ -704,7 +733,7 @@ def swagger_json_endpoint():
 
         if URL_PREFIX:
             spec = get_file_as_string("{}/swagger/{}".format(STATIC_CONTENT, specification_file))
-            spec_json = eval(spec) #pylint: disable=eval-used
+            spec_json = eval(spec)  # pylint: disable=eval-used
             server_url = spec_json['servers'][0]['url']
             spec_json['servers'][0]['url'] = '{}{}'.format(URL_PREFIX, server_url)
             return jsonify(spec_json)
@@ -714,12 +743,13 @@ def swagger_json_endpoint():
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
         resp.status_code = 400
         return resp
+
 
 @app.route("/version", strict_slashes=False)
 @app.route("/allure-docker-service/version", strict_slashes=False)
@@ -729,7 +759,7 @@ def version_endpoint():
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
@@ -740,12 +770,13 @@ def version_endpoint():
                 'version': version
             },
             'meta_data': {
-                'message' : "Version successfully obtained"
+                'message': "Version successfully obtained"
             }
         }
         resp = jsonify(body)
         resp.status_code = 200
     return resp
+
 
 @app.route("/config", strict_slashes=False)
 @app.route("/allure-docker-service/config", strict_slashes=False)
@@ -790,6 +821,7 @@ def config_endpoint():
         resp = jsonify(body)
         resp.status_code = 400
         return resp
+
 
 @app.route("/select-language", strict_slashes=False)
 @app.route("/allure-docker-service/select-language", strict_slashes=False)
@@ -844,6 +876,7 @@ def latest_report_endpoint():
         resp = jsonify(body)
         resp.status_code = 400
         return resp
+
 
 @app.route("/send-results", methods=['POST'], strict_slashes=False)
 @app.route("/allure-docker-service/send-results", methods=['POST'], strict_slashes=False)
@@ -1001,7 +1034,7 @@ def generate_report_endpoint():
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
@@ -1014,8 +1047,8 @@ def generate_report_endpoint():
                     'allure_results_files': files
                 },
                 'meta_data': {
-                    'message' : "Report successfully generated for project_id '{}'"
-                                .format(project_id)
+                    'message': "Report successfully generated for project_id '{}'"
+                        .format(project_id)
                 }
             }
         else:
@@ -1024,8 +1057,8 @@ def generate_report_endpoint():
                     'report_url': report_url
                 },
                 'meta_data': {
-                    'message' : "Report successfully generated for project_id '{}'"
-                                .format(project_id)
+                    'message': "Report successfully generated for project_id '{}'"
+                        .format(project_id)
                 }
             }
 
@@ -1034,19 +1067,20 @@ def generate_report_endpoint():
 
     return resp
 
+
 @app.route("/clean-history", strict_slashes=False)
 @app.route("/allure-docker-service/clean-history", strict_slashes=False)
 @jwt_required
 def clean_history_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+            return jsonify({'meta_data': {'message': 'Access Forbidden'}}), 403
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
             body = {
                 'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
+                    'message': "project_id '{}' not found".format(project_id)
                 }
             }
             resp = jsonify(body)
@@ -1059,7 +1093,7 @@ def clean_history_endpoint():
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
@@ -1067,7 +1101,7 @@ def clean_history_endpoint():
     else:
         body = {
             'meta_data': {
-                'message' : "History successfully cleaned for project_id '{}'".format(project_id)
+                'message': "History successfully cleaned for project_id '{}'".format(project_id)
             }
         }
         resp = jsonify(body)
@@ -1075,19 +1109,20 @@ def clean_history_endpoint():
 
     return resp
 
+
 @app.route("/clean-results", strict_slashes=False)
 @app.route("/allure-docker-service/clean-results", strict_slashes=False)
 @jwt_required
 def clean_results_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+            return jsonify({'meta_data': {'message': 'Access Forbidden'}}), 403
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
             body = {
                 'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
+                    'message': "project_id '{}' not found".format(project_id)
                 }
             }
             resp = jsonify(body)
@@ -1101,7 +1136,7 @@ def clean_results_endpoint():
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
@@ -1109,13 +1144,14 @@ def clean_results_endpoint():
     else:
         body = {
             'meta_data': {
-                'message' : "Results successfully cleaned for project_id '{}'".format(project_id)
+                'message': "Results successfully cleaned for project_id '{}'".format(project_id)
             }
         }
         resp = jsonify(body)
         resp.status_code = 200
 
     return resp
+
 
 @app.route("/emailable-report/render", strict_slashes=False)
 @app.route("/allure-docker-service/emailable-report/render", strict_slashes=False)
@@ -1126,7 +1162,7 @@ def emailable_report_render_endpoint():
         if is_existent_project(project_id) is False:
             body = {
                 'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
+                    'message': "project_id '{}' not found".format(project_id)
                 }
             }
             resp = jsonify(body)
@@ -1170,7 +1206,7 @@ def emailable_report_render_endpoint():
     except Exception as ex:
         body = {
             'meta_data': {
-                'message' : str(ex)
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
@@ -1178,6 +1214,7 @@ def emailable_report_render_endpoint():
         return resp
     else:
         return report
+
 
 @app.route("/emailable-report/export", strict_slashes=False)
 @app.route("/allure-docker-service/emailable-report/export", strict_slashes=False)
@@ -1188,7 +1225,7 @@ def emailable_report_export_endpoint():
         if is_existent_project(project_id) is False:
             body = {
                 'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
+                    'message': "project_id '{}' not found".format(project_id)
                 }
             }
             resp = jsonify(body)
@@ -1206,7 +1243,7 @@ def emailable_report_export_endpoint():
 
         body = {
             'meta_data': {
-                'message' : message
+                'message': message
             }
         }
         resp = jsonify(body)
@@ -1214,6 +1251,7 @@ def emailable_report_export_endpoint():
         return resp
     else:
         return report
+
 
 @app.route("/report/export", strict_slashes=False)
 @app.route("/allure-docker-service/report/export", strict_slashes=False)
@@ -1224,7 +1262,7 @@ def report_export_endpoint():
         if is_existent_project(project_id) is False:
             body = {
                 'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
+                    'message': "project_id '{}' not found".format(project_id)
                 }
             }
             resp = jsonify(body)
@@ -1232,7 +1270,7 @@ def report_export_endpoint():
             return resp
 
         check_process(GENERATE_REPORT_PROCESS, project_id)
-
+        call([COMBINE_PROCESS])
         project_path = get_project_path(project_id)
         tmp_report = '{}/allure-report'.format(tempfile.mkdtemp())
         shutil.copytree('{}/reports/latest'.format(project_path), tmp_report)
@@ -1597,10 +1635,12 @@ def create_project(json_body):
 
     return project_id
 
+
 def is_existent_project(project_id):
     if not project_id.strip():
         return False
     return os.path.isdir(get_project_path(project_id))
+
 
 def get_projects(projects_dirs):
     projects = {}
@@ -1614,6 +1654,7 @@ def get_projects(projects_dirs):
             projects[project_name] = project
     return projects
 
+
 def get_projects_filtered_by_id(project_id, projects):
     filtered_projects = []
     for project_name in projects:
@@ -1621,8 +1662,10 @@ def get_projects_filtered_by_id(project_id, projects):
             filtered_projects.append(project_name)
     return filtered_projects
 
+
 def get_project_path(project_id):
     return '{}/{}'.format(PROJECTS_DIRECTORY, project_id)
+
 
 def resolve_project(project_id_param):
     project_id = 'default'
@@ -1630,11 +1673,13 @@ def resolve_project(project_id_param):
         project_id = project_id_param
     return project_id
 
+
 def check_admin_access(user):
     if ENABLE_SECURITY_LOGIN is False:
         return True
 
     return check_access(ADMIN_ROLE_NAME, user)
+
 
 def check_access(role, user):
     if user.roles is None:
