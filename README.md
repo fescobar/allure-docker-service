@@ -4,6 +4,7 @@
 # ALLURE DOCKER SERVICE
 [![](https://github.com/fescobar/allure-docker-service/actions/workflows/docker-publish.yml/badge.svg?branch=master)](https://github.com/fescobar/allure-docker-service/actions?query=branch%3Amaster)
 
+![](https://img.shields.io/docker/pulls/frankescobar/allure-docker-service)
 
 Table of contents
 =================
