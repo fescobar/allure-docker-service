@@ -26,7 +26,6 @@ SSL_VERIFICATION = True
 current_directory = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger(__name__)
 results_directory = current_directory + ALLURE_RESULTS_DIRECTORY
-
 logger.info('RESULTS DIRECTORY PATH: %s', results_directory)
 
 
