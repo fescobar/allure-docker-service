@@ -12,16 +12,19 @@ ARG GID=1000
 ######
 
 FROM python:3.6-alpine AS dev_stage
-RUN apk update
-RUN apk add build-base
-RUN pip install -U pylint
-RUN pip install -Iv setuptools==47.1.1 wheel==0.34.2 waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.24.1 flask-swagger-ui==3.36.0 requests==2.23.0
-
 ENV ROOT_DIR=/code
 RUN mkdir -p $ROOT_DIR
 WORKDIR $ROOT_DIR
 COPY allure-docker-api $ROOT_DIR/allure-docker-api
+
+RUN apk update
+RUN apk add build-base
+RUN python -m pip install --upgrade pip && \
+    pip install -U pylint
+
+# Install requirements one-by-one to avoid ModuleNotFoundError 
+RUN grep -v '^#' allure-docker-api/requirements.txt | xargs -n1 pip install
+
 RUN pylint --rcfile=allure-docker-api/.pylintrc allure-docker-api
 
 ######
@@ -62,9 +65,7 @@ RUN apt-get update && \
       python3-dev \
       unzip && \
     ln -s `which python3` /usr/bin/python && \
-    pip3 install --upgrade pip && \
-    pip install -Iv setuptools==47.1.1 wheel==0.34.2 waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.25.0 flask-swagger-ui==3.36.0 requests==2.23.0 && \
+    python -m pip install --upgrade pip && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
@@ -105,6 +106,10 @@ RUN echo -n $(allure --version) > ${ALLURE_VERSION} && \
 WORKDIR $ROOT
 COPY --chown=allure:allure allure-docker-api $ROOT/allure-docker-api
 COPY --chown=allure:allure allure-docker-scripts $ROOT/
+
+# Install requirements one-by-one to avoid ModuleNotFoundError 
+RUN grep -v '^#' allure-docker-api/requirements.txt | xargs -n1 pip install
+
 RUN chmod +x $ROOT/*.sh && \
     mkdir $RESULTS_DIRECTORY && \
     mkdir -p $DEFAULT_PROJECT_REPORTS/latest && \
