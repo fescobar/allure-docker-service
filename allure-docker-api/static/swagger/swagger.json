@@ -280,7 +280,7 @@
             "tags":[
                "Action"
             ],
-            "summary":"Returns the last report generation status",
+            "summary":"Returns the last asynchronous report generation status",
             "parameters":[
                {
                   "in":"query",
