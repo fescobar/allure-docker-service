@@ -1,6 +1,7 @@
 #pylint: disable=too-many-lines
 from logging.config import dictConfig
 from functools import wraps
+from pathlib import Path
 from subprocess import call
 import base64
 import datetime
@@ -23,8 +24,8 @@ from flask import (
 from flask.logging import create_logger
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_jwt_extended import (
-    JWTManager, create_access_token, create_refresh_token, current_user, get_jwt_identity, verify_jwt_in_request,
-    get_jwt, set_access_cookies, set_refresh_cookies, unset_jwt_cookies
+    JWTManager, create_access_token, create_refresh_token, current_user, get_jwt_identity,
+    verify_jwt_in_request, get_jwt, set_access_cookies, set_refresh_cookies, unset_jwt_cookies
 )
 
 dictConfig({
@@ -75,7 +76,7 @@ app.config['JWT_REFRESH_TOKEN_EXPIRES'] = False
 
 DEV_MODE = 0
 HOST = '0.0.0.0'
-PORT = os.environ['PORT']
+PORT = int(os.environ['PORT']) if os.environ['PORT'] else None
 THREADS = 7
 URL_SCHEME = 'http'
 URL_PREFIX = ''
@@ -137,6 +138,9 @@ PROTECTED_ENDPOINTS = [
     }
 ]
 
+REDIRECT_OUTPUT = '>'
+PROCESS_CHAIN = '&&'
+BACKGROUND_LOG_FILE_PATTERN = '{}/report_{}.log'
 GENERATE_REPORT_PROCESS = '{}/generateAllureReport.sh'.format(os.environ['ROOT'])
 KEEP_HISTORY_PROCESS = '{}/keepAllureHistory.sh'.format(os.environ['ROOT'])
 CLEAN_HISTORY_PROCESS = '{}/cleanAllureHistory.sh'.format(os.environ['ROOT'])
@@ -452,7 +456,7 @@ if ENABLE_SECURITY_LOGIN:
 blacklist = set() #pylint: disable=invalid-name
 jwt = JWTManager(app) #pylint: disable=invalid-name
 
-@jwt.token_in_blacklist_loader
+@jwt.token_in_blocklist_loader
 def check_if_token_in_blacklist(decrypted_token):
     jti = decrypted_token['jti']
     return jti in blacklist
@@ -509,7 +513,7 @@ def jwt_refresh_token_required(fn): #pylint: disable=invalid-name, function-rede
         return fn(*args, **kwargs)
     return wrapper
 
-@jwt.user_loader_callback_loader
+@jwt.user_lookup_loader
 def user_loader_callback(identity):
     if identity not in USERS_INFO:
         return None
@@ -565,7 +569,7 @@ def login_endpoint():
             return get_response('SECURITY is not enabled', 404)
 
         content_type = str(request.content_type)
-        if content_type is None and content_type.startswith('application/json') is False:
+        if content_type is None or not content_type.startswith('application/json'):
             raise Exception("Header 'Content-Type' must be 'application/json'")
 
         if not request.is_json:
@@ -786,19 +790,25 @@ ACCESS_FORBIDDEN_RESPONSE = get_response('Access Forbidden', 403)
 @app.route("/allure-docker-service/send-results", methods=['POST'], strict_slashes=False)
 @jwt_required
 def send_results_endpoint(): #pylint: disable=too-many-branches
+    files = None
+    current_files_count = None
+    processed_files_count = None
+    sent_files_count = None
     try:
         if check_admin_access(current_user) is False:
             return ACCESS_FORBIDDEN_RESPONSE
 
         content_type = str(request.content_type)
         if content_type is None:
-            raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data'") #pylint: disable=line-too-long
+            raise Exception("Header 'Content-Type' should start with "
+                            "'application/json' or 'multipart/form-data'")
 
         if (
                 content_type.startswith('application/json') is False and
                 content_type.startswith('multipart/form-data') is False
             ):
-            raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data'") #pylint: disable=line-too-long
+            raise Exception("Header 'Content-Type' should start with "
+                            "'application/json' or 'multipart/form-data'")
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
@@ -918,7 +928,7 @@ def generate_report_endpoint():
     except Exception as ex:
         resp = get_error_response(ex)
     else:
-        if files is not None:
+        if files:
             body = {
                 'data': {
                     'report_url': report_url,
@@ -944,6 +954,127 @@ def generate_report_endpoint():
         resp.status_code = 200
 
     return resp
+
+
+ALLURE_BASE_PATH = '/allure-docker-service'
+ASYNC_REPORT_GENERATE_PATH = '/generate-report/async'
+
+
+@app.route(ASYNC_REPORT_GENERATE_PATH, strict_slashes=False, methods=['POST'])
+@app.route(ALLURE_BASE_PATH + ASYNC_REPORT_GENERATE_PATH, strict_slashes=False, methods=['POST'])
+@jwt_required
+def generate_report_start_async_endpoint():
+    try:
+        if check_admin_access(current_user) is False:
+            return ACCESS_FORBIDDEN_RESPONSE
+
+        project_id = resolve_project(request.args.get('project_id'))
+        if is_existent_project(project_id) is False:
+            return get_project_not_found_response(project_id)
+
+        files = None
+        project_path = get_project_path(project_id)
+        results_project = '{}/results'.format(project_path)
+
+        if API_RESPONSE_LESS_VERBOSE != 1:
+            files = os.listdir(results_project)
+
+        execution_name = request.args.get('execution_name')
+        if execution_name is None or not execution_name:
+            execution_name = 'Execution On Demand'
+
+        execution_from = request.args.get('execution_from')
+        if execution_from is None or not execution_from:
+            execution_from = ''
+
+        execution_type = request.args.get('execution_type')
+        if execution_type is None or not execution_type:
+            execution_type = ''
+
+        check_process(KEEP_HISTORY_PROCESS, project_id)
+        check_process(GENERATE_REPORT_PROCESS, project_id)
+
+        exec_store_results_process = '1'
+
+        call([KEEP_HISTORY_PROCESS, project_id, ORIGIN])
+        subprocess.Popen([
+            " ".join([GENERATE_REPORT_PROCESS, exec_store_results_process, project_id, ORIGIN,
+                      execution_name, execution_from, execution_type, REDIRECT_OUTPUT,
+                      BACKGROUND_LOG_FILE_PATTERN.format(project_path, project_id), PROCESS_CHAIN,
+                      RENDER_EMAIL_REPORT_PROCESS, project_id, ORIGIN])],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as ex:
+        resp = get_error_response(ex)
+    else:
+        body = {
+            'meta_data': {
+                'message': "Report successfully submitted for generation for project_id '{}'"
+                    .format(project_id)
+            }
+        }
+        if files:
+            body['data'] = {'allure_results_files': files}
+
+        resp = jsonify(body)
+        resp.status_code = 202
+    return resp
+
+
+@app.route(ASYNC_REPORT_GENERATE_PATH, strict_slashes=False, methods=['GET'])
+@app.route(ALLURE_BASE_PATH + ASYNC_REPORT_GENERATE_PATH, strict_slashes=False, methods=['GET'])
+@jwt_required
+def get_async_report_status_endpoint():
+    try:
+        if check_admin_access(current_user) is False:
+            return ACCESS_FORBIDDEN_RESPONSE
+
+        project_id = resolve_project(request.args.get('project_id'))
+        if is_existent_project(project_id) is False:
+            return get_project_not_found_response(project_id)
+        if is_process_running(GENERATE_REPORT_PROCESS, project_id) \
+                or is_process_running(RENDER_EMAIL_REPORT_PROCESS, project_id):
+            body = {
+                'meta_data': {
+                    'message': "Report generation is still running for project_id '{}'"
+                        .format(project_id)
+                }
+            }
+            resp = jsonify(body)
+            resp.status_code = 102
+            return resp
+
+        project_path = get_project_path(project_id)
+        result_file = BACKGROUND_LOG_FILE_PATTERN.format(project_path, project_id)
+        result_file_path = Path(result_file)
+        if not result_file_path.is_file():
+            return get_response("Unable to locate async job for project_id '{}'"
+                                .format(project_id), 404)
+
+        with open(BACKGROUND_LOG_FILE_PATTERN.format(project_path, project_id), 'r') as file:
+            file_lines = file.readlines()
+
+        build_order = 'latest'
+        for line in file_lines:
+            if line.startswith("BUILD_ORDER"):
+                build_order = line[line.index(':') + 1: len(line)]
+
+        report_url = url_for('get_reports_endpoint', project_id=project_id,
+                             path='{}/index.html'.format(build_order), _external=True)
+        body = {
+            'data': {
+                'report_url': report_url
+            },
+            'meta_data': {
+                'message': "Report successfully generated for project_id '{}'".format(project_id)
+            }
+        }
+
+        resp = jsonify(body)
+        resp.status_code = 200
+        return resp
+    except Exception as ex:
+        return get_error_response(ex)
+
 
 @app.route("/clean-history", strict_slashes=False)
 @app.route("/allure-docker-service/clean-history", strict_slashes=False)
@@ -1277,8 +1408,8 @@ def get_projects_search_endpoint():
 @app.route("/allure-docker-service/projects/<project_id>/reports/<path:path>")
 @jwt_required
 def get_reports_endpoint(project_id, path):
+    project_path = '{}/reports/{}'.format(project_id, path)
     try:
-        project_path = '{}/reports/{}'.format(project_id, path)
         return send_from_directory(PROJECTS_DIRECTORY, project_path)
     except Exception:
         if request.args.get('redirect') == 'false':
@@ -1311,8 +1442,7 @@ def validate_json_results(results):
     validated_results = []
     for result in results:
         file_name = result.get('file_name')
-        validated_result = {}
-        validated_result['file_name'] = file_name
+        validated_result = {'file_name': file_name}
 
         if 'content_base64' not in result or not result['content_base64'].strip():
             raise Exception("'content_base64' attribute is required for '{}' file"
@@ -1331,13 +1461,11 @@ def validate_json_results(results):
 
 def send_files_results(results_project, validated_results, processed_files, failed_files):
     for file in validated_results:
+        file_name = secure_filename(file.filename)
         try:
-            file_name = secure_filename(file.filename)
             file.save("{}/{}".format(results_project, file_name))
         except Exception as ex:
-            error = {}
-            error['message'] = str(ex)
-            error['file_name'] = file_name
+            error = {'message': str(ex), 'file_name': file_name}
             failed_files.append(error)
         else:
             processed_files.append(file_name)
@@ -1351,9 +1479,7 @@ def send_json_results(results_project, validated_results, processed_files, faile
             file = open("%s/%s" % (results_project, file_name), "wb")
             file.write(content_base64)
         except Exception as ex:
-            error = {}
-            error['message'] = str(ex)
-            error['file_name'] = file_name
+            error = {'message': str(ex), 'file_name': file_name}
             failed_files.append(error)
         else:
             processed_files.append(file_name)
@@ -1377,7 +1503,8 @@ def create_project(json_body):
     project_id_pattern = re.compile('^[a-z\\d]([a-z\\d -]*[a-z\\d])?$')
     match = project_id_pattern.match(json_body['id'])
     if  match is None:
-        raise Exception("'id' should contains alphanumeric lowercase characters or hyphens. For example: 'my-project-id'") #pylint: disable=line-too-long
+        raise Exception("'id' should contains alphanumeric lowercase characters or hyphens. "
+                        "For example: 'my-project-id'")
 
     project_id = json_body['id']
     if is_existent_project(project_id) is True:
@@ -1408,10 +1535,9 @@ def get_projects(projects_dirs):
     for project_name in projects_dirs:
         is_dir = os.path.isdir('{}/{}'.format(PROJECTS_DIRECTORY, project_name))
         if is_dir is True:
-            project = {}
-            project['uri'] = url_for('get_project_endpoint',
-                                     project_id=project_name,
-                                     _external=True)
+            project = {'uri': url_for('get_project_endpoint',
+                                      project_id=project_name,
+                                      _external=True)}
             projects[project_name] = project
     return projects
 
@@ -1446,12 +1572,18 @@ def check_access(role, user):
 
     return False
 
-def check_process(process_file, project_id):
+
+def is_process_running(process_file, project_id):
     tmp = os.popen('ps -Af | grep -w {}'.format(project_id)).read()
     proccount = tmp.count(process_file)
 
-    if proccount > 0:
+    return proccount > 0
+
+
+def check_process(process_file, project_id):
+    if is_process_running(process_file, project_id):
         raise Exception("Processing files for project_id '{}'. Try later!".format(project_id))
+
 
 if __name__ == '__main__':
     if DEV_MODE == 1:

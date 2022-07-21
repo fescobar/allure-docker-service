@@ -218,11 +218,104 @@
          }
       },
       "/generate-report":{
-         "get":{
+         "get": {
             "tags":[
                "Action"
             ],
             "summary":"Generate new report",
+            "parameters":[
+               {
+                  "in":"query",
+                  "name":"project_id",
+                  "schema":{
+                     "type":"string"
+                  }
+               },
+               {
+                  "in":"query",
+                  "name":"execution_name",
+                  "schema":{
+                     "type":"string"
+                  }
+               },
+               {
+                  "in":"query",
+                  "name":"execution_from",
+                  "schema":{
+                     "type":"string"
+                  }
+               },
+               {
+                  "in":"query",
+                  "name":"execution_type",
+                  "schema":{
+                     "type":"string"
+                  }
+               }
+            ],
+            "responses":{
+               "200":{
+                  "description":"OK",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "400":{
+                  "description":"BAD_REQUEST",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "404":{
+                  "description":"NOT_FOUND",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               }
+            }
+         }
+      },
+      "/generate-report/async":{
+         "get":{
+            "tags":[
+               "Action"
+            ],
+            "summary":"Returns the last report generation status",
+            "parameters":[
+               {
+                  "in":"query",
+                  "name":"project_id",
+                  "schema":{
+                     "type":"string"
+                  }
+               }
+            ],
+            "responses":{
+               "200":{
+                  "description":"OK",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "400":{
+                  "description":"BAD_REQUEST",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "404":{
+                  "description":"NOT_FOUND",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               }
+            }
+         },
+         "post": {
+            "tags":[
+               "Action"
+            ],
+            "summary":"Generate new report in asynchronous mode (return response immediately)",
             "parameters":[
                {
                   "in":"query",
