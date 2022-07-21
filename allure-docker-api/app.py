@@ -19,6 +19,7 @@ from flask import (
     Flask, jsonify, render_template, redirect,
     request, send_file, send_from_directory, make_response, url_for
 )
+
 from flask.logging import create_logger
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_jwt_extended import (
@@ -539,19 +540,29 @@ def after_request_func(response):
     return response
 ### end CORS section
 
+
+def get_response(message, status_code):
+    body = {
+        'meta_data': {
+            'message': str(message)
+        }
+    }
+    resp = jsonify(body)
+    resp.status_code = status_code
+    return resp
+
+
+def get_error_response(exception):
+    return get_response(exception, 400)
+
+
 ### Security Endpoints Section
 @app.route('/login', methods=['POST'], strict_slashes=False)
 @app.route('/allure-docker-service/login', methods=['POST'], strict_slashes=False)
 def login_endpoint():
     try:
         if ENABLE_SECURITY_LOGIN is False:
-            body = {
-                'meta_data': {
-                    'message' : 'SECURITY is not enabled'
-                }
-            }
-            resp = jsonify(body)
-            return resp, 404
+            return get_response('SECURITY is not enabled', 404)
 
         content_type = str(request.content_type)
         if content_type is None and content_type.startswith('application/json') is False:
@@ -593,51 +604,27 @@ def login_endpoint():
         set_refresh_cookies(resp, refresh_token)
         return resp, 200
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        return resp, 400
+        return get_error_response(ex)
 
 @app.route('/logout', methods=['DELETE'], strict_slashes=False)
 @app.route('/allure-docker-service/logout', methods=['DELETE'], strict_slashes=False)
 @jwt_required
 def logout_endpoint():
     if ENABLE_SECURITY_LOGIN is False:
-        body = {
-            'meta_data': {
-                'message' : 'SECURITY is not enabled'
-            }
-        }
-        resp = jsonify(body)
-        return resp, 404
+        return get_response('SECURITY is not enabled', 404)
     try:
         jti = get_jwt()['jti']
         blacklist.add(jti)
-        return jsonify({'meta_data': {'message' : 'Successfully logged out'}}), 200
+        return get_response('Successfully logged out', 200)
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        return resp, 400
+        return get_error_response(ex)
 
 @app.route('/logout-refresh-token', methods=['DELETE'], strict_slashes=False)
 @app.route('/allure-docker-service/logout-refresh-token', methods=['DELETE'], strict_slashes=False)
 @jwt_refresh_token_required
 def logout_refresh_token_endpoint():
     if ENABLE_SECURITY_LOGIN is False:
-        body = {
-            'meta_data': {
-                'message' : 'SECURITY is not enabled'
-            }
-        }
-        resp = jsonify(body)
-        return resp, 404
+        return get_response('SECURITY is not enabled', 404)
     try:
         jti = get_jwt()['jti']
         blacklist.add(jti)
@@ -645,26 +632,14 @@ def logout_refresh_token_endpoint():
         unset_jwt_cookies(resp)
         return resp, 200
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        return resp, 400
+        return get_error_response(ex)
 
 @app.route('/refresh', methods=['POST'], strict_slashes=False)
 @app.route('/allure-docker-service/refresh', methods=['POST'], strict_slashes=False)
 @jwt_refresh_token_required
 def refresh_endpoint():
     if ENABLE_SECURITY_LOGIN is False:
-        body = {
-            'meta_data': {
-                'message' : 'SECURITY is not enabled'
-            }
-        }
-        resp = jsonify(body)
-        return resp, 404
+        return get_response('SECURITY is not enabled', 404)
     try:
         username = get_jwt_identity()
         access_token = create_access_token(identity=username)
@@ -684,13 +659,7 @@ def refresh_endpoint():
         set_access_cookies(resp, access_token)
         return resp, 200
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        return resp, 400
+        return get_error_response(ex)
 ### end Security Endpoints Section
 
 @app.route("/swagger.json")
@@ -711,14 +680,8 @@ def swagger_json_endpoint():
         return send_file("{}/swagger/{}"
                          .format(STATIC_CONTENT, specification_file), mimetype='application/json')
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
+
 
 @app.route("/version", strict_slashes=False)
 @app.route("/allure-docker-service/version", strict_slashes=False)
@@ -726,13 +689,7 @@ def version_endpoint():
     try:
         version = get_file_as_string(ALLURE_VERSION).strip()
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
+        resp = get_error_response(ex)
     else:
         body = {
             'data': {
@@ -781,14 +738,7 @@ def config_endpoint():
         resp.status_code = 200
         return resp
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
 
 @app.route("/select-language", strict_slashes=False)
 @app.route("/allure-docker-service/select-language", strict_slashes=False)
@@ -805,14 +755,12 @@ def select_language_endpoint():
 
         return render_template(LANGUAGE_TEMPLATE, languageCode=code, css=GLOBAL_CSS)
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
+
+
+def get_project_not_found_response(project_id):
+    return get_response("project_id '{}' not found".format(project_id), 404)
+
 
 @app.route("/latest-report", strict_slashes=False)
 @app.route("/allure-docker-service/latest-report", strict_slashes=False)
@@ -821,28 +769,18 @@ def latest_report_endpoint():
     try:
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         project_report_latest_path = '/latest/{}'.format(REPORT_INDEX_FILE)
         url = url_for('get_reports_endpoint', project_id=project_id,
                       path=project_report_latest_path, redirect='false', _external=True)
         return redirect(url)
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
+
+
+ACCESS_FORBIDDEN_RESPONSE = get_response('Access Forbidden', 403)
+
 
 @app.route("/send-results", methods=['POST'], strict_slashes=False)
 @app.route("/allure-docker-service/send-results", methods=['POST'], strict_slashes=False)
@@ -850,7 +788,7 @@ def latest_report_endpoint():
 def send_results_endpoint(): #pylint: disable=too-many-branches
     try:
         if check_admin_access(current_user) is False:
-            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+            return ACCESS_FORBIDDEN_RESPONSE
 
         content_type = str(request.content_type)
         if content_type is None:
@@ -867,14 +805,7 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
             if request.args.get('force_project_creation') == 'true':
                 project_id = create_project({ "id": project_id })
             else:
-                body = {
-                    'meta_data': {
-                        'message' : "project_id '{}' not found".format(project_id)
-                    }
-                }
-                resp = jsonify(body)
-                resp.status_code = 404
-                return resp
+                return get_project_not_found_response(project_id)
 
         validated_results = []
         processed_files = []
@@ -905,13 +836,7 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
             processed_files_count = len(processed_files)
 
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
+        resp = get_error_response(ex)
     else:
         if API_RESPONSE_LESS_VERBOSE != 1:
             body = {
@@ -946,18 +871,11 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
 def generate_report_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+            return ACCESS_FORBIDDEN_RESPONSE
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         files = None
         project_path = get_project_path(project_id)
@@ -998,13 +916,7 @@ def generate_report_endpoint():
         report_url = url_for('get_reports_endpoint', project_id=project_id,
                              path='{}/index.html'.format(build_order), _external=True)
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
+        resp = get_error_response(ex)
     else:
         if files is not None:
             body = {
@@ -1039,30 +951,17 @@ def generate_report_endpoint():
 def clean_history_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+            return ACCESS_FORBIDDEN_RESPONSE
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         check_process(CLEAN_HISTORY_PROCESS, project_id)
 
         call([CLEAN_HISTORY_PROCESS, project_id, ORIGIN])
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
+        resp = get_error_response(ex)
     else:
         body = {
             'meta_data': {
@@ -1080,31 +979,18 @@ def clean_history_endpoint():
 def clean_results_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+            return ACCESS_FORBIDDEN_RESPONSE
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         check_process(GENERATE_REPORT_PROCESS, project_id)
         check_process(CLEAN_RESULTS_PROCESS, project_id)
 
         call([CLEAN_RESULTS_PROCESS, project_id, ORIGIN])
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
+        resp = get_error_response(ex)
     else:
         body = {
             'meta_data': {
@@ -1123,14 +1009,7 @@ def emailable_report_render_endpoint():
     try:
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         check_process(GENERATE_REPORT_PROCESS, project_id)
 
@@ -1167,14 +1046,7 @@ def emailable_report_render_endpoint():
             if file is not None:
                 file.close()
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
     else:
         return report
 
@@ -1185,14 +1057,7 @@ def emailable_report_export_endpoint():
     try:
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         check_process(GENERATE_REPORT_PROCESS, project_id)
 
@@ -1201,16 +1066,7 @@ def emailable_report_export_endpoint():
 
         report = send_file(emailable_report_path, as_attachment=True)
     except Exception as ex:
-        message = str(ex)
-
-        body = {
-            'meta_data': {
-                'message' : message
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
     else:
         return report
 
@@ -1221,14 +1077,7 @@ def report_export_endpoint():
     try:
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         check_process(GENERATE_REPORT_PROCESS, project_id)
 
@@ -1255,14 +1104,7 @@ def report_export_endpoint():
             attachment_filename='allure-docker-service-report.zip'
         )
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
 
 @app.route("/projects", methods=['POST'], strict_slashes=False)
 @app.route("/allure-docker-service/projects", methods=['POST'], strict_slashes=False)
@@ -1270,20 +1112,14 @@ def report_export_endpoint():
 def create_project_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+            return ACCESS_FORBIDDEN_RESPONSE
 
         if not request.is_json:
             raise Exception("Header 'Content-Type' is not 'application/json'")
 
         project_id = create_project(request.get_json())
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
+        resp = get_error_response(ex)
     else:
         body = {
             'data': {
@@ -1303,31 +1139,18 @@ def create_project_endpoint():
 def delete_project_endpoint(project_id):
     try:
         if check_admin_access(current_user) is False:
-            return jsonify({ 'meta_data': { 'message': 'Access Forbidden' } }), 403
+            return ACCESS_FORBIDDEN_RESPONSE
 
         if project_id == 'default':
             raise Exception("You must not remove project_id 'default'. Try with other projects")
 
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         project_path = get_project_path(project_id)
         shutil.rmtree(project_path)
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
+        resp = get_error_response(ex)
     else:
         body = {
             'meta_data': {
@@ -1344,14 +1167,7 @@ def delete_project_endpoint(project_id):
 def get_project_endpoint(project_id):
     try:
         if is_existent_project(project_id) is False:
-            body = {
-                'meta_data': {
-                    'message' : "project_id '{}' not found".format(project_id)
-                }
-            }
-            resp = jsonify(body)
-            resp.status_code = 404
-            return resp
+            return get_project_not_found_response(project_id)
 
         project_reports_path = '{}/reports'.format(get_project_path(project_id))
         reports_entity = []
@@ -1396,14 +1212,7 @@ def get_project_endpoint(project_id):
         resp.status_code = 200
         return resp
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
 
 @app.route('/projects', strict_slashes=False)
 @app.route("/allure-docker-service/projects", strict_slashes=False)
@@ -1448,7 +1257,7 @@ def get_projects_search_endpoint():
         projects = get_projects(projects_filtered)
 
         if len(projects) == 0:
-            return jsonify({'meta_data': {'message': 'Project not found'}}), 404
+            return get_project_not_found_response(project_id)
 
         body = {
             'data': {
@@ -1462,14 +1271,7 @@ def get_projects_search_endpoint():
         resp.status_code = 200
         return resp
     except Exception as ex:
-        body = {
-            'meta_data': {
-                'message' : str(ex)
-            }
-        }
-        resp = jsonify(body)
-        resp.status_code = 400
-        return resp
+        return get_error_response(ex)
 
 @app.route('/projects/<project_id>/reports/<path:path>')
 @app.route("/allure-docker-service/projects/<project_id>/reports/<path:path>")
