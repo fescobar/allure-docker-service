@@ -22,9 +22,8 @@ from flask import (
 from flask.logging import create_logger
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token, create_refresh_token, current_user,
-    get_jwt_identity, verify_jwt_in_request, jwt_refresh_token_required, get_raw_jwt,
-    set_access_cookies, set_refresh_cookies, unset_jwt_cookies, verify_jwt_refresh_token_in_request
+    JWTManager, create_access_token, create_refresh_token, current_user, get_jwt_identity, verify_jwt_in_request,
+    get_raw_jwt, set_access_cookies, set_refresh_cookies, unset_jwt_cookies, verify_jwt_refresh_token_in_request
 )
 
 dictConfig({
