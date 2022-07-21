@@ -783,7 +783,8 @@ def latest_report_endpoint():
         return get_error_response(ex)
 
 
-ACCESS_FORBIDDEN_RESPONSE = get_response('Access Forbidden', 403)
+def get_access_forbidden_response():
+    return get_response('Access Forbidden', 403)
 
 
 @app.route("/send-results", methods=['POST'], strict_slashes=False)
@@ -796,7 +797,7 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
     sent_files_count = None
     try:
         if check_admin_access(current_user) is False:
-            return ACCESS_FORBIDDEN_RESPONSE
+            return get_access_forbidden_response()
 
         content_type = str(request.content_type)
         if content_type is None:
@@ -881,7 +882,7 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
 def generate_report_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return ACCESS_FORBIDDEN_RESPONSE
+            return get_access_forbidden_response()
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
@@ -966,7 +967,7 @@ ASYNC_REPORT_GENERATE_PATH = '/generate-report/async'
 def generate_report_start_async_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return ACCESS_FORBIDDEN_RESPONSE
+            return get_access_forbidden_response()
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
@@ -1026,7 +1027,7 @@ def generate_report_start_async_endpoint():
 def get_async_report_status_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return ACCESS_FORBIDDEN_RESPONSE
+            return get_access_forbidden_response()
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
@@ -1082,7 +1083,7 @@ def get_async_report_status_endpoint():
 def clean_history_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return ACCESS_FORBIDDEN_RESPONSE
+            return get_access_forbidden_response()
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
@@ -1110,7 +1111,7 @@ def clean_history_endpoint():
 def clean_results_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return ACCESS_FORBIDDEN_RESPONSE
+            return get_access_forbidden_response()
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
@@ -1243,7 +1244,7 @@ def report_export_endpoint():
 def create_project_endpoint():
     try:
         if check_admin_access(current_user) is False:
-            return ACCESS_FORBIDDEN_RESPONSE
+            return get_access_forbidden_response()
 
         if not request.is_json:
             raise Exception("Header 'Content-Type' is not 'application/json'")
@@ -1270,7 +1271,7 @@ def create_project_endpoint():
 def delete_project_endpoint(project_id):
     try:
         if check_admin_access(current_user) is False:
-            return ACCESS_FORBIDDEN_RESPONSE
+            return get_access_forbidden_response()
 
         if project_id == 'default':
             raise Exception("You must not remove project_id 'default'. Try with other projects")
