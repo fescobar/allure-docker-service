@@ -109,11 +109,8 @@ jobs:
 
       - name: DockerHub Login
         if: success() && startsWith(github.ref, 'refs/tags/v')
-        env:
-          DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
-          DOCKER_HUB_PASS: ${{ secrets.DOCKER_HUB_PASS }}
         run: |
-          echo "${DOCKER_HUB_PASS}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin
+          run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
 
       - name: Docker Publishing
         if: success() && startsWith(github.ref, 'refs/tags/v')
@@ -132,11 +129,8 @@ jobs:
     steps:
       - name: DockerHub Login
         if: success() && startsWith(github.ref, 'refs/tags/v')
-        env:
-          DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
-          DOCKER_HUB_PASS: ${{ secrets.DOCKER_HUB_PASS }}
         run: |
-          echo "${DOCKER_HUB_PASS}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin
+          run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
 
       - name: Docker Publishing Manifest
         if: success() && startsWith(github.ref, 'refs/tags/v')
