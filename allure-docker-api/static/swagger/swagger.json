@@ -292,19 +292,25 @@
             ],
             "responses":{
                "200":{
-                  "description":"OK",
+                  "description":"OK - Report generated",
                   "schema":{
                      "$ref":"#/components/schemas/response"
                   }
                },
-               "400":{
-                  "description":"BAD_REQUEST",
+               "202":{
+                  "description":"ACCEPTED - Process is still running",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "403":{
+                  "description":"FORBIDDEN - You do not have permissions to call the endpoint",
                   "schema":{
                      "$ref":"#/components/schemas/response"
                   }
                },
                "404":{
-                  "description":"NOT_FOUND",
+                  "description":"NOT_FOUND - No such job, project",
                   "schema":{
                      "$ref":"#/components/schemas/response"
                   }
@@ -347,20 +353,20 @@
                }
             ],
             "responses":{
-               "200":{
-                  "description":"OK",
+               "202":{
+                  "description":"ACCEPTED - Process is still running",
                   "schema":{
                      "$ref":"#/components/schemas/response"
                   }
                },
-               "400":{
-                  "description":"BAD_REQUEST",
+               "403":{
+                  "description":"FORBIDDEN - You do not have permissions to call the endpoint",
                   "schema":{
                      "$ref":"#/components/schemas/response"
                   }
                },
                "404":{
-                  "description":"NOT_FOUND",
+                  "description":"NOT_FOUND - No such job, project",
                   "schema":{
                      "$ref":"#/components/schemas/response"
                   }
