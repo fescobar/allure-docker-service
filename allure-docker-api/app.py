@@ -998,12 +998,13 @@ def generate_report_start_async_endpoint():
         exec_store_results_process = '1'
 
         call([KEEP_HISTORY_PROCESS, project_id, ORIGIN])
-        subprocess.Popen([
+        subprocess.Popen(
             " ".join([GENERATE_REPORT_PROCESS, exec_store_results_process, project_id, ORIGIN,
                       execution_name, execution_from, execution_type, REDIRECT_OUTPUT,
-                      BACKGROUND_LOG_FILE_PATTERN.format(project_path, project_id), PROCESS_CHAIN,
-                      RENDER_EMAIL_REPORT_PROCESS, project_id, ORIGIN])],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                      BACKGROUND_LOG_FILE_PATTERN.format(project_path, project_id),
+                      PROCESS_CHAIN,
+                      RENDER_EMAIL_REPORT_PROCESS, project_id, ORIGIN]),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     except Exception as ex:
         resp = get_error_response(ex)
     else:
@@ -1041,7 +1042,7 @@ def get_async_report_status_endpoint():
                 }
             }
             resp = jsonify(body)
-            resp.status_code = 102
+            resp.status_code = 202
             return resp
 
         project_path = get_project_path(project_id)
@@ -1057,7 +1058,7 @@ def get_async_report_status_endpoint():
         build_order = 'latest'
         for line in file_lines:
             if line.startswith("BUILD_ORDER"):
-                build_order = line[line.index(':') + 1: len(line)]
+                build_order = line[line.index(':') + 1: len(line)].strip()
 
         report_url = url_for('get_reports_endpoint', project_id=project_id,
                              path='{}/index.html'.format(build_order), _external=True)
