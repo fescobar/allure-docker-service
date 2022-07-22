@@ -526,12 +526,13 @@ def jwt_refresh_token_required(fn): #pylint: disable=invalid-name, function-rede
     return wrapper
 
 @jwt.user_lookup_loader
-def user_loader_callback(identity):
-    if identity not in USERS_INFO:
+def user_loader_callback(_, identity):
+    username = identity['sub']
+    if username not in USERS_INFO:
         return None
     return UserAccess(
-        username=identity,
-        roles=USERS_INFO[identity]['roles']
+        username=username,
+        roles=USERS_INFO[username]['roles']
     )
 ### end Security Section
 
