@@ -76,7 +76,9 @@ app.config['JWT_REFRESH_TOKEN_EXPIRES'] = False
 
 DEV_MODE = 0
 HOST = '0.0.0.0'
-PORT = int(os.environ['PORT']) if os.environ['PORT'] else None
+PORT_STR = os.environ.get('PORT')
+PORT = int(PORT_STR) if PORT_STR else None
+ROOT_DIR = os.environ.get('ROOT', '/app')
 THREADS = 7
 URL_SCHEME = 'http'
 URL_PREFIX = ''
@@ -151,11 +153,11 @@ PROTECTED_ENDPOINTS = [
 REDIRECT_OUTPUT = '>'
 PROCESS_CHAIN = '&&'
 BACKGROUND_LOG_FILE_PATTERN = '{}/report_{}.log'
-GENERATE_REPORT_PROCESS = '{}/generateAllureReport.sh'.format(os.environ['ROOT'])
-KEEP_HISTORY_PROCESS = '{}/keepAllureHistory.sh'.format(os.environ['ROOT'])
-CLEAN_HISTORY_PROCESS = '{}/cleanAllureHistory.sh'.format(os.environ['ROOT'])
-CLEAN_RESULTS_PROCESS = '{}/cleanAllureResults.sh'.format(os.environ['ROOT'])
-RENDER_EMAIL_REPORT_PROCESS = '{}/renderEmailableReport.sh'.format(os.environ['ROOT'])
+GENERATE_REPORT_PROCESS = '{}/generateAllureReport.sh'.format(ROOT_DIR)
+KEEP_HISTORY_PROCESS = '{}/keepAllureHistory.sh'.format(ROOT_DIR)
+CLEAN_HISTORY_PROCESS = '{}/cleanAllureHistory.sh'.format(ROOT_DIR)
+CLEAN_RESULTS_PROCESS = '{}/cleanAllureResults.sh'.format(ROOT_DIR)
+RENDER_EMAIL_REPORT_PROCESS = '{}/renderEmailableReport.sh'.format(ROOT_DIR)
 ALLURE_VERSION = os.environ['ALLURE_VERSION']
 STATIC_CONTENT = os.environ['STATIC_CONTENT']
 PROJECTS_DIRECTORY = os.environ['STATIC_CONTENT_PROJECTS']
@@ -467,8 +469,8 @@ blacklist = set() #pylint: disable=invalid-name
 jwt = JWTManager(app) #pylint: disable=invalid-name
 
 @jwt.token_in_blocklist_loader
-def check_if_token_in_blacklist(decrypted_token):
-    jti = decrypted_token['jti']
+def check_if_token_in_blacklist(_, jwt_data):
+    jti = jwt_data['jti']
     return jti in blacklist
 
 @jwt.invalid_token_loader
