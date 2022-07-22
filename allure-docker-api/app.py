@@ -118,6 +118,16 @@ PROTECTED_ENDPOINTS = [
     },
     {
         "method": "get",
+        "path": "/generate-report/async",
+        "endpoint": "get_async_report_status_endpoint"
+    },
+    {
+        "method": "post",
+        "path": "/generate-report/async",
+        "endpoint": "generate_report_start_async_endpoint"
+    },
+    {
+        "method": "get",
         "path": "/clean-results",
         "endpoint": "clean_results_endpoint"
     },
