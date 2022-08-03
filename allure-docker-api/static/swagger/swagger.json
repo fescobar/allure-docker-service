@@ -218,7 +218,7 @@
          }
       },
       "/generate-report":{
-         "get":{
+         "get": {
             "tags":[
                "Action"
             ],
@@ -268,6 +268,105 @@
                },
                "404":{
                   "description":"NOT_FOUND",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               }
+            }
+         }
+      },
+      "/generate-report/async":{
+         "get":{
+            "tags":[
+               "Action"
+            ],
+            "summary":"Returns the last asynchronous report generation status",
+            "parameters":[
+               {
+                  "in":"query",
+                  "name":"project_id",
+                  "schema":{
+                     "type":"string"
+                  }
+               }
+            ],
+            "responses":{
+               "200":{
+                  "description":"OK - Report generated",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "202":{
+                  "description":"ACCEPTED - Process is still running",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "403":{
+                  "description":"FORBIDDEN - You do not have permissions to call the endpoint",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "404":{
+                  "description":"NOT_FOUND - No such job, project",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               }
+            }
+         },
+         "post": {
+            "tags":[
+               "Action"
+            ],
+            "summary":"Generate new report in asynchronous mode (return response immediately)",
+            "parameters":[
+               {
+                  "in":"query",
+                  "name":"project_id",
+                  "schema":{
+                     "type":"string"
+                  }
+               },
+               {
+                  "in":"query",
+                  "name":"execution_name",
+                  "schema":{
+                     "type":"string"
+                  }
+               },
+               {
+                  "in":"query",
+                  "name":"execution_from",
+                  "schema":{
+                     "type":"string"
+                  }
+               },
+               {
+                  "in":"query",
+                  "name":"execution_type",
+                  "schema":{
+                     "type":"string"
+                  }
+               }
+            ],
+            "responses":{
+               "202":{
+                  "description":"ACCEPTED - Process is still running",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "403":{
+                  "description":"FORBIDDEN - You do not have permissions to call the endpoint",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "404":{
+                  "description":"NOT_FOUND - No such job, project",
                   "schema":{
                      "$ref":"#/components/schemas/response"
                   }
