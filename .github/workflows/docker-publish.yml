@@ -12,7 +12,7 @@ on:
 
 env:
   DOCKER_IMAGE: frankescobar/allure-docker-service
-  ALLURE_RELEASE: 2.17.2
+  ALLURE_RELEASE: 2.19.0
   QEMU_VERSION: v4.0.0
   DOCKER_CLI_EXPERIMENTAL: enabled
 

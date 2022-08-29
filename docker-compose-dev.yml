@@ -10,7 +10,7 @@ services:
       context: ../allure-docker-service
       dockerfile: docker-custom/Dockerfile.bionic-custom
       args:
-        ALLURE_RELEASE: "2.17.2"
+        ALLURE_RELEASE: "2.19.0"
     environment:
       DEV_MODE: 0
       CHECK_RESULTS_EVERY_SECONDS: NONE
