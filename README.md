@@ -54,6 +54,7 @@ Table of contents
             * [Roles](#roles)
             * [Make Viewer endpoints public](#make-viewer-endpoints-public)
             * [Scripts](#scripts)
+          * [Multi-instance Setup](#multi-instance-setup)
           * [Add Custom URL Prefix](#add-custom-url-prefix)
           * [Optimize Storage](#optimize-storage)
           * [Export Native Full Report](#export-native-full-report)
@@ -1198,6 +1199,9 @@ python send_results_security.py
 
 - Declarative Pipeline script for JENKINS with security enabled: [allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy)
 
+#### Multi-instance Setup
+`Available from Allure Docker Service version 2.18.0`
+If you wish to use a setup with multiple instances, you will need to set `JWT_SECRET_KEY` env variables. Otherwise, requests may respond with `Invalid Token - Signature verification failed`.
 
 #### Add Custom URL Prefix
 `Available from Allure Docker Service version 2.13.5`
