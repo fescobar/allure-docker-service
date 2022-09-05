@@ -54,6 +54,7 @@ Table of contents
             * [Roles](#roles)
             * [Make Viewer endpoints public](#make-viewer-endpoints-public)
             * [Scripts](#scripts)
+          * [Multi-instance Setup](#multi-instance-setup)
           * [Add Custom URL Prefix](#add-custom-url-prefix)
           * [Optimize Storage](#optimize-storage)
           * [Export Native Full Report](#export-native-full-report)
@@ -100,9 +101,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.17.2                         | frankescobar/allure-docker-service:2.17.2-amd64   |
-|                                        | frankescobar/allure-docker-service:2.17.2-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.17.2-arm64v8 |
+| latest, 2.19.0                         | frankescobar/allure-docker-service:2.19.0-amd64   |
+|                                        | frankescobar/allure-docker-service:2.19.0-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.19.0-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -721,7 +722,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.17.2"
+    image: "frankescobar/allure-docker-service:2.19.0"
 ```
 or using latest version:
 
@@ -1198,6 +1199,9 @@ python send_results_security.py
 
 - Declarative Pipeline script for JENKINS with security enabled: [allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy)
 
+#### Multi-instance Setup
+`Available from Allure Docker Service version 2.18.0`
+If you wish to use a setup with multiple instances, you will need to set `JWT_SECRET_KEY` env variables. Otherwise, requests may respond with `Invalid Token - Signature verification failed`.
 
 #### Add Custom URL Prefix
 `Available from Allure Docker Service version 2.13.5`
@@ -1391,7 +1395,7 @@ docker-compose -f docker-compose-dev.yml up --build
 ```
 ### Build image
 ```sh
-docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.17.2 .
+docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.19.0 .
 ```
 ### Run container
 ```sh
@@ -1442,5 +1446,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.17.2
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.19.0
 ```
