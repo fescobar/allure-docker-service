@@ -66,7 +66,6 @@ class UserAccess:
 app = Flask(__name__) #pylint: disable=invalid-name
 
 LOGGER = create_logger(app)
-app.config['JWT_SECRET_KEY'] = os.urandom(16)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
@@ -249,6 +248,11 @@ if "MAKE_VIEWER_ENDPOINTS_PUBLIC" in os.environ:
             LOGGER.info('Overriding MAKE_VIEWER_ENDPOINTS_PUBLIC=%s', VIEWER_ENDPOINTS_PUBLIC_TMP)
     except Exception as ex:
         LOGGER.error('Wrong env var value. Setting VIEWER_ENDPOINTS_PUBLIC=0 by default')
+
+if "JWT_SECRET_KEY" in os.environ:
+    app.config['JWT_SECRET_KEY'] = os.environ['JWT_SECRET_KEY']
+else:
+    app.config['JWT_SECRET_KEY'] = os.urandom(16)
 
 if "SECURITY_USER" in os.environ:
     SECURITY_USER_TMP = os.environ['SECURITY_USER']
