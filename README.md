@@ -101,9 +101,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**              |
 |----------------------------------------|---------------------------------------------------|
-| latest, 2.21.0                         | frankescobar/allure-docker-service:2.21.0-amd64   |
-|                                        | frankescobar/allure-docker-service:2.21.0-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.21.0-arm64v8 |
+| latest, 2.25.0                         | frankescobar/allure-docker-service:2.25.0-amd64   |
+|                                        | frankescobar/allure-docker-service:2.25.0-arm32v7 |
+|                                        | frankescobar/allure-docker-service:2.25.0-arm64v8 |
 
 ## USAGE
 ### Generate Allure Results
@@ -190,7 +190,7 @@ NOTE:
 - Check the [New User Interface](#new-user-interface)
 
 #### SINGLE PROJECT - LOCAL REPORTS
-This option is recommended for local executions. You should attach the volume where your results are being generated locally for your automation project. 
+This option is recommended for local executions. You should attach the volume where your results are being generated locally for your automation project.
 
 All the information related local executions will be stored in the `default` project what is created when you start the container. You can see the complete info using the `GET /projects/default` endpoint:
 
@@ -722,7 +722,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.21.0"
+    image: "frankescobar/allure-docker-service:2.25.0"
 ```
 or using latest version:
 
@@ -813,7 +813,7 @@ From version `2.13.4` you can also use as value `1`
     environment:
       KEEP_HISTORY: 1
 ```
- 
+
 If you want to clean the history use the [Allure API](#allure-api).
 
 Allure framework allow you to see the latest 20 executions in the history https://github.com/allure-framework/allure2/pull/1059
@@ -882,7 +882,7 @@ docker run --user="$(id -u):$(id -g)" -p 5050:5050 -e CHECK_RESULTS_EVERY_SECOND
 
 Note: It's not a good practice to use `root` user to manipulate containers.
 
-Reference: 
+Reference:
 - https://snyk.io/blog/10-docker-image-security-best-practices/
 
 #### Start in DEV Mode
@@ -1395,7 +1395,7 @@ docker-compose -f docker-compose-dev.yml up --build
 ```
 ### Build image
 ```sh
-docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.21.0 .
+docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.25.0 .
 ```
 ### Run container
 ```sh
@@ -1446,5 +1446,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.21.0
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.25.0
 ```
