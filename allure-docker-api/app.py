@@ -17,7 +17,7 @@ import waitress
 from werkzeug.utils import secure_filename
 from flask import (
     Flask, jsonify, render_template, redirect,
-    request, send_file, send_from_directory, make_response, url_for
+    Request, request, send_file, send_from_directory, make_response, url_for
 )
 from flask.logging import create_logger
 from flask_swagger_ui import get_swaggerui_blueprint
@@ -1656,6 +1656,13 @@ def check_process(process_file, project_id):
 
     if proccount > 0:
         raise Exception("Processing files for project_id '{}'. Try later!".format(project_id))
+
+class CustomRequest(Request):
+    def __init__(self, *args, **kwargs):
+        super(CustomRequest, self).__init__(*args, **kwargs)
+        self.max_form_parts = 10000
+app.request_class = CustomRequest
+
 
 if __name__ == '__main__':
     if DEV_MODE == 1:
