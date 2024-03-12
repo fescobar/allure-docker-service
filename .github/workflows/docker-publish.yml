@@ -92,7 +92,7 @@ jobs:
 
       - name: Docker Building
         run: |
-          docker build --platform --no-cache ${{ steps.prepare.outputs.docker_args }}
+          docker build --no-cache ${{ steps.prepare.outputs.docker_args }}
 
       - name: Docker Testing
         run: |
