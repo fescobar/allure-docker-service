@@ -11,7 +11,7 @@ on:
   pull_request:
 
 env:
-  DOCKER_IMAGE: frankescobar/allure-docker-service
+  DOCKER_IMAGE: martinsozols/allure-docker-service
   ALLURE_RELEASE: 2.21.0
   QEMU_VERSION: v4.0.0
   DOCKER_CLI_EXPERIMENTAL: enabled
@@ -21,21 +21,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ARCH: [amd64, arm32v7, arm64v8]
+        ARCH: [amd64, arm, arm64]
         include:
         - ARCH: amd64
-          DOCKER_FILE: Dockerfile.bionic
-          JDK: adoptopenjdk:11-jre-openj9-bionic
+          DOCKER_FILE: Dockerfile
+          JDK: adoptopenjdk/openjdk11:jre-11.0.22_7
           QEMU_ARCH: x86_64
 
-        - ARCH: arm32v7
-          DOCKER_FILE: Dockerfile.bionic
-          JDK: adoptopenjdk:11-jdk-hotspot-bionic
+        - ARCH: arm
+          DOCKER_FILE: Dockerfile
+          JDK: adoptopenjdk/openjdk11:jre-11.0.22_7
           QEMU_ARCH: arm
 
         - ARCH: arm64v8
-          DOCKER_FILE: Dockerfile.bionic
-          JDK: adoptopenjdk:11-jre-hotspot-bionic
+          DOCKER_FILE: Dockerfile
+          JDK: adoptopenjdk/openjdk11:jre-11.0.22_7
           QEMU_ARCH: aarch64
 
     if: github.event_name == 'push'
@@ -77,7 +77,7 @@ jobs:
             --build-arg BUILD_VERSION=${VERSION} \
             --build-arg BUILD_REF=${GITHUB_SHA::8} \
             --build-arg ALLURE_RELEASE=${ALLURE_RELEASE} \
-            ${TAGS} --file docker/Dockerfile.bionic .
+            ${TAGS} --file docker/Dockerfile .
 
       - name: Setting up QEMU
         run: |
@@ -92,7 +92,7 @@ jobs:
 
       - name: Docker Building
         run: |
-          docker build --no-cache ${{ steps.prepare.outputs.docker_args }}
+          docker build --platform --no-cache ${{ steps.prepare.outputs.docker_args }}
 
       - name: Docker Testing
         run: |
@@ -144,11 +144,11 @@ jobs:
           BUILD_VERSION=${{ needs.build_release.outputs.build_version }}
           docker manifest create ${DOCKER_IMAGE}:${BUILD_VERSION} \
               ${DOCKER_IMAGE}:${BUILD_VERSION}-amd64 \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm32v7 \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64v8
+              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm \
+              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64
 
-          docker manifest annotate ${DOCKER_IMAGE}:${BUILD_VERSION} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm32v7 --os=linux --arch=arm --variant=v7
-          docker manifest annotate ${DOCKER_IMAGE}:${BUILD_VERSION} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64v8 --os=linux --arch=arm64 --variant=v8
+          docker manifest annotate ${DOCKER_IMAGE}:${BUILD_VERSION} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm --os=linux --arch=arm --variant=v7
+          docker manifest annotate ${DOCKER_IMAGE}:${BUILD_VERSION} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64 --os=linux --arch=arm64 --variant=v8
 
           docker manifest push ${DOCKER_IMAGE}:${BUILD_VERSION}
 
@@ -159,11 +159,11 @@ jobs:
 
           docker manifest create ${DOCKER_IMAGE}:${TAG} \
               ${DOCKER_IMAGE}:${BUILD_VERSION}-amd64 \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm32v7 \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64v8
+              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm \
+              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64
 
-          docker manifest annotate ${DOCKER_IMAGE}:${TAG} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm32v7 --os=linux --arch=arm --variant=v7
-          docker manifest annotate ${DOCKER_IMAGE}:${TAG} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64v8 --os=linux --arch=arm64 --variant=v8
+          docker manifest annotate ${DOCKER_IMAGE}:${TAG} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm --os=linux --arch=arm --variant=v7
+          docker manifest annotate ${DOCKER_IMAGE}:${TAG} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64 --os=linux --arch=arm64 --variant=v8
 
           docker manifest push ${DOCKER_IMAGE}:${TAG}
 

@@ -1,22 +1,31 @@
 ARG ARCH=amd64
 ARG JDK=adoptopenjdk:11-jre-openj9-bionic
 ARG BUILD_DATE
-ARG BUILD_VERSION=2.21.0-custom
-ARG BUILD_REF=na
-ARG ALLURE_RELEASE=2.21.0
+ARG BUILD_VERSION
+ARG BUILD_REF
+ARG ALLURE_RELEASE=NONE
 ARG ALLURE_REPO=https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline
+ARG QEMU_ARCH
 ARG UID=1000
 ARG GID=1000
 
 ######
 
-FROM python:3.6-alpine AS dev_stage
+FROM python:3.13.0a4-alpine3.19 AS dev_stage
 RUN apk update
 RUN apk add build-base
 RUN pip install -U pylint
-RUN pip install -Iv setuptools==47.1.1 wheel==0.34.2 waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.24.1 flask-swagger-ui==3.36.0 requests==2.23.0
-
+RUN pip install -Iv \
+        setuptools==47.1.1 \
+        wheel==0.34.2 \
+        waitress==1.4.4 && \
+    pip install -Iv Flask==1.1.2 \
+        itsdangerous==2.0.1 \
+        Jinja2==3.0.3 \
+        Werkzeug==2.0.3 \
+        Flask-JWT-Extended==3.24.1 \
+        flask-swagger-ui==4.11.1 \
+        requests==2.23.0
 ENV ROOT_DIR=/code
 RUN mkdir -p $ROOT_DIR
 WORKDIR $ROOT_DIR
@@ -24,7 +33,7 @@ COPY allure-docker-api $ROOT_DIR/allure-docker-api
 RUN pylint --rcfile=allure-docker-api/.pylintrc allure-docker-api
 
 ######
-FROM $ARCH/$JDK
+FROM --platform=linux/${ARCH} $JDK
 ARG ARCH
 ARG JDK
 ARG BUILD_DATE
@@ -57,8 +66,17 @@ RUN apt-get update && \
       unzip && \
     ln -s `which python3` /usr/bin/python && \
     pip3 install --upgrade pip && \
-    pip install -Iv setuptools==47.1.1 wheel==0.34.2 waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 Flask-JWT-Extended==3.25.0 flask-swagger-ui==3.36.0 requests==2.23.0 && \
+    pip install -Iv \
+        setuptools==47.1.1 \
+        wheel==0.34.2 \
+        waitress==1.4.4 && \
+    pip install -Iv Flask==1.1.2 \
+        itsdangerous==2.0.1 \
+        Jinja2==3.0.3 \
+        Werkzeug==2.0.3 \
+        Flask-JWT-Extended==3.24.1 \
+        flask-swagger-ui==4.11.1 \
+        requests==2.23.0 && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
