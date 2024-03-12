@@ -33,7 +33,7 @@ jobs:
           JDK: adoptopenjdk/openjdk11:jre-11.0.22_7
           QEMU_ARCH: arm
 
-        - ARCH: arm64v8
+        - ARCH: arm64
           DOCKER_FILE: Dockerfile
           JDK: adoptopenjdk/openjdk11:jre-11.0.22_7
           QEMU_ARCH: aarch64
