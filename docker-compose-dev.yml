@@ -10,7 +10,7 @@ services:
       context: ../allure-docker-service
       dockerfile: docker-custom/Dockerfile.custom
       args:
-        ALLURE_RELEASE: "2.21.0"
+        ALLURE_RELEASE: "2.27.0"
     environment:
       DEV_MODE: 0
       CHECK_RESULTS_EVERY_SECONDS: NONE

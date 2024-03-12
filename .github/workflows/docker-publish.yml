@@ -12,7 +12,7 @@ on:
 
 env:
   DOCKER_IMAGE: martinsozols/allure-docker-service
-  ALLURE_RELEASE: 2.21.0
+  ALLURE_RELEASE: 2.27.0
   QEMU_VERSION: v4.0.0
   DOCKER_CLI_EXPERIMENTAL: enabled
 
