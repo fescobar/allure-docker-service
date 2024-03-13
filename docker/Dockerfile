@@ -8,24 +8,17 @@ ARG ALLURE_REPO=https://repo.maven.apache.org/maven2/io/qameta/allure/allure-com
 ARG QEMU_ARCH
 ARG UID=1000
 ARG GID=1000
+ARG PYTHON_VERSION=3.8
 
 ######
 
-FROM python:3.13.0a4-alpine3.19 AS dev_stage
+FROM python:${PYTHON_VERSION}-alpine AS dev_stage
 RUN apk update
 RUN apk add build-base
 RUN pip install -U pylint
-RUN pip install -Iv \
-        setuptools==47.1.1 \
-        wheel==0.34.2 \
-        waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 \
-        itsdangerous==2.0.1 \
-        Jinja2==3.0.3 \
-        Werkzeug==2.0.3 \
-        Flask-JWT-Extended==3.24.1 \
-        flask-swagger-ui==4.11.1 \
-        requests==2.23.0
+RUN pip install --upgrade pip setuptools wheel waitress && \
+    pip install -Iv Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0
+
 ENV ROOT_DIR=/code
 RUN mkdir -p $ROOT_DIR
 WORKDIR $ROOT_DIR
@@ -43,6 +36,7 @@ ARG ALLURE_RELEASE
 ARG ALLURE_REPO
 ARG UID
 ARG GID
+ARG PYTHON_VERSION=3.8
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.docker.dockerfile="docker-custom/Dockerfile.custom" \
@@ -58,26 +52,20 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     authors="Frank Escobar <fescobar.systems@gmail.com>, Raymond Mouthaan <raymondmmouthaan@gmail.com>"
 
 RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
       tzdata \
       nano \
-      python3 \
+      python${PYTHON_VERSION} \
       python3-pip \
       unzip && \
     ln -s `which python3` /usr/bin/python && \
     pip3 install --upgrade pip && \
-    pip install -Iv \
-        setuptools==47.1.1 \
-        wheel==0.34.2 \
-        waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 \
-        itsdangerous==2.0.1 \
-        Jinja2==3.0.3 \
-        Werkzeug==2.0.3 \
-        Flask-JWT-Extended==3.24.1 \
-        flask-swagger-ui==4.11.1 \
-        requests==2.23.0 &&\
-curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
+    python${PYTHON_VERSION} -m pip install --upgrade pip setuptools wheel waitress && \
+    python${PYTHON_VERSION} -m pip install -v Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0 && \
+    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
         rm -rf /tmp/* && \
@@ -88,6 +76,7 @@ curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -
 RUN groupadd --gid ${GID} allure \
     && useradd --uid ${UID} --gid allure --shell /bin/bash --create-home allure
 
+ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV ROOT=/app
 ENV ALLURE_HOME=/allure-$ALLURE_RELEASE
 ENV ALLURE_HOME_SL=/allure
