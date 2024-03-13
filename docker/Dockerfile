@@ -1,5 +1,5 @@
 ARG ARCH=amd64
-ARG JDK=adoptopenjdk:11-jre-openj9-bionic
+ARG JDK=adoptopenjdk/openjdk11:jre-11.0.22_7
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
@@ -45,7 +45,7 @@ ARG UID
 ARG GID
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.docker.dockerfile="docker-custom/Dockerfile.bionic-custom" \
+    org.label-schema.docker.dockerfile="docker-custom/Dockerfile.custom" \
     org.label-schema.license="MIT" \
     org.label-schema.name="Allure Framework" \
     org.label-schema.version=${BUILD_VERSION} \
@@ -63,21 +63,21 @@ RUN apt-get update && \
       nano \
       python3 \
       python3-pip \
-      unzip && \
-    ln -s `which python3` /usr/bin/python && \
-    pip3 install --upgrade pip && \
-    pip install -Iv \
+      unzip
+RUN ln -s `which python3` /usr/bin/python
+RUN pip3 install --upgrade pip
+RUN pip install -Iv \
         setuptools==47.1.1 \
         wheel==0.34.2 \
-        waitress==1.4.4 && \
-    pip install -Iv Flask==1.1.2 \
+        waitress==1.4.4
+RUN pip install -Iv Flask==1.1.2 \
         itsdangerous==2.0.1 \
         Jinja2==3.0.3 \
         Werkzeug==2.0.3 \
         Flask-JWT-Extended==3.24.1 \
         flask-swagger-ui==4.11.1 \
-        requests==2.23.0 && \
-    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
+        requests==2.23.0
+ RUN curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
         rm -rf /tmp/* && \
