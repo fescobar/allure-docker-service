@@ -92,7 +92,7 @@ jobs:
 
       - name: Docker Building
         run: |
-          docker build --platform linux/${ARCH} --no-cache ${{ steps.prepare.outputs.docker_args }}
+          docker build --platform linux/${{matrix.ARCH}} --no-cache ${{ steps.prepare.outputs.docker_args }}
 
       - name: Docker Testing
         run: |
