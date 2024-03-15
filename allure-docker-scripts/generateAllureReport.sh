@@ -12,7 +12,7 @@ EXECUTION_TYPE=$6
 PROJECT_REPORTS=$STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports
 if [ "$(ls $PROJECT_REPORTS | wc -l)" != "0" ]; then
     if [ -e "$PROJECT_REPORTS/latest" ]; then
-        LAST_REPORT_PATH_DIRECTORY=$(ls -td $PROJECT_REPORTS/* | grep -v latest | grep -v $EMAILABLE_REPORT_FILE_NAME | head -1)
+        LAST_REPORT_PATH_DIRECTORY=$(ls -td $PROJECT_REPORTS/* | grep -wv $PROJECT_REPORTS/latest | grep -v $EMAILABLE_REPORT_FILE_NAME | head -1)
     else
         LAST_REPORT_PATH_DIRECTORY=$(ls -td $PROJECT_REPORTS/* | grep -v $EMAILABLE_REPORT_FILE_NAME | head -1)
     fi

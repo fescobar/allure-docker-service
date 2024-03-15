@@ -1,2 +1,2 @@
 #!/bin/bash
-python $ROOT/allure-docker-api/app.py
+python${PYTHON_VERSION} $ROOT/allure-docker-api/app.py

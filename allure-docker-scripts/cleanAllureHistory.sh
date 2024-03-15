@@ -14,7 +14,7 @@ if [ "$(ls -A $PROJECT_LATEST_REPORT | wc -l)" != "0" ]; then
 fi
 
 if [ "$(ls -A $PROJECT_REPORTS_DIRECTORY | wc -l)" != "0" ]; then
-    ls -d $PROJECT_REPORTS_DIRECTORY/* | grep -v latest | grep -wv 0 | xargs rm 2 -rf> /dev/null
+    ls -d $PROJECT_REPORTS_DIRECTORY/* | grep -wv $PROJECT_REPORTS_DIRECTORY/latest | grep -wv 0 | xargs rm 2 -rf> /dev/null
 fi
 
 if [ -e $PROJECT_RESULTS_HISTORY ]; then
