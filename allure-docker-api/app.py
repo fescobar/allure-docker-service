@@ -71,6 +71,8 @@ app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = False
+# Set maximum request size to 32 megabytes
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32 MB
 
 DEV_MODE = 0
 HOST = '0.0.0.0'
