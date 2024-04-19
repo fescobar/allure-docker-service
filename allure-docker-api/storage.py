@@ -87,6 +87,13 @@ class LocalStorage(StorageInterface):
     def save_file(self, file, path, method):
         file.save(path)
 
+    def write_file(self, file, path, method):
+        with open(path, method) as f:
+            if hasattr(file, 'read'):
+                f.write(file.read())
+            else:
+                f.write(file)
+
     def save_json(self, content, path):
         file = open(path, "wb")
         file.write(content)
@@ -106,6 +113,7 @@ class S3Storage(StorageInterface):
         self.bucket_name = bucket_name
         self.type = 's3'
         self.init_root_folder()
+        self.write_file = self.save_file
 
     def isdir(self, path):
         return self.fs.isdir(f"{self.bucket_name}{path}")

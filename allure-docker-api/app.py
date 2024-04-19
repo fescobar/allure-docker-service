@@ -1553,6 +1553,7 @@ def validate_json_results(results):
 def send_files_results(results_project, validated_results, processed_files, failed_files):
     for file in validated_results:
         try:
+            LOGGER.info(f"WRITING FILE: {file.filename}")
             file_name = secure_filename(file.filename)
             storage.save_file(file, "{}/{}".format(results_project, file_name), 'wb')
             # file.save("{}/{}".format(results_project, file_name))
@@ -1703,7 +1704,7 @@ def render_emailable_report(project_id):
                                 serverUrl=server_url, testCases=test_cases)
 
     emailable_report_path = '{}/reports/{}'.format(project_path, EMAILABLE_REPORT_FILE_NAME)
-    storage.save_file(report, emailable_report_path, 'w')
+    storage.write_file(report, emailable_report_path, 'w')
     return report
 
 
