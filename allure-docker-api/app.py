@@ -12,8 +12,11 @@ import re
 import shutil
 import tempfile
 import subprocess
+import mimetypes
 import zipfile
 import waitress
+from storage import get_storage 
+import scripts
 from werkzeug.utils import secure_filename
 from flask import (
     Flask, jsonify, render_template, redirect,
@@ -145,8 +148,11 @@ ALLURE_VERSION = os.environ['ALLURE_VERSION']
 STATIC_CONTENT = os.environ['STATIC_CONTENT']
 PROJECTS_DIRECTORY = os.environ['STATIC_CONTENT_PROJECTS']
 EMAILABLE_REPORT_FILE_NAME = os.environ['EMAILABLE_REPORT_FILE_NAME']
+STORAGE_TYPE = os.getenv('STORAGE_TYPE', 'local')
+BUCKET_NAME = os.getenv('BUCKET_NAME')
 ORIGIN = 'api'
 SECURITY_SPECS_PATH = 'swagger/security_specs'
+ALLURE_RESOURCES = '/app/resources'
 
 REPORT_INDEX_FILE = 'index.html'
 DEFAULT_TEMPLATE = 'default.html'
@@ -156,6 +162,15 @@ GLOBAL_CSS = "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstra
 EMAILABLE_REPORT_CSS = GLOBAL_CSS
 EMAILABLE_REPORT_TITLE = "Emailable Report"
 API_RESPONSE_LESS_VERBOSE = 0
+
+# define storage
+storage = get_storage(STORAGE_TYPE, BUCKET_NAME)
+scripts.setup_storage(storage)
+
+if "ALLURE_RESOURCES" in os.environ:
+    ALLURE_RESOURCES = os.environ['ALLURE_RESOURCES']
+    LOGGER.info('Overriding path for allure resources. ALLURE_RESOURCES=%s',
+                ALLURE_RESOURCES)
 
 if "EMAILABLE_REPORT_CSS_CDN" in os.environ:
     EMAILABLE_REPORT_CSS = os.environ['EMAILABLE_REPORT_CSS_CDN']
@@ -905,7 +920,7 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
             raise Exception('Problems with files: {}'.format(failed_files))
 
         if API_RESPONSE_LESS_VERBOSE != 1:
-            files = os.listdir(results_project)
+            files = storage.listdir(results_project)
             current_files_count = len(files)
             sent_files_count = len(validated_results)
             processed_files_count = len(processed_files)
@@ -970,7 +985,7 @@ def generate_report_endpoint():
         results_project = '{}/results'.format(project_path)
 
         if API_RESPONSE_LESS_VERBOSE != 1:
-            files = os.listdir(results_project)
+            files = storage.listdir(results_project)
 
         execution_name = request.args.get('execution_name')
         if execution_name is None or not execution_name:
@@ -984,22 +999,21 @@ def generate_report_endpoint():
         if execution_type is None or not execution_type:
             execution_type = ''
 
-        check_process(KEEP_HISTORY_PROCESS, project_id)
+        # check_process(KEEP_HISTORY_PROCESS, project_id)
         check_process(GENERATE_REPORT_PROCESS, project_id)
 
         exec_store_results_process = '1'
 
-        call([KEEP_HISTORY_PROCESS, project_id, ORIGIN])
-        response = subprocess.Popen([
-            GENERATE_REPORT_PROCESS, exec_store_results_process,
-            project_id, ORIGIN, execution_name, execution_from, execution_type],
-                                    stdout=subprocess.PIPE).communicate()[0]
+        scripts.keep_allure_history(project_id)
+        LOGGER.warning(f'executing generate-report function')
+        build_order = 'latest'
+
+        result = scripts.generate_allure_report(exec_store_results_process, project_id, origin=ORIGIN, execution_name=execution_name, execution_from=execution_from, execution_type=execution_type)
+        
         call([RENDER_EMAIL_REPORT_PROCESS, project_id, ORIGIN])
 
-        build_order = 'latest'
-        for line in response.decode("utf-8").split("\n"):
-            if line.startswith("BUILD_ORDER"):
-                build_order = line[line.index(':') + 1: len(line)]
+        if result:
+            build_order = result
 
         report_url = url_for('get_reports_endpoint', project_id=project_id,
                              path='{}/index.html'.format(build_order), _external=True)
@@ -1102,7 +1116,7 @@ def clean_results_endpoint():
         check_process(GENERATE_REPORT_PROCESS, project_id)
         check_process(CLEAN_RESULTS_PROCESS, project_id)
 
-        call([CLEAN_RESULTS_PROCESS, project_id, ORIGIN])
+        scripts.clean_allure_results(project_id)
     except Exception as ex:
         body = {
             'meta_data': {
@@ -1139,39 +1153,7 @@ def emailable_report_render_endpoint():
             return resp
 
         check_process(GENERATE_REPORT_PROCESS, project_id)
-
-        project_path = get_project_path(project_id)
-        tcs_latest_report_project = "{}/reports/latest/data/test-cases/*.json".format(project_path)
-
-        files = glob.glob(tcs_latest_report_project)
-        files.sort(key=os.path.getmtime, reverse=True)
-        test_cases = []
-        for file_name in files:
-            with open(file_name) as file:
-                json_string = file.read()
-                LOGGER.debug("----TestCase-JSON----")
-                LOGGER.debug(json_string)
-                test_case = json.loads(json_string)
-                if test_case["hidden"] is False:
-                    test_cases.append(test_case)
-
-        server_url = url_for('latest_report_endpoint', project_id=project_id, _external=True)
-
-        if "SERVER_URL" in os.environ:
-            server_url = os.environ['SERVER_URL']
-
-        report = render_template(DEFAULT_TEMPLATE, css=EMAILABLE_REPORT_CSS,
-                                 title=EMAILABLE_REPORT_TITLE, projectId=project_id,
-                                 serverUrl=server_url, testCases=test_cases)
-
-        emailable_report_path = '{}/reports/{}'.format(project_path, EMAILABLE_REPORT_FILE_NAME)
-        file = None
-        try:
-            file = open(emailable_report_path, "w")
-            file.write(report)
-        finally:
-            if file is not None:
-                file.close()
+        report = render_emailable_report(project_id=project_id)
     except Exception as ex:
         body = {
             'meta_data': {
@@ -1201,9 +1183,11 @@ def emailable_report_export_endpoint():
             return resp
 
         check_process(GENERATE_REPORT_PROCESS, project_id)
-
         project_path = get_project_path(project_id)
         emailable_report_path = '{}/reports/{}'.format(project_path, EMAILABLE_REPORT_FILE_NAME)
+        if storage.type == 's3':
+            storage.get_files(emailable_report_path, os.path.join("/tmp/allure-results", project_id))
+            emailable_report_path = os.path.join("/tmp/allure-results", project_id, EMAILABLE_REPORT_FILE_NAME)
 
         report = send_file(emailable_report_path, as_attachment=True)
     except Exception as ex:
@@ -1325,7 +1309,7 @@ def delete_project_endpoint(project_id):
             return resp
 
         project_path = get_project_path(project_id)
-        shutil.rmtree(project_path)
+        storage.rmdir(project_path)
     except Exception as ex:
         body = {
             'meta_data': {
@@ -1362,13 +1346,13 @@ def get_project_endpoint(project_id):
         project_reports_path = '{}/reports'.format(get_project_path(project_id))
         reports_entity = []
 
-        for file in os.listdir(project_reports_path):
+        for file in storage.listdir(project_reports_path):
             file_path = '{}/{}/index.html'.format(project_reports_path, file)
-            is_file = os.path.isfile(file_path)
+            is_file = storage.isfile(file_path)
             if is_file is True:
                 report = url_for('get_reports_endpoint', project_id=project_id,
                                  path='{}/index.html'.format(file), _external=True)
-                reports_entity.append([report, os.path.getmtime(file_path), file])
+                reports_entity.append([report, storage.getmtime(file_path), file])
 
         reports_entity.sort(key=lambda reports_entity: reports_entity[1], reverse=True)
         reports = []
@@ -1416,7 +1400,7 @@ def get_project_endpoint(project_id):
 @jwt_required
 def get_projects_endpoint():
     try:
-        projects_dirs = os.listdir(PROJECTS_DIRECTORY)
+        projects_dirs = storage.listdir(PROJECTS_DIRECTORY)
         projects = get_projects(projects_dirs)
 
         body = {
@@ -1450,7 +1434,7 @@ def get_projects_search_endpoint():
             raise Exception("'id' query parameter is required")
 
         project_id = project_id.lower()
-        projects_filtered = get_projects_filtered_by_id(project_id, os.listdir(PROJECTS_DIRECTORY))
+        projects_filtered = get_projects_filtered_by_id(project_id, storage.listdir(PROJECTS_DIRECTORY))
         projects = get_projects(projects_filtered)
 
         if len(projects) == 0:
@@ -1482,13 +1466,46 @@ def get_projects_search_endpoint():
 @jwt_required
 def get_reports_endpoint(project_id, path):
     try:
-        project_path = '{}/reports/{}'.format(project_id, path)
-        return send_from_directory(PROJECTS_DIRECTORY, project_path)
+        object_path = '{}/{}/reports/{}'.format(PROJECTS_DIRECTORY,project_id, path)
+        mime_type, _ = mimetypes.guess_type(object_path)
+
+        if not mime_type:
+            mime_type = 'application/octet-stream'
+        pattern = r'^(latest|\d+)\/(?!.*\/)(styles\.css|app\.js)$'
+
+        if OPTIMIZE_STORAGE is 1 and re.match(pattern, path):
+            with open(transform_path(path), 'rb') as f:
+                content = f.read()
+        else:
+            content = storage.read_file(object_path)
+
+        return send_file(
+            io.BytesIO(content),
+            mimetype=mime_type,
+            as_attachment=False,
+            download_name=path.split('/')[-1]
+        )
+
+    # TO DO: rewrite exception logic
     except Exception:
         if request.args.get('redirect') == 'false':
+            project_path = '{}/reports/{}'.format(project_id, path)
             return send_from_directory(PROJECTS_DIRECTORY, project_path)
         return redirect(url_for('get_project_endpoint', project_id=project_id, _external=True))
 
+
+def transform_path(path):
+    pattern = r'(latest|\d+)/(styles\.css|app\.js)$'
+    transformations = {
+        'styles.css': f'{ALLURE_RESOURCES}/styles.css',
+        'app.js': f'{ALLURE_RESOURCES}/app.js',
+    }
+    def replace(match):
+        filename = match.group(2)
+        return transformations.get(filename.replace('\\', ''), filename)
+    
+    transformed_path = re.sub(pattern, replace, path)
+    return transformed_path
 
 def validate_files_array(files):
     if not files:
@@ -1536,9 +1553,12 @@ def validate_json_results(results):
 def send_files_results(results_project, validated_results, processed_files, failed_files):
     for file in validated_results:
         try:
+            LOGGER.info(f"WRITING FILE: {file.filename}")
             file_name = secure_filename(file.filename)
-            file.save("{}/{}".format(results_project, file_name))
+            storage.save_file(file, "{}/{}".format(results_project, file_name), 'wb')
+            # file.save("{}/{}".format(results_project, file_name))
         except Exception as ex:
+            LOGGER.info(f"EXCEPTION WITH FILE: {file.filename}, {ex}")
             error = {}
             error['message'] = str(ex)
             error['file_name'] = file_name
@@ -1552,8 +1572,10 @@ def send_json_results(results_project, validated_results, processed_files, faile
         content_base64 = result.get('content_base64')
         file = None
         try:
-            file = open("%s/%s" % (results_project, file_name), "wb")
-            file.write(content_base64)
+            LOGGER.info(f"trying to save json result: {result.get('file_name')}")
+            storage.save_json(content_base64, "%s/%s" % (results_project, file_name))
+            # file = open("%s/%s" % (results_project, file_name), "wb")
+            # file.write(content_base64)
         except Exception as ex:
             error = {}
             error['message'] = str(ex)
@@ -1594,23 +1616,23 @@ def create_project(json_body):
     latest_report_project = '{}/reports/latest'.format(project_path)
     results_project = '{}/results'.format(project_path)
 
-    if not os.path.exists(latest_report_project):
-        os.makedirs(latest_report_project)
+    if not storage.exists(latest_report_project):
+        storage.mkdir(latest_report_project)
 
-    if not os.path.exists(results_project):
-        os.makedirs(results_project)
+    if not storage.exists(results_project):
+        storage.mkdir(results_project)
 
     return project_id
 
 def is_existent_project(project_id):
     if not project_id.strip():
         return False
-    return os.path.isdir(get_project_path(project_id))
+    return storage.isdir(get_project_path(project_id))
 
 def get_projects(projects_dirs):
     projects = {}
     for project_name in projects_dirs:
-        is_dir = os.path.isdir('{}/{}'.format(PROJECTS_DIRECTORY, project_name))
+        is_dir = storage.isdir('{}/{}'.format(PROJECTS_DIRECTORY, project_name))
         if is_dir is True:
             project = {}
             project['uri'] = url_for('get_project_endpoint',
@@ -1656,6 +1678,35 @@ def check_process(process_file, project_id):
 
     if proccount > 0:
         raise Exception("Processing files for project_id '{}'. Try later!".format(project_id))
+
+def render_emailable_report(project_id):
+    project_path = get_project_path(project_id)
+    tcs_latest_report_project = "{}/reports/latest/data/test-cases/*.json".format(project_path)
+
+    files = storage.glob(tcs_latest_report_project)
+    files.sort(key=lambda x: storage.getmtime(x), reverse=True)
+    test_cases = []
+    for file_name in files:
+        file = storage.read_file(file_name)
+        LOGGER.debug("----TestCase-JSON----")
+        LOGGER.debug(file)
+        test_case = json.loads(file)
+        if test_case["hidden"] is False:
+            test_cases.append(test_case)
+
+    server_url = url_for('latest_report_endpoint', project_id=project_id, _external=True)
+
+    if "SERVER_URL" in os.environ:
+        server_url = os.environ['SERVER_URL']
+
+    report = render_template(DEFAULT_TEMPLATE, css=EMAILABLE_REPORT_CSS,
+                                title=EMAILABLE_REPORT_TITLE, projectId=project_id,
+                                serverUrl=server_url, testCases=test_cases)
+
+    emailable_report_path = '{}/reports/{}'.format(project_path, EMAILABLE_REPORT_FILE_NAME)
+    storage.write_file(report, emailable_report_path, 'w')
+    return report
+
 
 if __name__ == '__main__':
     if DEV_MODE == 1:

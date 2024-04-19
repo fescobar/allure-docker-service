@@ -17,7 +17,7 @@ RUN apk update
 RUN apk add build-base
 RUN pip install -U pylint
 RUN pip install --upgrade pip setuptools wheel waitress && \
-    pip install -Iv Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0
+    pip install -Iv Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0 s3fs==2024.3.1
 
 ENV ROOT_DIR=/code
 RUN mkdir -p $ROOT_DIR
@@ -69,7 +69,7 @@ RUN apt-get update && \
     ln -s `which python3` /usr/bin/python && \
     pip3 install --upgrade pip && \
     python${PYTHON_VERSION} -m pip install --upgrade pip setuptools wheel waitress && \
-    python${PYTHON_VERSION} -m pip install -v Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0 && \
+    python${PYTHON_VERSION} -m pip install -v Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0 s3fs==2024.3.1 && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
