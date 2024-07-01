@@ -849,6 +849,21 @@ The `latest` directory contains the report from the last execution. On this case
 [![](resources/allure-docker-service-history-latest-and-last-execution.png)](allure-docker-service-history-latest-and-last-execution.png)
 
 
+#### Use custom build order value
+`Available from Allure Docker Service version 2.28.0`
+
+Enable `USE_CUSTOM_BUILD_ORDER` environment variable to work with a custom build order instead of a counter.
+
+Docker Compose example:
+```sh
+    environment:
+      USE_CUSTOM_BUILD_ORDER: 1
+```
+
+This new value is sending as a new param in generate-report api [Action Endpoints](#action-endpoints)
+
+[![](resources/custom_build_order.png)](custom_build_order.png)
+
 #### Override User Container
 `Available from Allure Docker Service version 2.13.1`
 
