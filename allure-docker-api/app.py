@@ -79,6 +79,7 @@ THREADS = 7
 URL_SCHEME = 'http'
 URL_PREFIX = ''
 OPTIMIZE_STORAGE = 0
+USE_CUSTOM_BUILD_ORDER = False
 ENABLE_SECURITY_LOGIN = False
 MAKE_VIEWER_ENDPOINTS_PUBLIC = False
 SECURITY_USER = None
@@ -223,6 +224,15 @@ if "OPTIMIZE_STORAGE" in os.environ:
             LOGGER.error('Wrong env var value. Setting OPTIMIZE_STORAGE=0 by default')
     except Exception as ex:
         LOGGER.error('Wrong env var value. Setting OPTIMIZE_STORAGE=0 by default')
+
+if "USE_CUSTOM_BUILD_ORDER" in os.environ:
+    try:
+        USE_CUSTOM_BUILD_ORDER_TMP = int(os.environ['USE_CUSTOM_BUILD_ORDER'])
+        if USE_CUSTOM_BUILD_ORDER_TMP == 1:
+            USE_CUSTOM_BUILD_ORDER = True
+            LOGGER.info('Overriding USE_CUSTOM_BUILD_ORDER=%s', USE_CUSTOM_BUILD_ORDER_TMP)
+    except Exception as ex:
+        LOGGER.error('Wrong env var value. Setting USE_CUSTOM_BUILD_ORDER=0 by default')
 
 if "MAKE_VIEWER_ENDPOINTS_PUBLIC" in os.environ:
     try:
@@ -421,6 +431,20 @@ def generate_security_swagger_spec():
     except Exception as ex:
         LOGGER.error(str(ex))
 
+def add_build_order_swagger_param():
+    try:
+        build_order_path = "{}/swagger/{}".format(STATIC_CONTENT, 'custom_build_order.json')
+        build_order = eval(get_file_as_string(build_order_path))
+        with open("{}/swagger/swagger.json".format(STATIC_CONTENT)) as json_file:
+            data = json.load(json_file)
+            params = data['paths']['/generate-report']['get']['parameters']
+            params.append(build_order)
+            data['paths']['/generate-report']['get']['parameters'] = params
+        with open("{}/swagger/swagger.json".format(STATIC_CONTENT), 'w') as outfile:
+            json.dump(data, outfile)
+    except Exception as ex:
+        LOGGER.error(str(ex))
+
 ### swagger specific ###
 NATIVE_PREFIX = '/allure-docker-service'
 SWAGGER_ENDPOINT = '/swagger'
@@ -448,6 +472,9 @@ if URL_PREFIX:
     app.register_blueprint(SWAGGERUI_BLUEPRINT,
         url_prefix='{}{}'.format(NATIVE_PREFIX, SWAGGER_ENDPOINT))
 ### end swagger specific ###
+
+if USE_CUSTOM_BUILD_ORDER:
+    add_build_order_swagger_param()
 
 ### Security Section
 if ENABLE_SECURITY_LOGIN:
@@ -983,6 +1010,12 @@ def generate_report_endpoint():
         execution_type = request.args.get('execution_type')
         if execution_type is None or not execution_type:
             execution_type = ''
+        
+        if USE_CUSTOM_BUILD_ORDER is True:
+            custom_build_order_arg = request.args.get('custom_build_order')
+            custom_build_order = is_valid_build_order(project_id, custom_build_order_arg)
+        else:
+            custom_build_order=''
 
         check_process(KEEP_HISTORY_PROCESS, project_id)
         check_process(GENERATE_REPORT_PROCESS, project_id)
@@ -992,7 +1025,7 @@ def generate_report_endpoint():
         call([KEEP_HISTORY_PROCESS, project_id, ORIGIN])
         response = subprocess.Popen([
             GENERATE_REPORT_PROCESS, exec_store_results_process,
-            project_id, ORIGIN, execution_name, execution_from, execution_type],
+            project_id, ORIGIN, execution_name, execution_from, execution_type, custom_build_order],
                                     stdout=subprocess.PIPE).communicate()[0]
         call([RENDER_EMAIL_REPORT_PROCESS, project_id, ORIGIN])
 
@@ -1634,6 +1667,28 @@ def resolve_project(project_id_param):
     if project_id_param is not None:
         project_id = project_id_param
     return project_id
+
+def get_build_order_path(project_id, build_order):
+    project_path=get_project_path(project_id)
+    return '{}/reports/{}'.format(project_path, build_order)
+
+def is_existent_build_order(project_id, build_order):
+    if not build_order.strip():
+        return False
+    return os.path.isdir(get_build_order_path(project_id, build_order))
+
+def is_valid_build_order(project_id, build_order):
+    if build_order is None or not build_order:
+        raise Exception("custom_build_order is a required parameter")
+
+    if is_existent_build_order(project_id, build_order) is True:
+        raise Exception("custom_build_order '{}' exist".format(build_order))
+
+    build_order_pattern = re.compile('^[0-9\\d .]*[0-9\\d]$')
+    match = build_order_pattern.match(build_order)
+    if  match is None:
+        raise Exception("custom_build_order should contains numeric characters or dots. For example: '1.0.0'") #pylint: disable=line-too-long
+    return build_order
 
 def check_admin_access(user):
     if ENABLE_SECURITY_LOGIN is False:
