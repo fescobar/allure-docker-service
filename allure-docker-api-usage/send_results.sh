@@ -22,6 +22,11 @@ done
 set -o xtrace
 echo "------------------SEND-RESULTS------------------"
 curl -X POST "$ALLURE_SERVER/allure-docker-service/send-results?project_id=$PROJECT_ID" -H 'Content-Type: multipart/form-data' $FILES -ik
+# send archived allure-results files with form-data
+#curl -X POST "$ALLURE_SERVER/allure-docker-service/send-results?project_id=$PROJECT_ID" -H 'Content-Type: multipart/form-data' "-F zip=allure-results-example/allure-results-example.zip" -ik
+# send archived allure-results as body
+#curl -X POST "$ALLURE_SERVER/allure-docker-service/send-results?project_id=$PROJECT_ID" -H 'Content-Type: application/zip' --data-binary @'allure-results-example/allure-results-example.zip' -ik
+#curl -X POST "$ALLURE_SERVER/allure-docker-service/send-results?project_id=$PROJECT_ID" -H 'Content-Type: application/gzip' --data-binary @'allure-results-example/allure-results-example.tar.gz' -ik
 
 
 #If you want to generate reports on demand use the endpoint `GET /generate-report` and disable the Automatic Execution >> `CHECK_RESULTS_EVERY_SECONDS: NONE`
