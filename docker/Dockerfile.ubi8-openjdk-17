@@ -1,5 +1,5 @@
-ARG ARCH=amd64
-ARG JDK=adoptopenjdk:11-jre-openj9-bionic
+ARG ARCH=registry.access.redhat.com
+ARG JDK=ubi8/openjdk-17-runtime
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
@@ -37,10 +37,14 @@ ARG ALLURE_REPO
 ARG QEMU_ARCH
 ARG UID
 ARG GID
+# Needs to be separate var's for build on Tekton
+ARG UID_OCP=1001
+ARG GID_OCP=1001
+
 ARG PYTHON_VERSION=3.8
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.docker.dockerfile="docker/Dockerfile.bionic" \
+    org.label-schema.docker.dockerfile="docker/Dockerfile.ubi8-openjdk-17" \
     org.label-schema.license="MIT" \
     org.label-schema.name="Allure Framework" \
     org.label-schema.version=${BUILD_VERSION} \
@@ -53,33 +57,32 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     authors="Frank Escobar <fescobar.systems@gmail.com>, Raymond Mouthaan <raymondmmouthaan@gmail.com>"
 
 # QEMU - Quick Emulation
-COPY tmp/qemu-$QEMU_ARCH-static /usr/bin/qemu-$QEMU_ARCH-static
+#COPY tmp/qemu-$QEMU_ARCH-static /usr/bin/qemu-$QEMU_ARCH-static
 
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
+USER root
+
+RUN microdnf update && \
+    microdnf install -y \
       tzdata \
       nano \
+      procps \
       python${PYTHON_VERSION} \
       python3-pip \
-      python3-dev \
       unzip && \
-    ln -s `which python3` /usr/bin/python && \
+    ln -s /usr/bin/python3 /usr/bin/python && \
     pip3 install --upgrade pip && \
     python${PYTHON_VERSION} -m pip install --upgrade pip setuptools wheel waitress && \
     python${PYTHON_VERSION} -m pip install -v Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0 && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
-        apt-get remove -y unzip && \
+        microdnf remove -y unzip && \
         rm -rf /tmp/* && \
         rm -rf /var/lib/apt/lists/* && \
         chmod -R +x /allure-$ALLURE_RELEASE/bin && \
         mkdir -p /app
 
-RUN groupadd --gid ${GID} allure \
-    && useradd --uid ${UID} --gid allure --shell /bin/bash --create-home allure
+RUN groupadd --gid ${GID_OCP} allure \
+    && useradd --uid ${UID_OCP} --gid allure --shell /bin/bash --create-home allure
 
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV ROOT=/app
@@ -131,9 +134,12 @@ ENV PORT=5050
 EXPOSE $DEPRECATED_PORT
 EXPOSE $PORT
 
-HEALTHCHECK --interval=10s --timeout=60s --retries=3 \
-      CMD curl -f http://localhost:$PORT || exit 1
+#HEALTHCHECK --interval=10s --timeout=60s --retries=3 \
+#      CMD curl -f http://localhost:$PORT || exit 1
 
-USER allure
+RUN chmod -R g=u /etc/passwd /home /app \
+ && chgrp -R 0 /home /app
 
-CMD $ROOT/runAllureDeprecated.sh & $ROOT/runAllureApp.sh & $ROOT/checkAllureResultsFiles.sh
+USER ${UID_OCP}
+
+CMD $ROOT/handleUser.sh && $ROOT/runAllureDeprecated.sh & $ROOT/runAllureApp.sh & $ROOT/checkAllureResultsFiles.sh
