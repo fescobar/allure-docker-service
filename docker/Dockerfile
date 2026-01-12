@@ -1,13 +1,12 @@
-ARG ARCH=amd64
-ARG JDK=adoptopenjdk:11-jre-openj9-bionic
+ARG JDK=eclipse-temurin:11-jre-noble
 ARG BUILD_DATE
-ARG BUILD_VERSION=2.27.0-custom
-ARG BUILD_REF=na
-ARG ALLURE_RELEASE=2.27.0
+ARG BUILD_VERSION
+ARG BUILD_REF
+ARG ALLURE_RELEASE=NONE
 ARG ALLURE_REPO=https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline
 ARG UID=1000
 ARG GID=1000
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.13
 
 ######
 
@@ -15,8 +14,8 @@ FROM python:${PYTHON_VERSION}-alpine AS dev_stage
 RUN apk update
 RUN apk add build-base
 RUN pip install -U pylint
-RUN pip install --upgrade pip setuptools wheel waitress && \
-    pip install -Iv Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0
+RUN pip install --upgrade pip==25.2 setuptools==80.9.0 wheel==0.45.1 waitress==3.0.2 && \
+    pip install -Iv Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.32.5
 
 ENV ROOT_DIR=/code
 RUN mkdir -p $ROOT_DIR
@@ -25,8 +24,7 @@ COPY allure-docker-api $ROOT_DIR/allure-docker-api
 RUN pylint --rcfile=allure-docker-api/.pylintrc allure-docker-api
 
 ######
-FROM $ARCH/$JDK
-ARG ARCH
+FROM --platform=$BUILDPLATFORM $JDK
 ARG JDK
 ARG BUILD_DATE
 ARG BUILD_VERSION
@@ -35,10 +33,10 @@ ARG ALLURE_RELEASE
 ARG ALLURE_REPO
 ARG UID
 ARG GID
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.13
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.docker.dockerfile="docker-custom/Dockerfile.bionic-custom" \
+    org.label-schema.docker.dockerfile="docker/Dockerfile" \
     org.label-schema.license="MIT" \
     org.label-schema.name="Allure Framework" \
     org.label-schema.version=${BUILD_VERSION} \
@@ -47,8 +45,9 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.vcs-ref=${BUILD_REF} \
     org.label-schema.vcs-type="Git" \
     org.label-schema.vcs-url="https://github.com/fescobar/allure-docker-service" \
-    org.label-schema.arch=${ARCH} \
-    authors="Frank Escobar <fescobar.systems@gmail.com>, Raymond Mouthaan <raymondmmouthaan@gmail.com>"
+    org.label-schema.arch=${BUILDPLATFORM} \
+    authors="Frank Escobar <fescobar.systems@gmail.com>"
+
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
@@ -57,12 +56,16 @@ RUN apt-get update && \
       tzdata \
       nano \
       python${PYTHON_VERSION} \
-      python3-pip \
       unzip && \
     ln -s `which python3` /usr/bin/python && \
-    pip3 install --upgrade pip && \
-    python${PYTHON_VERSION} -m pip install --upgrade pip setuptools wheel waitress && \
-    python${PYTHON_VERSION} -m pip install -v Flask==3.0.2 Flask-JWT-Extended==4.6.0 flask-swagger-ui==4.11.1 requests==2.31.0 && \
+    apt-get purge python3-cryptography -y && \
+    apt-get autoremove -y && \
+    wget https://bootstrap.pypa.io/get-pip.py && \
+    sed -i "s/\"--force-reinstall\"/\"--force-reinstall\", \"--break-system-packages\"/g" get-pip.py && \
+    python${PYTHON_VERSION} get-pip.py && \
+    python${PYTHON_VERSION} -m pip config set global.break-system-packages true && \
+    python${PYTHON_VERSION} -m pip install setuptools==80.9.0 wheel==0.45.1 waitress==3.0.2 pipdeptree==2.29.0 cffi==2.0.0 cryptography==46.0.3 && \
+    python${PYTHON_VERSION} -m pip install --ignore-installed --upgrade Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.32.5 && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
@@ -71,8 +74,9 @@ RUN apt-get update && \
         chmod -R +x /allure-$ALLURE_RELEASE/bin && \
         mkdir -p /app
 
-RUN groupadd --gid ${GID} allure \
-    && useradd --uid ${UID} --gid allure --shell /bin/bash --create-home allure
+RUN usermod -l allure $(getent passwd ${UID} | cut -d: -f1)
+RUN mkdir -p /home/allure && \
+    chown -R ${UID}:${GID} /home/allure
 
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV ROOT=/app
@@ -102,8 +106,8 @@ RUN echo -n $(allure --version) > ${ALLURE_VERSION} && \
     ln -s $DEFAULT_PROJECT_REPORTS $ROOT/default-reports
 
 WORKDIR $ROOT
-COPY --chown=allure:allure allure-docker-api $ROOT/allure-docker-api
-COPY --chown=allure:allure allure-docker-scripts $ROOT/
+COPY --chown=${UID}:${GID} allure-docker-api $ROOT/allure-docker-api
+COPY --chown=${UID}:${GID} allure-docker-scripts $ROOT/
 RUN chmod +x $ROOT/*.sh && \
     mkdir $RESULTS_DIRECTORY && \
     mkdir -p $DEFAULT_PROJECT_REPORTS/latest && \
@@ -114,7 +118,7 @@ RUN chmod +x $ROOT/*.sh && \
     cp /tmp/resources/app.js $ALLURE_RESOURCES && \
     cp /tmp/resources/styles.css $ALLURE_RESOURCES
 
-RUN chown -R allure:allure $ROOT
+RUN chown -R ${UID}:${GID} $ROOT
 
 VOLUME [ "$RESULTS_DIRECTORY" ]
 

@@ -91,19 +91,19 @@ Allure Docker Service supports architectures amd64, arm32v7 and arm64v8.
 
 The following table shows the variation of provided images.
 
-|**Tag**         |**Base Image**                              |**Arch** | **OS** |
-|----------------|--------------------------------------------|---------|--------|
-| 0.20.7-amd64   | amd64/adoptopenjdk:11-jre-openj9-bionic    | amd64   | ubuntu |
-| 0.20.7-arm32v7 | arm32v7/adoptopenjdk:11-jdk-hotspot-bionic | arm32v7 | ubuntu |
-| 0.20.7-arm64v8 | arm64v8/adoptopenjdk:11-jre-hotspot-bionic | arm64v8 | ubuntu |
+|**Base Image**                              |**Arch** | **OS** |
+|--------------------------------------------|---------|--------|
+| amd64/eclipse-temurin:11-jre-noble         | amd64   | ubuntu |
+| arm32v7/eclipse-temurin:11-jre-noble       | armv7   | ubuntu |
+| arm64/eclipse-temurin:11-jre-noble         | arm64   | ubuntu |
 
 The following table shows the provided Manifest Lists.
 
-| **Tag**                                | **allure-docker-service Base Image**              |
-|----------------------------------------|---------------------------------------------------|
-| latest, 2.27.0                         | frankescobar/allure-docker-service:2.27.0-amd64   |
-|                                        | frankescobar/allure-docker-service:2.27.0-arm32v7 |
-|                                        | frankescobar/allure-docker-service:2.27.0-arm64v8 |
+| **Tag**                                | **allure-docker-service Base Image**            |
+|----------------------------------------|-------------------------------------------------|
+| latest, 2.35.1                         | frankescobar/allure-docker-service:2.35.1-amd64 |
+|                                        | frankescobar/allure-docker-service:2.35.1-armv7 |
+|                                        | frankescobar/allure-docker-service:2.35.1-arm64 |
 
 ## USAGE
 ### Generate Allure Results
@@ -722,7 +722,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.27.0"
+    image: "frankescobar/allure-docker-service:2.35.1"
 ```
 or using latest version:
 
@@ -1395,7 +1395,7 @@ docker-compose -f docker-compose-dev.yml up --build
 ```
 ### Build image
 ```sh
-docker build -t allure-release -f docker-custom/Dockerfile.bionic-custom --build-arg ALLURE_RELEASE=2.27.0 .
+docker build --no-cache -t allure-release -f docker/Dockerfile --build-arg ALLURE_RELEASE=2.35.1 .
 ```
 ### Run container
 ```sh
@@ -1412,6 +1412,10 @@ docker exec -it ${CONTAINER_ID} bash
 ### Access to logs
 ```sh
 docker exec -it ${CONTAINER_ID} tail -f log
+```
+### Security scan
+```sh
+docker scout cves allure-release
 ```
 ### Remove all containers
 ```sh
@@ -1446,5 +1450,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.27.0
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.35.1
 ```

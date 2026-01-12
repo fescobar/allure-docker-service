@@ -1,16 +1,17 @@
-version: '3'
-
 volumes:
   allure-docker-service:
     driver: local
 
 services:
   allure-docker-service:
+    platform: linux/amd64
     build:
       context: ../allure-docker-service
-      dockerfile: docker-custom/Dockerfile.bionic-custom
+      dockerfile: docker/Dockerfile
       args:
-        ALLURE_RELEASE: "2.27.0"
+        ALLURE_RELEASE: 2.35.1
+        BUILD_VERSION: 2.35.1
+        JDK: eclipse-temurin:11-jre-noble
     environment:
       DEV_MODE: 0
       CHECK_RESULTS_EVERY_SECONDS: NONE
