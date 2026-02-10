@@ -1395,7 +1395,7 @@ docker-compose -f docker-compose-dev.yml up --build
 ```
 ### Build image
 ```sh
-docker build --no-cache -t allure-release -f docker/Dockerfile --build-arg ALLURE_RELEASE=2.35.1 .
+docker build --no-cache -t allure-release -f docker/Dockerfile --build-arg ALLURE_RELEASE=2.36.0 .
 ```
 ### Run container
 ```sh
