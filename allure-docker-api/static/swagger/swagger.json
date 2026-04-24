@@ -115,6 +115,13 @@
                   "schema":{
                      "type":"string"
                   }
+               },
+               {
+                  "in":"query",
+                  "name":"run_id",
+                  "schema":{
+                     "type":"string"
+                  }
                }
             ],
             "responses":{

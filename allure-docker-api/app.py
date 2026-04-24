@@ -1226,6 +1226,7 @@ def emailable_report_export_endpoint():
 def report_export_endpoint():
     try:
         project_id = resolve_project(request.args.get('project_id'))
+        run_id = request.args.get('run_id')
         if is_existent_project(project_id) is False:
             body = {
                 'meta_data': {
@@ -1239,8 +1240,23 @@ def report_export_endpoint():
         check_process(GENERATE_REPORT_PROCESS, project_id)
 
         project_path = get_project_path(project_id)
+        report_id = 'latest'
+        if run_id is not None and run_id.strip():
+            report_id = secure_filename(run_id.strip())
+
+        report_path = '{}/reports/{}'.format(project_path, report_id)
+        if os.path.isdir(report_path) is False:
+            body = {
+                'meta_data': {
+                    'message': "run_id '{}' not found for project_id '{}'".format(report_id, project_id)
+                }
+            }
+            resp = jsonify(body)
+            resp.status_code = 404
+            return resp
+
         tmp_report = '{}/allure-report'.format(tempfile.mkdtemp())
-        shutil.copytree('{}/reports/latest'.format(project_path), tmp_report)
+        shutil.copytree(report_path, tmp_report)
 
         data = io.BytesIO()
         with zipfile.ZipFile(data, 'w', zipfile.ZIP_DEFLATED) as zipf:
