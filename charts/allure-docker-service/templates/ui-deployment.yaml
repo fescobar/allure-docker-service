@@ -1,0 +1,106 @@
+{{- if .Values.ui.enabled -}}
+{{/*
+  Build the default environment variables for the UI container.
+
+  ALLURE_DOCKER_PUBLIC_API_URL_PREFIX defaults to an empty string, matching
+  the docker-compose default. Override via podEnvs if a URL prefix is needed.
+
+  ALLURE_DOCKER_PUBLIC_API_URL defaults to the scheme + first host from
+  ui.ingress.hosts[0].host (http:// or https:// based on whether ingress TLS
+  is configured). Override via podEnvs to supply a different URL.
+*/}}
+{{- $apiHost := "" -}}
+{{- if .Values.ui.ingress.hosts -}}
+{{- $apiHost = (first .Values.ui.ingress.hosts).host -}}
+{{- end -}}
+{{- $apiScheme := "http" -}}
+{{- if .Values.ui.ingress.tls -}}
+{{- $apiScheme = "https" -}}
+{{- end -}}
+{{- $apiUrl := printf "%s://%s" $apiScheme $apiHost -}}
+{{- $defaults := list
+  (dict "name" "ALLURE_DOCKER_PUBLIC_API_URL_PREFIX" "value" "")
+  (dict "name" "ALLURE_DOCKER_PUBLIC_API_URL" "value" $apiUrl)
+-}}
+{{- $userEnvNames := list -}}
+{{- range .Values.ui.podEnvs -}}
+{{- $userEnvNames = append $userEnvNames .name -}}
+{{- end -}}
+{{- $filteredDefaults := list -}}
+{{- range $defaults -}}
+{{- if not (has .name $userEnvNames) -}}
+{{- $filteredDefaults = append $filteredDefaults . -}}
+{{- end -}}
+{{- end -}}
+{{- $allEnvs := concat $filteredDefaults .Values.ui.podEnvs -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "allure-docker-service.ui.fullname" . }}
+  labels:
+    {{- include "allure-docker-service.ui.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.ui.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "allure-docker-service.ui.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.ui.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "allure-docker-service.ui.selectorLabels" . | nindent 8 }}
+        {{- with .Values.ui.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "allure-docker-service.serviceAccountName" . }}
+      {{- with .Values.ui.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ui
+          {{- with .Values.ui.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "allure-docker-service.ui.image" . }}
+          imagePullPolicy: {{ .Values.ui.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5252
+              protocol: TCP
+          env:
+            {{- toYaml $allEnvs | nindent 12 }}
+          {{- with .Values.ui.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.ui.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.ui.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.ui.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ui.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ui.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

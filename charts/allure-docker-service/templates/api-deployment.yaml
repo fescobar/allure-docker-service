@@ -1,0 +1,142 @@
+{{- if .Values.api.enabled -}}
+{{/*
+  Build the default environment variables for the API container.
+  These are the operational defaults derived from docker-compose-dev.yml.
+
+  Merge strategy: user values win.
+    1. Collect the names of every env var the user declared in podEnvs.
+    2. Keep only the defaults whose name is NOT in that set.
+    3. Concat filtered defaults with podEnvs — user entries always appear last
+       and therefore shadow any remaining duplicate that could sneak in.
+
+  Credentials (SECURITY_USER/PASS, viewer pair) are injected from the managed
+  Secret via secretKeyRef — see api-secrets.yaml and api.security in values.
+  URL_PREFIX defaults to an empty string (root). Override via podEnvs to serve
+  the API under a sub-path, e.g.: - name: URL_PREFIX\n      value: "/my-prefix"
+*/}}
+{{- $defaults := list
+  (dict "name" "DEV_MODE"                    "value" "0")
+  (dict "name" "CHECK_RESULTS_EVERY_SECONDS" "value" "NONE")
+  (dict "name" "KEEP_HISTORY"                "value" "1")
+  (dict "name" "KEEP_HISTORY_LATEST"         "value" "5")
+  (dict "name" "SECURITY_ENABLED"            "value" "1")
+  (dict "name" "MAKE_VIEWER_ENDPOINTS_PUBLIC" "value" "0")
+  (dict "name" "OPTIMIZE_STORAGE"            "value" "0")
+  (dict "name" "API_RESPONSE_LESS_VERBOSE"   "value" "0")
+  (dict "name" "TLS"                         "value" "0")
+  (dict "name" "URL_PREFIX"                  "value" "")
+-}}
+{{- $userEnvNames := list -}}
+{{- range .Values.api.podEnvs -}}
+{{- $userEnvNames = append $userEnvNames .name -}}
+{{- end -}}
+{{- $filteredDefaults := list -}}
+{{- range $defaults -}}
+{{- if not (has .name $userEnvNames) -}}
+{{- $filteredDefaults = append $filteredDefaults . -}}
+{{- end -}}
+{{- end -}}
+{{- $allEnvs := concat $filteredDefaults .Values.api.podEnvs -}}
+{{- $secretName := .Values.api.security.existingSecret | default (include "allure-docker-service.api.fullname" .) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "allure-docker-service.api.fullname" . }}
+  labels:
+    {{- include "allure-docker-service.api.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "allure-docker-service.api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.api.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "allure-docker-service.api.selectorLabels" . | nindent 8 }}
+        {{- with .Values.api.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "allure-docker-service.serviceAccountName" . }}
+      {{- with .Values.api.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: api
+          {{- with .Values.api.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "allure-docker-service.api.image" . }}
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5050
+              protocol: TCP
+          env:
+            - name: SECURITY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: user
+            - name: SECURITY_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: password
+            - name: SECURITY_VIEWER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: viewerUser
+            - name: SECURITY_VIEWER_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: viewerPassword
+            {{- toYaml $allEnvs | nindent 12 }}
+          {{- with .Values.api.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.api.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.api.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.api.persistence.enabled }}
+          volumeMounts:
+            - name: allure-results
+              mountPath: /app/allure-results
+          {{- end }}
+      {{- if .Values.api.persistence.enabled }}
+      volumes:
+        - name: allure-results
+          persistentVolumeClaim:
+            claimName: {{ include "allure-docker-service.api.fullname" . }}
+      {{- end }}
+      {{- with .Values.api.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

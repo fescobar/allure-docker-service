@@ -1,0 +1,17 @@
+{{- if and .Values.api.enabled .Values.api.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "allure-docker-service.api.fullname" . }}
+  labels:
+    {{- include "allure-docker-service.api.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.api.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.api.persistence.size }}
+  {{- with .Values.api.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+{{- end }}
