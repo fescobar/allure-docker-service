@@ -1,12 +1,11 @@
-ARG JDK=eclipse-temurin:11-jre-noble
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION=3.13
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
-ARG ALLURE_RELEASE=NONE
-ARG ALLURE_REPO=https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline
+ARG ALLURE_NPM_VERSION=3.3.1
 ARG UID=1000
 ARG GID=1000
-ARG PYTHON_VERSION=3.13
 
 ######
 
@@ -24,65 +23,80 @@ COPY allure-docker-api $ROOT_DIR/allure-docker-api
 RUN pylint --rcfile=allure-docker-api/.pylintrc allure-docker-api
 
 ######
-FROM --platform=$BUILDPLATFORM $JDK
-ARG JDK
+# Allure CLI: Node oficial (Bookworm) — evita o pacote debian `nodejs`/`npm` com CVEs antigos no Scout.
+# `npm audit fix` no pacote `allure` aplica correções semver sem --force (pode falhar silenciosamente).
+FROM node:22-bookworm-slim AS allure_cli
+ARG ALLURE_NPM_VERSION=3.3.1
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+RUN npm install -g allure@${ALLURE_NPM_VERSION} \
+    && ALLURE_PKG="$(npm root -g)/allure" \
+    && if [ -f "$ALLURE_PKG/package.json" ]; then (cd "$ALLURE_PKG" && npm audit fix --omit=dev 2>/dev/null || true); fi \
+    && npm cache clean --force
+# Só binários reais; não copiar o shim `allure` (symlink → ../lib/node_modules/allure/cli.js),
+# senão o `import "./dist/index.js"` resolve para /usr/local/bin/dist e falha.
+RUN mkdir -p /export/bin /export/lib \
+    && cp -a /usr/local/lib/node_modules /export/lib/ \
+    && cp -a /usr/local/bin/node /usr/local/bin/npm /usr/local/bin/npx /export/bin/ \
+    && allure --version
+
+######
+FROM python:${PYTHON_VERSION}-slim-bookworm
+ARG PYTHON_VERSION
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
-ARG ALLURE_RELEASE
-ARG ALLURE_REPO
+ARG ALLURE_NPM_VERSION
 ARG UID
 ARG GID
-ARG PYTHON_VERSION=3.13
+ARG BUILDPLATFORM=unknown
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.docker.dockerfile="docker/Dockerfile" \
-    org.label-schema.license="MIT" \
-    org.label-schema.name="Allure Framework" \
+    org.label-schema.license="Apache-2.0" \
+    org.label-schema.name="Allure Docker Service" \
     org.label-schema.version=${BUILD_VERSION} \
-    org.label-schema.description="Allure Framework is a flexible lightweight multi-language test report tool." \
-    org.label-schema.url="https://docs.qameta.io/allure/" \
+    org.label-schema.description="Allure Report 3 (npm) with Allure Docker Service API." \
+    org.label-schema.url="https://allurereport.org/docs/" \
     org.label-schema.vcs-ref=${BUILD_REF} \
     org.label-schema.vcs-type="Git" \
-    org.label-schema.vcs-url="https://github.com/fescobar/allure-docker-service" \
+    org.label-schema.vcs-url="https://github.com/LFBRxD/allure-docker-service" \
     org.label-schema.arch=${BUILDPLATFORM} \
-    authors="Frank Escobar <fescobar.systems@gmail.com>"
+    authors="Flavio Ramos <flavior.desouza@gmail.com> (maintainer); Frank Escobar <fescobar.systems@gmail.com> (original author)" \
+    org.opencontainers.image.title="Allure Docker Service" \
+    org.opencontainers.image.authors="Flavio Ramos <flavior.desouza@gmail.com> (maintainer); Frank Escobar <fescobar.systems@gmail.com> (original author)" \
+    org.opencontainers.image.source="https://github.com/LFBRxD/allure-docker-service" \
+    org.opencontainers.image.url="https://github.com/LFBRxD/allure-docker-service" \
+    org.opencontainers.image.documentation="https://github.com/LFBRxD/allure-docker-service#readme" \
+    org.opencontainers.image.vendor="Flavio Ramos (fork maintainer)" \
+    org.opencontainers.image.licenses="Apache-2.0" \
+    org.opencontainers.image.description="Allure Report 3 (npm allure): REST API, Swagger, multi-project, report history, report navigator (iframe), emailable HTML reports." \
+    org.opencontainers.image.version="${BUILD_VERSION}" \
+    org.opencontainers.image.created="${BUILD_DATE}" \
+    org.opencontainers.image.revision="${BUILD_REF}" \
+    allure.npm.version="${ALLURE_NPM_VERSION}"
 
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      procps \
       tzdata \
-      nano \
-      python${PYTHON_VERSION} \
-      unzip && \
-    ln -s `which python3` /usr/bin/python && \
-    apt-get purge python3-cryptography -y && \
-    apt-get autoremove -y && \
-    wget https://bootstrap.pypa.io/get-pip.py && \
-    sed -i "s/\"--force-reinstall\"/\"--force-reinstall\", \"--break-system-packages\"/g" get-pip.py && \
-    python${PYTHON_VERSION} get-pip.py && \
-    python${PYTHON_VERSION} -m pip config set global.break-system-packages true && \
-    python${PYTHON_VERSION} -m pip install setuptools==80.9.0 wheel==0.45.1 waitress==3.0.2 pipdeptree==2.29.0 cffi==2.0.0 cryptography==46.0.3 && \
-    python${PYTHON_VERSION} -m pip install --ignore-installed --upgrade Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.32.5 && \
-    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
-        unzip -q /tmp/allure-commandline.zip -d / && \
-        apt-get remove -y unzip && \
-        rm -rf /tmp/* && \
-        rm -rf /var/lib/apt/lists/* && \
-        chmod -R +x /allure-$ALLURE_RELEASE/bin && \
-        mkdir -p /app
+    && rm -rf /var/lib/apt/lists/*
 
-RUN usermod -l allure $(getent passwd ${UID} | cut -d: -f1)
-RUN mkdir -p /home/allure && \
-    chown -R ${UID}:${GID} /home/allure
+COPY --from=allure_cli /export/lib/node_modules /usr/local/lib/node_modules
+COPY --from=allure_cli /export/bin/node /export/bin/npm /export/bin/npx /usr/local/bin/
+RUN ln -sf ../lib/node_modules/allure/cli.js /usr/local/bin/allure \
+    && allure --version
+
+RUN groupadd -g ${GID} allure \
+    && useradd -u ${UID} -g allure -m -s /bin/sh allure \
+    && mkdir -p /home/allure \
+    && chown -R ${UID}:${GID} /home/allure
 
 ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV PYTHONUNBUFFERED=1
 ENV ROOT=/app
-ENV ALLURE_HOME=/allure-$ALLURE_RELEASE
-ENV ALLURE_HOME_SL=/allure
-ENV PATH=$PATH:$ALLURE_HOME/bin
 ENV ALLURE_RESOURCES=$ROOT/resources
 ENV RESULTS_DIRECTORY=$ROOT/allure-results
 ENV REPORT_DIRECTORY=$ROOT/allure-report
@@ -97,26 +111,32 @@ ENV DEFAULT_PROJECT_ROOT=$STATIC_CONTENT_PROJECTS/$DEFAULT_PROJECT
 ENV DEFAULT_PROJECT_RESULTS=$DEFAULT_PROJECT_ROOT/results
 ENV DEFAULT_PROJECT_REPORTS=$DEFAULT_PROJECT_ROOT/reports
 ENV EXECUTOR_FILENAME=executor.json
+ENV ALLURE_REPORT_ENGINE=awesome
+
+WORKDIR $ROOT
+
+COPY NOTICE $ROOT/NOTICE
+
+COPY docker/bootstrap-allure-results /tmp/bootstrap-allure-results
 
 RUN echo -n $(allure --version) > ${ALLURE_VERSION} && \
     echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION}) && \
-    mkdir $ALLURE_HOME_SL && \
-    ln -s $ALLURE_HOME/* $ALLURE_HOME_SL && \
+    mkdir -p ${ALLURE_RESOURCES} && \
+    allure awesome /tmp/bootstrap-allure-results --output /tmp/resources --single-file && \
+    rm -rf /tmp/bootstrap-allure-results /tmp/resources && \
     ln -s $STATIC_CONTENT_PROJECTS $ROOT/projects && \
     ln -s $DEFAULT_PROJECT_REPORTS $ROOT/default-reports
 
-WORKDIR $ROOT
 COPY --chown=${UID}:${GID} allure-docker-api $ROOT/allure-docker-api
 COPY --chown=${UID}:${GID} allure-docker-scripts $ROOT/
 RUN chmod +x $ROOT/*.sh && \
     mkdir $RESULTS_DIRECTORY && \
     mkdir -p $DEFAULT_PROJECT_REPORTS/latest && \
     ln -sf $RESULTS_DIRECTORY $DEFAULT_PROJECT_RESULTS && \
-    ln -sf $DEFAULT_PROJECT_REPORTS/latest $REPORT_DIRECTORY && \
-    allure generate -c -o /tmp/resources && \
-    mkdir $ALLURE_RESOURCES && \
-    cp /tmp/resources/app.js $ALLURE_RESOURCES && \
-    cp /tmp/resources/styles.css $ALLURE_RESOURCES
+    ln -sf $DEFAULT_PROJECT_REPORTS/latest $REPORT_DIRECTORY
+
+RUN python3 -m pip install --no-cache-dir --upgrade pip==25.2 setuptools==80.9.0 wheel==0.45.1 waitress==3.0.2 pipdeptree==2.29.0 cffi==2.0.0 cryptography==46.0.3 && \
+    python3 -m pip install --no-cache-dir Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.32.5
 
 RUN chown -R ${UID}:${GID} $ROOT
 
@@ -129,7 +149,7 @@ EXPOSE $DEPRECATED_PORT
 EXPOSE $PORT
 
 HEALTHCHECK --interval=10s --timeout=60s --retries=3 \
-      CMD curl -f http://localhost:$PORT || exit 1
+      CMD curl -fsS http://127.0.0.1:$PORT/version >/dev/null || exit 1
 
 USER allure
 

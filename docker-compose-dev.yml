@@ -6,31 +6,37 @@ services:
   allure-docker-service:
     platform: linux/amd64
     build:
-      context: ../allure-docker-service
+      context: .
       dockerfile: docker/Dockerfile
+      # BUILD_VERSION = release da imagem (fork); ALLURE_NPM_VERSION = pacote npm `allure` na imagem.
       args:
-        ALLURE_RELEASE: 2.38.1
-        BUILD_VERSION: 2.38.1
-        JDK: eclipse-temurin:11-jre-noble
+        ALLURE_NPM_VERSION: 3.3.1
+        BUILD_VERSION: dev-local
     environment:
       DEV_MODE: 0
       CHECK_RESULTS_EVERY_SECONDS: NONE
       KEEP_HISTORY: 1
-      KEEP_HISTORY_LATEST: 5
+      KEEP_HISTORY_LATEST: 10
+      # With watcher disabled (NONE), generate/rotate report right after each send-results call
+      AUTO_GENERATE_REPORT_ON_SEND_RESULTS: 1
       #URL_PREFIX: "/my-prefix"
-      SECURITY_USER: "my_username"
-      SECURITY_PASS: "my_password"
-      SECURITY_VIEWER_USER: "view_user"
-      SECURITY_VIEWER_PASS: "view_pass"
-      SECURITY_ENABLED: 1
+      SECURITY_USER: "${SECURITY_USER:-}"
+      SECURITY_PASS: "${SECURITY_PASS:-}"
+      SECURITY_VIEWER_USER: "${SECURITY_VIEWER_USER:-}"
+      SECURITY_VIEWER_PASS: "${SECURITY_VIEWER_PASS:-}"
+      SECURITY_ENABLED: 0
       MAKE_VIEWER_ENDPOINTS_PUBLIC: 0
-      OPTIMIZE_STORAGE: 0
+      # Allure Report 3: awesome (default) = single-file HTML; use generate for classic multi-file report
+      ALLURE_REPORT_ENGINE: awesome
+      OPTIMIZE_STORAGE: 1
       API_RESPONSE_LESS_VERBOSE: 0
       TLS: 0
     ports:
       - "${ALLURE_DOCKER_SERVICE_API_PORT}:5050"
     volumes:
       - ./.data/allure-docker-service/allure-results:/app/allure-results
+      # Persiste todos os project_id (default + criados via API): results/reports/history por pasta
+      - ./.data/allure-docker-service/projects:/app/allure-docker-api/static/projects
 
   allure-ui:
     image: "frankescobar/allure-docker-service-ui"

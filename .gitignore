@@ -1,2 +1,9 @@
 allure-docker-api/static/swagger/swagger_security.json
 .data/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.local
+*.log

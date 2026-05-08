@@ -12,7 +12,7 @@ if [ "$SECURITY_ENABLED" == "1" ] && [ -n "$SECURITY_USER" ] && [ -n "$SECURITY_
 fi
 
 if [ "$AUTH" == "1" ]; then
-	COOKIES_TEMP_FILE=$(tempfile)
+	COOKIES_TEMP_FILE=$(mktemp)
     curl -X POST http://localhost:$PORT/login -H 'Content-Type: application/json' -d '{ "username": "'$SECURITY_USER'", "password": "'$SECURITY_PASS'"}' -c $COOKIES_TEMP_FILE --silent --output /dev/null --show-error --fail
 fi
 

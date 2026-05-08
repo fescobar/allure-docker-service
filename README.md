@@ -1,22 +1,19 @@
-[![](resources/allure.png)](http://allure.qatools.ru/)
-[![](resources/docker.png)](https://docs.docker.com/)
+[Allure Report](https://allurereport.org/) · [Docker](https://docs.docker.com/)
 
 # ALLURE DOCKER SERVICE
-[![](https://github.com/fescobar/allure-docker-service/actions/workflows/docker-publish.yml/badge.svg?branch=master)](https://github.com/fescobar/allure-docker-service/actions?query=branch%3Amaster)
 
-![](https://img.shields.io/docker/pulls/frankescobar/allure-docker-service)
+[![CI](https://github.com/LFBRxD/allure-docker-service/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/LFBRxD/allure-docker-service/actions)
 
-
-> [!IMPORTANT]
-> <div align="center">
+> This fork targets **Allure Report 3** (npm package `allure`). **Screenshots committed in-repo** live under [`docs/images/`](docs/images/) — add or replace them when you refresh the docs.
 >
-> # <font color="red">ANNOUNCEMENT</font>
-> ## <font color="red">We are developing a new open-source version designed to resolve known issues and introduce significant enhancements related to UI, functionality, and data processing. While this transition will take time, we are prioritizing development to get a build ready for our testers as soon as possible.</font>
+> **Mantenedor deste fork:** [Flavio Ramos](https://github.com/LFBRxD) — **Projeto original:** [Frank Escobar](https://github.com/fescobar) ([Allure Docker Service](https://github.com/fescobar/allure-docker-service)).
 >
-> </div>
+> **Imagem Docker Hub (Allure 3, uso público):** [hub.docker.com/r/flaviordesouza/allure-docker-service](https://hub.docker.com/r/flaviordesouza/allure-docker-service)
+
 
 Table of contents
 =================
+   * [ACKNOWLEDGEMENTS](#acknowledgements)
    * [FEATURES](#FEATURES)
       * [Docker Hub](#docker-hub)
       * [Docker Versions](#docker-versions)
@@ -35,6 +32,7 @@ Table of contents
       * [PORT 4040 Deprecated](#port-4040-deprecated)
       * [Known Issues](#known-issues)
       * [Opening & Refreshing Report](#opening--refreshing-report)
+         * [Report navigator](#report-navigator)
       * [New User Interface](#new-user-interface)
       * [Deploy using Kubernetes](#deploy-using-kubernetes)
       * [Extra options](#extra-options)
@@ -78,6 +76,12 @@ Table of contents
       * [Gitter](#gitter)
    * [DOCKER GENERATION (Usage for developers)](#docker-generation-usage-for-developers)
 
+## ACKNOWLEDGEMENTS
+
+**Mantenedor principal (este fork):** [Flavio Ramos](https://github.com/LFBRxD) — desenvolvimento e manutenção (Allure Report 3, API, Swagger, Docker, documentação e CI).
+
+**Autor original:** [Frank Escobar](https://github.com/fescobar) — criador do [Allure Docker Service](https://github.com/fescobar/allure-docker-service) upstream; este fork mantém o crédito e a base sobre a qual as alterações foram construídas.
+
 ## FEATURES
 Allure Framework provides you good looking reports for automation testing.
 For using this tool is required to install a server. You could have this server running on Jenkins or if you want to see reports locally, you need to run some commands on your machine. This work results tedious, at least for me :)
@@ -86,33 +90,44 @@ For that reason, this docker container allows you to see up to date reports simp
 
 - Useful for developers who wants to run tests locally and want to see what were the problems during regressions.
 - Useful for the team to check the tests status for every project.
+- **Report navigator:** one HTML page ([`GET /allure-docker-service/report-navigator`](#report-navigator)) to pick the project and open **latest** or **history** builds in iframes; switching builds **keeps the same in-report view** (hash / sub-path) when possible, plus optional static `reports/report-navigator.html` after each generation.
 
 ### Docker Hub
-- Repository: [frankescobar/allure-docker-service](https://hub.docker.com/r/frankescobar/allure-docker-service/)
+- **Link público da imagem (uso):** [https://hub.docker.com/r/flaviordesouza/allure-docker-service](https://hub.docker.com/r/flaviordesouza/allure-docker-service) — **Allure Report 3** (npm `allure`), alinhado com este README.
+- **Imagem Docker Hub de Frank Escobar:** [frankescobar/allure-docker-service](https://hub.docker.com/r/frankescobar/allure-docker-service) — corresponde ao fluxo **Allure Report 2** (stack antiga). **Não** é Allure 3; não a uses como substituto da imagem v3 deste fork.
+
+**Ajustar o que aparece no Docker Hub (duas camadas):**
+
+1. **Página do repositório** (texto para humanos) — em [hub.docker.com](https://hub.docker.com/) → teu repositório → **Settings** / **General**: *Description* (curta). Em **Repositories** → **flaviordesouza/allure-docker-service** → **Edit** (ou *Manage repository*): secção **Overview** em Markdown (instalação, portas, link do GitHub). Opcional: **Linked GitHub** / **Automated builds** ou copiar manualmente trechos deste README quando publicares uma versão.
+2. **Metadados dentro da imagem** (labels OCI / label-schema) — definidos no [`docker/Dockerfile`](docker/Dockerfile); preenchidos na build com `--build-arg BUILD_DATE=…`, `BUILD_VERSION=…`, `BUILD_REF=…` (o [CI](.github/workflows/docker-publish.yml) já passa estes args em release). Consulta local: `docker inspect flaviordesouza/allure-docker-service:TAG --format '{{json .Config.Labels}}' | jq`.
+
+**Overview para colar no Docker Hub:** texto Markdown pronto em [`docs/DOCKER_HUB_OVERVIEW.md`](docs/DOCKER_HUB_OVERVIEW.md) (Repository → *Edit* → secção **Overview**).
 
 ### Docker Versions
-Docker container versions are based on binary [Allure 2 releases](https://github.com/allure-framework/allure2/releases/)
+The image bundles [Allure Report 3](https://allurereport.org/docs/) via the official npm package `allure` (build arg `ALLURE_NPM_VERSION`, default `3.3.1`).
+
+**Dois números diferentes:** (1) **Tag da imagem no registry** — versão de **release deste fork** (definida pela tag Git `vX.Y.Z` no CI, ou `main` / `sha-…` em pushes na `main`). Não tem de coincidir com o Allure. (2) **Versão do Allure CLI** na imagem — vem de `ALLURE_NPM_VERSION`; consulta `GET /version` e a label `allure.npm.version` em `docker inspect`.
 
 #### Image Variants
-Allure Docker Service supports architectures amd64, arm32v7 and arm64v8.
+CI publishes **linux/amd64** and **linux/arm64** (no armv7: the Allure CLI layer uses official `node:22-bookworm-slim`, which does not ship armv7).
 
-- Tags: https://hub.docker.com/r/frankescobar/allure-docker-service/tags
+- Tags (fork): https://hub.docker.com/r/flaviordesouza/allure-docker-service/tags
+- **Branch `main`:** cada push bem-sucedido publica release automática **`1.0.<N>`** (`N` = número de commits até o commit do push, via `git rev-list --count`), atualiza **`latest`** para esse build e mantém manifests **`main`** e **`sha-<8 hex>`**. Não precisas criar tag Git. Tags **`v*`** continuam opcionais para releases semver “manuais”.
 
 The following table shows the variation of provided images.
 
 |**Base Image**                              |**Arch** | **OS** |
 |--------------------------------------------|---------|--------|
-| amd64/eclipse-temurin:11-jre-noble         | amd64   | ubuntu |
-| arm32v7/eclipse-temurin:11-jre-noble       | armv7   | ubuntu |
-| arm64/eclipse-temurin:11-jre-noble         | arm64   | ubuntu |
+| python:3.13-slim-bookworm + Node 22 (npm `allure`) | amd64   | debian |
+| python:3.13-slim-bookworm + Node 22 (npm `allure`) | arm64   | debian |
 
 The following table shows the provided Manifest Lists.
 
-| **Tag**                                | **allure-docker-service Base Image**            |
-|----------------------------------------|-------------------------------------------------|
-| latest, 2.38.1                         | frankescobar/allure-docker-service:2.38.1-amd64 |
-|                                        | frankescobar/allure-docker-service:2.38.1-armv7 |
-|                                        | frankescobar/allure-docker-service:2.38.1-arm64 |
+| **Tag**                                | **allure-docker-service per-arch tags (example)** |
+|----------------------------------------|---------------------------------------------------|
+| latest, 1.4.0 (ex.: git tag `v1.4.0`)  | flaviordesouza/allure-docker-service:1.4.0-amd64   |
+|                                        | flaviordesouza/allure-docker-service:1.4.0-arm64   |
+| main, sha-abc12345                     | flaviordesouza/allure-docker-service:main-amd64, …-arm64 (and matching `sha-*-arch`) |
 
 ## USAGE
 ### Generate Allure Results
@@ -183,7 +198,7 @@ Just it has left 1 step more. You have to run `allure-docker-service` mounting y
 Start the container for a single project -> [SINGLE PROJECT - LOCAL REPORTS](#SINGLE-PROJECT---LOCAL-REPORTS)
 
 ### ALLURE DOCKER SERVICE
-Docker Image: https://hub.docker.com/r/frankescobar/allure-docker-service/
+Docker image (this fork, Allure Report 3): https://hub.docker.com/r/flaviordesouza/allure-docker-service/ — not the legacy `frankescobar/*` v2 image.
 
 |  **Project Type**   |  **Port**  |       **Volume Path**     |  **Container Volume Path**   |
 |---------------------|------------|---------------------------|------------------------------|
@@ -211,7 +226,7 @@ From this directory [allure-docker-java-testng-example](https://github.com/fesco
       docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY=1 \
                  -v ${PWD}/allure-results:/app/allure-results \
                  -v ${PWD}/allure-reports:/app/default-reports \
-                 frankescobar/allure-docker-service
+                 flaviordesouza/allure-docker-service
 ```
 
 ##### Single Project - Docker on Windows (Git Bash)
@@ -220,7 +235,7 @@ From this directory [allure-docker-java-testng-example](https://github.com/fesco
       docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY=1 \
                  -v "/$(pwd)/allure-results:/app/allure-results" \
                  -v "/$(pwd)/allure-reports:/app/default-reports" \
-                 frankescobar/allure-docker-service
+                 flaviordesouza/allure-docker-service
 ```
 
 ##### Single Project - Docker Compose
@@ -230,7 +245,7 @@ Using docker-compose is the best way to manage containers: [allure-docker-java-t
 version: '3'
 services:
   allure:
-    image: "frankescobar/allure-docker-service"
+    image: "flaviordesouza/allure-docker-service"
     environment:
       CHECK_RESULTS_EVERY_SECONDS: 1
       KEEP_HISTORY: 1
@@ -261,7 +276,7 @@ docker-compose logs -f allure
 
 NOTE:
 - Check the [New User Interface](#new-user-interface)
-- Read about [PORT 4040 Deprecated](#port-4040-deprecated) in case you are using previous versions.
+- Read about [PORT 4040 Deprecated](#port-4040-deprecated) if your deployment still exposes old port mappings.
 - The `${PWD}/allure-results` directory could be in anywhere on your machine. Your project must generate results in that directory.
 - The `/app/allure-results` directory is inside of the container. You MUST NOT change this directory, otherwise, the container won't detect the new changes.
 - The `/app/default-reports` directory is inside of the container. You MUST NOT change this directory, otherwise, the history reports won't be stored.
@@ -270,7 +285,6 @@ NOTE FOR WINDOWS USERS:
 - `${PWD}` determines the current directory. This only works for [GIT BASH](https://git-scm.com/downloads). If you want to use PowerShell or CMD you need to put your full path to `allure-results` directory or find the way to get the current directory path using those tools.
 
 #### MULTIPLE PROJECTS - REMOTE REPORTS
-`Available from Allure Docker Service version 2.13.3`
 
 With this option you could generate multiple reports for multiple projects, you can create, delete and get projects using [Project Endpoints](#project-endpoints). You can use Swagger documentation to help you.
 
@@ -282,14 +296,14 @@ IMPORTANT NOTE:
 ```sh
       docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=NONE -e KEEP_HISTORY=1 \
                  -v ${PWD}/projects:/app/projects \
-                 frankescobar/allure-docker-service
+                 flaviordesouza/allure-docker-service
 ```
 
 ##### Multiple Project - Docker on Windows (Git Bash)
 ```sh
       docker run -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=NONE -e KEEP_HISTORY=1 \
                  -v "/$(pwd)/projects:/app/projects" \
-                 frankescobar/allure-docker-service
+                 flaviordesouza/allure-docker-service
 ```
 
 ##### Multiple Project - Docker Compose
@@ -299,7 +313,7 @@ Using docker-compose is the best way to manage containers: [allure-docker-multi-
 version: '3'
 services:
   allure:
-    image: "frankescobar/allure-docker-service"
+    image: "flaviordesouza/allure-docker-service"
     environment:
       CHECK_RESULTS_EVERY_SECONDS: NONE
       KEEP_HISTORY: 1
@@ -329,7 +343,7 @@ docker-compose logs -f allure
 NOTE:
 - Check the [New User Interface](#new-user-interface)
 - Check [Deploy using Kubernetes](#deploy-using-kubernetes)
-- Read about [PORT 4040 Deprecated](#port-4040-deprecated) in case you are using previous versions.
+- Read about [PORT 4040 Deprecated](#port-4040-deprecated) if your deployment still exposes old port mappings.
 - The `/app/projects` directory is inside of the container. You MUST NOT change this directory, otherwise, the information about projects won't be stored.
 
 NOTE FOR WINDOWS USERS:
@@ -338,21 +352,20 @@ NOTE FOR WINDOWS USERS:
 
 ##### Creating our first project
 
-- Creating the project `my-project-id` using the endpoint `POST /projects`:
+Use the API (or Swagger UI):
 
-[![](resources/allure-mp00.png)](resources/allure-mp00.png)
+1. **Create** `my-project-id` with `POST /projects` and body `{ "id": "my-project-id" }`.
+2. **List** projects with `GET /projects`.
+3. The **`default`** project is created automatically and must not be deleted.
+4. **Details** for one project: `GET /projects/{id}` (includes report URLs).
 
+Exemplos na **Swagger UI** (corpo da requisição e resposta):
 
-- You can see all the existent projects using the endpoint `GET /projects`:
+![POST /projects — criar projeto](docs/images/flow-01-swagger-post-projects.png)
 
-[![](resources/allure-mp01.png)](resources/allure-mp01.png)
+![GET /projects — listar](docs/images/flow-02-swagger-get-projects.png)
 
-- The `default` project is always created automatically, it shouldn't be removed.
-
-- And get specific information using the endpoint `GET /projects/{id}`
-
-[![](resources/allure-mp02.png)](resources/allure-mp02.png)
-
+![GET /projects/{id} — detalhe](docs/images/flow-03-swagger-get-project-by-id.png)
 
 If we want to generate reports for this specific project we need to use the same [Action Endpoints](#action-endpoints) that we used for a single project, but the difference now is we need to use the query parameter `project_id` to specify our new project.
 
@@ -370,13 +383,15 @@ You can use any [Action Endpoints](#action-endpoints), but don't forget to pass 
 
 'GET'      /latest-report`?project_id=my-project-id`
 
+'GET'      /report-navigator`?project_id=my-project-id`
+
 'POST'     /send-results`?project_id=my-project-id`
 
 'GET'      /generate-report`?project_id=my-project-id`
 
-'GET'      /clean-results`?project_id=my-project-id`
+'DELETE'   /clean-results`?project_id=my-project-id`
 
-'GET'      /clean-history`?project_id=my-project-id`
+'DELETE'   /clean-history`?project_id=my-project-id`
 
 'GET'      /emailable-report/render`?project_id=my-project-id`
 
@@ -433,6 +448,7 @@ Check the new commands to start the container for a single project or for multip
 
 ### Known Issues
 - `Permission denied` --> https://github.com/fescobar/allure-docker-service/issues/108
+- **Docker Scout / CVEs:** the image uses a **multi-stage build** with **official `node:22-bookworm-slim`** for `npm install -g allure` (no Debian `nodejs`/`npm` packages in the final image), **`apt-get upgrade`** on the Python stage, and a best-effort **`npm audit fix --omit=dev`** inside the global `allure` package during build. That removes a large class of **deb/nodejs** noise and applies fixes npm can resolve within semver. **It does not guarantee zero CVEs:** the Allure CLI still ships a large transitive tree; remaining issues depend on **new `allure` releases on npm** (`ALLURE_NPM_VERSION`) and upstream. Rebuild periodically and re-scan.
 
 ### Opening & Refreshing Report
 If everything was OK, you will see this:
@@ -471,12 +487,38 @@ When you start the container for a single report, the `default` project will be 
 
 The `redirect=false` parameter is used to avoid be redirected to the `GET /projects/{id}` endpoint (default behaviour)
 
+#### Report navigator
 
-[![](resources/allure01.png)](resources/allure01.png)
+Use this when you want a **single HTML page** to browse **latest** and **historical** report folders (`reports/latest`, `reports/<build>`) without opening each URL manually. The page loads each report inside an **iframe** using the same URLs as `GET /projects/{id}/reports/{path}` (with `redirect=false` on `index.html`), which helps when Allure’s own history/trend links would otherwise 404 outside that context.
 
-[![](resources/allure02.png)](resources/allure02.png)
+| Item | Details |
+|------|---------|
+| **Endpoint** | `GET /allure-docker-service/report-navigator` (also `GET /report-navigator` at container root) |
+| **Query** | `project_id` — optional; defaults to `default` (same rule as other actions) |
+| **Example** | `http://localhost:5050/allure-docker-service/report-navigator` or `...?project_id=my-project-id` |
+| **Response** | `text/html` (not JSON) |
+| **Security** | Same as other report routes (`jwt_required` when [security is enabled](#enable-security)); with `SECURITY_ENABLED=0` no login is required |
+| **Switching builds** | The page tries to **preserve navigation inside the report** when you select another build: it copies the iframe’s **`#hash`** (typical for Allure Report 3 / SPA routes) and, for **classic** multi-file output (`allure generate`), the **path after** `reports/<build>/` when it is not only `index.html`. The new URL is the chosen build’s `index.html` plus that state. Works with a **same-origin** iframe (normal for this service). If the target build has no matching page, Allure may show an error—that is expected. |
 
-[![](resources/allure03.png)](resources/allure03.png)
+**Static file (optional):** after each successful report generation, `report-navigator.html` is written under `projects/<project_id>/reports/report-navigator.html` and can be opened directly, e.g. `http://localhost:5050/allure-docker-service/projects/default/reports/report-navigator.html`. Iframe targets use **relative** URLs inside that folder. If a link is resolved incorrectly from Allure’s `<base>` (e.g. `.../reports/latest/reports/report-navigator.html`), the API **redirects** to the canonical `.../reports/report-navigator.html`.
+
+**UI (browser only):** project selector (all project directories on disk), build list, **switching builds without jumping back to the report home** when the in-report route can be reapplied (see table row above), theme **light / dark / follow system** (stored in `localStorage`), **hamburger** menu for the build list on small screens, and **collapse sidebar** on wide screens to maximize iframe area (also persisted).
+
+**Screenshots** (examples; your projects/build counts will differ). Source files live in [`docs/images/`](docs/images/); replace the PNGs when the UI changes.
+
+![Report navigator — desktop, sidebar open](docs/images/readme-report-navigator-desktop-2026.png)
+
+*Wide layout: list of **Latest** + history builds, **Projeto** / **Tema** selectors, and the Allure report in the iframe.*
+
+![Report navigator — mobile, build drawer open](docs/images/readme-report-navigator-mobile-drawer-2026.png)
+
+*Narrow viewport (~390px): **Menu builds** opens the drawer over the report; tap outside or **Esc** to close.*
+
+![Report navigator — desktop, sidebar collapsed](docs/images/readme-report-navigator-sidebar-collapsed-2026.png)
+
+*Panel hidden for maximum iframe width; the **chevron** tab on the left restores the build list.*
+
+![Allure Report 3 — overview (example)](docs/images/readme-report-overview-2026.png)
 
 Now we can run other tests without being worried about Allure server. You don't need to restart or execute any Allure command.
 
@@ -491,17 +533,7 @@ mvn test -Dtest=SecondTest
 ```
 When this second test finished, refresh your browser and you will see there is a new report including last results tests.
 
-[![](resources/allure04.png)](resources/allure04.png)
-
-[![](resources/allure05.png)](resources/allure05.png)
-
-We can run the same test suite again and navigate the history:
-
-[![](resources/allure06.png)](resources/allure06.png)
-
-[![](resources/allure07.png)](resources/allure07.png)
-
-[![](resources/allure08.png)](resources/allure08.png)
+We can run the same test suite again and navigate the history.
 
 
 You can repeat these steps, but now execute the third and fourth test
@@ -514,15 +546,9 @@ mvn test -Dtest=FourthTestFactory
  ```
 
 ### New User Interface
-Check the new UI
-- [https://github.com/fescobar/allure-docker-service-ui](https://github.com/fescobar/allure-docker-service-ui)
-
-[![](https://github.com/fescobar/allure-docker-service-ui/blob/master/resources/signin-allure-docker-service-ui.png?raw=true)](https://github.com/fescobar/allure-docker-service-ui/blob/master/resources/signin-allure-docker-service-ui.png?raw=true)
-
-[![](https://github.com/fescobar/allure-docker-service-ui/blob/master/resources/allure-docker-service-ui.png?raw=true)](https://github.com/fescobar/allure-docker-service-ui/blob/master/resources/allure-docker-service-ui.png?raw=true)
+Optional companion UI (maintained upstream): [allure-docker-service-ui](https://github.com/fescobar/allure-docker-service-ui). Screenshots for that UI live in **that** repository — this fork does not vendor them.
 
 ### Deploy using Kubernetes
-[![](https://github.com/fescobar/allure-docker-service-examples/blob/master/resources/kubernetes.png?raw=true)](https://github.com/fescobar/allure-docker-service-examples/blob/master/resources/kubernetes.png?raw=true)
 
 Check yaml definitions here:
 - [allure-docker-kubernetes-example](https://github.com/fescobar/allure-docker-service-examples/tree/master/allure-docker-kubernetes-example)
@@ -547,13 +573,15 @@ Available endpoints:
 
 `'GET'      /latest-report`
 
+`'GET'      /report-navigator`
+
 `'POST'     /send-results` (admin role)
 
 `'GET'      /generate-report` (admin role)
 
-`'GET'      /clean-results` (admin role)
+`'DELETE'   /clean-results` (admin role)
 
-`'GET'      /clean-history` (admin role)
+`'DELETE'   /clean-history` (admin role)
 
 `'GET'      /emailable-report/render`
 
@@ -572,9 +600,13 @@ Available endpoints:
 
 `'GET'      /projects/{id}`
 
+`'GET'      /projects/{id}/storage`
+
 `'GET'      /projects/{id}/reports/{path}`
 
 `'GET'      /projects/search`
+
+`'GET'      /projects/storage`
 
 ##### Security Endpoints
 
@@ -589,9 +621,9 @@ Available endpoints:
 
 Access to http://localhost:5050 to see Swagger documentation with examples
 
-[![](resources/allure-api.png)](resources/allure-api.png)
+![Swagger UI — API (example)](docs/images/readme-swagger-2026.png)
 
-From version `2.13.4` you can request an endpoint using the base path (prefix) `/allure-docker-service/`:
+You can request endpoints using the base path (prefix) `/allure-docker-service/`:
 
 ```sh
 curl http://localhost:5050/allure-docker-service/version
@@ -605,7 +637,6 @@ curl http://localhost:5050/version
 For accessing `Security Endpoints`, you have to enable the security. Check [Enable Security](#enable-security) section.
 
 #### Send results through API
-`Available from Allure Docker Service version 2.12.1`
 
 After running your tests, you can execute any script to send the generated results from any node/agent/machine to the Allure Docker server container using the [Allure API](#allure-api). Use the endpoint `POST /send-results`.
 
@@ -637,7 +668,6 @@ python send_results_security.py
 ```
 
 ##### Content-Type - multipart/form-data
-`Available from Allure Docker Service version 2.13.3`
 
 - Bash script: [allure-docker-api-usage/send_results.sh](allure-docker-api-usage/send_results.sh)
 
@@ -654,69 +684,27 @@ NOTE:
 
 - These scripts are sending these example results [allure-docker-api-usage/allure-results-example](allure-docker-api-usage/allure-results-example)
 
-- If you want to clean the results use the endpoint `GET /clean-results` ([Allure API](#allure-api)).
+- If you want to clean the results use the endpoint `DELETE /clean-results` ([Allure API](#allure-api)).
 
 ##### Force Project Creation Option
-`Available from Allure Docker Service version 2.13.6`
 If you use the query parameter `force_project_creation` with value `true`, the project where you want to send the results will be created automatically in case doesn't exist.
 
 `POST /send-results?project_id=any-unexistent-project&force_project_creation=true`
 
 #### Customize Executors Configuration
-`Available from Allure Docker Service version 2.13.3`
 
-When you use the `GET /generate-report`, you will see this in your report:
+When you call `GET /generate-report`, the service writes `executor.json` into the project `results/` folder before generating the HTML report. In **Allure Report 3** the executor block still shows **name**, **CI URL** and **executor type icon** when you pass query parameters:
 
-[![](resources/executor00.png)](resources/executor00.png)
+| Parameter | Purpose | Example |
+|-----------|---------|---------|
+| `execution_name` | Label shown in the report | `GET /generate-report?execution_name=my-execution-name` |
+| `execution_from` | Link back to your CI/job | `GET /generate-report?execution_from=http://my-jenkins-url/job/my-job/7/` |
+| `execution_type` | Icon set (`jenkins`, `teamcity`, `bamboo`, `gitlab`, `github`, …) | `GET /generate-report?execution_type=jenkins` |
 
-If you want to change the `execution name`, you need to pass a parameter named `execution_name` with the value. Example:
-`GET /generate-report?execution_name=my-execution-name`
-
-[![](resources/executor01.png)](resources/executor01.png)
-
-
-If you want to change the `execution from` (by default is empty), you need to pass a parameter named `execution_from` with the value. Example:
-`GET /generate-report?execution_from=http://my-jenkins-url/job/my-job/7/`
-
-This option allow you to come back to your executor server.
-
-[![](resources/executor02.png)](resources/executor02.png)
-
-
-If you want to change the `execution icon` (default is empty), you need to pass a parameter named `execution_type` with the value. Example:
-`GET /generate-report?execution_type=jenkins`
-
-If the type is not recognized it will take the default icon. You can use different types like:
-- jenkins
-
-[![](resources/executor03.png)](resources/executor03.png)
-
-
-- teamcity
-
-[![](resources/executor04.png)](resources/executor04.png)
-
-
-- bamboo
-
-[![](resources/executor05.png)](resources/executor05.png)
-
-
-- gitlab
-
-[![](resources/executor06.png)](resources/executor06.png)
-
-
-- github
-
-[![](resources/executor07.png)](resources/executor07.png)
-
-
-The icons are based on the native Allure2 Framework:
-- https://github.com/allure-framework/allure2/tree/master/allure-generator/src/main/javascript/blocks/executor-icon
+Combine parameters as needed, e.g.  
+`GET /allure-docker-service/generate-report?project_id=default&execution_name=On%20Demand&execution_from=https://ci.example/job/1/&execution_type=jenkins`
 
 #### API Response Less Verbose
-`Available from Allure Docker Service version 2.13.1`
 
 Enable `API_RESPONSE_LESS_VERBOSE` environment variable if you are handling big quantities of files. This option is useful to avoid to transfer too much data when you request the API. Have in mind the json response structure will change.
 
@@ -727,20 +715,26 @@ Enable `API_RESPONSE_LESS_VERBOSE` environment variable if you are handling big 
 
 
 #### Switching version
-You can switch the version container using `frankescobar/allure-docker-service:${VERSION_NUMBER}`.
-Docker Compose example:
+Pin the image tag or registry in Compose when you need a fixed version. The **frankescobar/allure-docker-service** image on Docker Hub is the **Allure 2** line only; for **Allure Report 3** use **flaviordesouza/allure-docker-service** (this fork) or your own build from this repository.
+
+Docker Compose example (custom registry/repository):
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.38.1"
+    image: "${ALLURE_DOCKER_IMAGE:-flaviordesouza/allure-docker-service}:1.4.0"
 ```
-or using latest version:
+
+Or using latest:
 
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:latest"
+    image: "${ALLURE_DOCKER_IMAGE:-flaviordesouza/allure-docker-service}:latest"
 ```
 
-By default it will take last version: https://hub.docker.com/r/frankescobar/allure-docker-service/tags
+If you are cloning this repository and building locally, prefer:
+
+```sh
+docker compose -f docker-compose-dev.yml up -d --build
+```
 
 #### Switching port
 Inside of the container `Allure API` use port `5050`.
@@ -779,7 +773,7 @@ From any server machine:
 2. Make sure the server is accessible from where your scripts are requesting the API.
 
 From your automation tests project:
-1. Request endpoint `GET /clean-results` (specify project if it's needed) to clean all existing results. This will be `BEFORE` starting any test execution.
+1. Request endpoint `DELETE /clean-results` (specify project if it's needed) to clean all existing results. This will be `BEFORE` starting any test execution.
 2. Execute your tests and generate your allure results with any Allure Framework according technology (Allure/Cucumber/Java, Allure/Specflow/C#, Allure/CucumberJS/NodeJS, etc).
 3. Once all your tests were executed, send all your results generated recently using the endpoint `POST /send-results` (specify project if it's needed).
 4. You won't see any report generated because at the moment you have only your results stored in the container.
@@ -789,12 +783,12 @@ From your automation tests project:
 NOTE:
 - Scripts to interact with the API:  [Send results through API](#send-results-through-api) (Check commented code in the scripts).
 
-- If you execute `GET /generate-report` endpoint after every test execution, you will see multiple reports that doesn't represent your executions, that is because the container is building the report taking in count existing results files. For that reason, we use the `GET /clean-results` endpoint before starting any new execution to delete all results not related the current execution.
+- If you execute `GET /generate-report` endpoint after every test execution, you will see multiple reports that doesn't represent your executions, that is because the container is building the report taking in count existing results files. For that reason, we use the `DELETE /clean-results` endpoint before starting any new execution to delete all results not related the current execution.
 
 Resume:
 ```sh
 ---EXECUTION 1---
-1. Clean results files to avoid data from previous results files - GET /clean-results
+1. Clean results files to avoid data from previous results files - DELETE /clean-results
 2. Execute Suite1
 3. Execute Suite2
 4. Execute Suite3
@@ -808,7 +802,6 @@ Same steps from previous execution (don't forget to clean results first)
 ```
 
 #### Keep History and Trends
-`Available from Allure Docker Service version 2.12.1`
 
 Enable `KEEP_HISTORY` environment variable to work with history & trends
 
@@ -817,49 +810,31 @@ Docker Compose example:
     environment:
       KEEP_HISTORY: "TRUE"
 ```
-From version `2.13.4` you can also use as value `1`
+You can also use numeric `1`:
 ```sh
     environment:
       KEEP_HISTORY: 1
 ```
  
-If you want to clean the history use the [Allure API](#allure-api).
+If you want to clean the history use `DELETE /clean-history` ([Allure API](#allure-api)).
 
-Allure framework allow you to see the latest 20 executions in the history https://github.com/allure-framework/allure2/pull/1059
+By default, numbered snapshots under `reports/<build>/` are pruned to the latest **20** builds. Override with `KEEP_HISTORY_LATEST`.
 
-[![](resources/allure-history-visually-limited-01.png)](resources/allure-history-visually-limited-01.png)
+**History file (Allure Report 3):** trends across runs are stored in `projects/<project_id>/history.jsonl` (written by the generator; see `generateAllureReport.sh`, which creates `allurerc.json` with `historyPath` per project). Copying `reports/latest/history` into `results/history` is only needed for legacy flows; this fork relies on the JSONL history file for charts in Allure Report 3.
 
-`Available from Allure Docker Service version 2.13.3`
+Folder layout (typical):
 
-You can access to previous history clicking on the Allure image in the report. If the report is not available you will be redirected to the endpoint `GET /projects/{id}`
+- `projects/<id>/reports/latest/` — last generated report (`awesome` = mostly `index.html` + assets).
+- `projects/<id>/reports/<n>/` — stored snapshots when `KEEP_HISTORY=1` (bounded by `KEEP_HISTORY_LATEST`).
+- `projects/<id>/history.jsonl` — Allure 3 history for charts (when generation runs with history enabled).
 
-[![](resources/allure-history-visually-limited-02.png)](resources/allure-history-visually-limited-02.png)
+No relatório gerado, o menu **Report** inclui **Graphs** (tendências e widgets com histórico) e **Timeline** (execução por host/processos):
 
+![Allure Report 3 — Graphs (exemplo)](docs/images/readme-report-graphs-2026.png)
 
-Also, `Allure Docker Service` by default keeps the latest 20 executions in the history, but you can extend that limit:
-```sh
-    environment:
-      KEEP_HISTORY_LATEST: 28
-```
-
-[![](resources/allure-docker-service-history-28.png)](resources/allure-docker-service-history-28.png)
-
-
-or you can reduce it
-```sh
-    environment:
-      KEEP_HISTORY_LATEST: 10
-```
-
-[![](resources/allure-docker-service-history-10.png)](resources/allure-docker-service-history-10.png)
-
-The `latest` directory contains the report from the last execution. On this case, the `29` directory contains the same report in the `latest` directory:
-
-[![](resources/allure-docker-service-history-latest-and-last-execution.png)](allure-docker-service-history-latest-and-last-execution.png)
-
+![Allure Report 3 — Timeline (exemplo)](docs/images/readme-report-timeline-2026.png)
 
 #### Override User Container
-`Available from Allure Docker Service version 2.13.1`
 
 Override the user container in case your platform required it. The container must have permissions to create files inside directories like `allure-results` (Single Project) or `projects` (Multiple Project) or any other directory that you want to mount.
 
@@ -886,16 +861,14 @@ or from Docker you can use parameter `--user`
 docker run --user="$(id -u):$(id -g)" -p 5050:5050 -e CHECK_RESULTS_EVERY_SECONDS=3 -e KEEP_HISTORY="TRUE" \
            -v ${PWD}/allure-results:/app/allure-results \
            -v ${PWD}/allure-reports:/app/default-reports \
-           frankescobar/allure-docker-service
+           flaviordesouza/allure-docker-service
 ```
 
-Note: It's not a good practice to use `root` user to manipulate containers.
+By default this image runs the app as the non-root `allure` user (UID/GID from the image build). The `docker run --user=...` example above maps your host UID/GID so mounted volumes keep correct ownership — that is the **recommended** pattern for local mounts, not “wrong”. Avoid running the **process inside the container** as UID 0 (`root`) unless you have a specific reason.
 
-Reference: 
-- https://snyk.io/blog/10-docker-image-security-best-practices/
+Further reading: [Docker image security practices (Snyk)](https://snyk.io/blog/10-docker-image-security-best-practices/)
 
 #### Start in DEV Mode
-`Available from Allure Docker Service version 2.13.3`
 
 Enable dev mode, if you want to see the logs about api requests using the `DEV_MODE` environment variable.
 
@@ -908,7 +881,6 @@ NOTE:
 - Don't use this mode for live/prod environments.
 
 #### Enable TLS
-`Available from Allure Docker Service version 2.13.4`
 
 Enable TLS, if you want to implement `https` protocol using the `TLS` environment variable.
 
@@ -918,7 +890,6 @@ Docker Compose example:
       TLS: 1
 ```
 #### Enable Security
-`Available from Allure Docker Service version 2.13.5`
 
 If you are going to publish this API, this feature MUST BE USED TOGETHER with [Enable TLS](#enable-tls), otherwise, your tokens can be intercepted and your security could be vulnerable. When you enable TLS, the cookies credentials will be stored as `SECURE`.
 
@@ -930,8 +901,8 @@ Also you need to enable the security to protect the endpoints with env var 'SECU
 Docker Compose example:
 ```sh
     environment:
-      SECURITY_USER: "my_username"
-      SECURITY_PASS: "my_password"
+      SECURITY_USER: "${SECURITY_USER:-}"
+      SECURITY_PASS: "${SECURITY_PASS:-}"
       SECURITY_ENABLED: 1
 ```
 Where 'SECURITY_PASS' env var is case sensitive.
@@ -986,8 +957,6 @@ Server: waitress
 
 {"data":{"projects":{"default":{"uri":"http://localhost:5050/allure-docker-service/projects/default"}}},"meta_data":{"message":"Projects successfully obtained"}}
 ```
-
-[![](resources/allure_security_login_cookies.png)](resources/allure_security_login_cookies.png)
 
 ##### X-CSRF-TOKEN
 For example, if you try to create a new project with the security enabled with the cookies obtained in the `POST /login` endpoint
@@ -1045,9 +1014,6 @@ Server: waitress
 {"data":{"id":"my-project-id"},"meta_data":{"message":"Project successfully created"}}
 ```
 
-[![](resources/allure_security_create_project_cookies.png)](resources/allure_security_create_project_cookies.png)
-
-
 ##### Refresh Access Token
 If you want to avoid the user login each time the access token expired, you need to refresh your token
 
@@ -1077,9 +1043,6 @@ Set-Cookie: csrf_access_token=d34c2eb1-dcc5-481c-a4ad-2c499a992f65; Path=/
 
 {"data":{"access_token":"eyJ0eXAiOiJKV1Qi..."},"meta_data":{"message":"Successfully token obtained"}}
 ```
-
-[![](resources/allure_security_refresh_cookies.png)](resources/allure_security_refresh_cookies.png)
-
 
 The `Access Token` expires in 15 mins by default. You can change the default behaviour with env var `ACCESS_TOKEN_EXPIRES_IN_MINS`
 
@@ -1160,7 +1123,6 @@ Set-Cookie: csrf_refresh_token=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Path=/
 ```
 
 ##### Roles
-`Available from Allure Docker Service version 2.13.7`
 
 `SECURITY_USER` & `SECURITY_PASS` env vars are used to define the `ADMIN` user credentials who will have access to every endpoint. Also, there is another kind of user just with enough access to check the reports, this is the `VIEWER` user.
 
@@ -1168,10 +1130,10 @@ You can add this kind of user using `SECURITY_VIEWER_USER` & `SECURITY_VIEWER_PA
 Docker Compose example:
 ```sh
     environment:
-      SECURITY_USER: "my_username"
-      SECURITY_PASS: "my_password"
-      SECURITY_VIEWER_USER: "view_user"
-      SECURITY_VIEWER_PASS: "view_pass"
+      SECURITY_USER: "${SECURITY_USER:-}"
+      SECURITY_PASS: "${SECURITY_PASS:-}"
+      SECURITY_VIEWER_USER: "${SECURITY_VIEWER_USER:-}"
+      SECURITY_VIEWER_PASS: "${SECURITY_VIEWER_PASS:-}"
       SECURITY_ENABLED: 1
 ```
 Note:
@@ -1180,14 +1142,13 @@ Note:
 - Check [Allure API](#allure-api) to see what endpoints are exclusively for the `ADMIN` role.
 
 ##### Make Viewer endpoints public
-`Available from Allure Docker Service version 2.13.8`
 If you only want to protect the `Admin` endpoints and make public the viewer endpoints, then you can use the environment variable `MAKE_VIEWER_ENDPOINTS_PUBLIC` to make accessible the endpoints:
 
 Docker Compose example:
 ```sh
     environment:
-      SECURITY_USER: "my_username"
-      SECURITY_PASS: "my_password"
+      SECURITY_USER: "${SECURITY_USER:-}"
+      SECURITY_PASS: "${SECURITY_PASS:-}"
       SECURITY_ENABLED: 1
       MAKE_VIEWER_ENDPOINTS_PUBLIC: 1
 ```
@@ -1209,11 +1170,9 @@ python send_results_security.py
 - Declarative Pipeline script for JENKINS with security enabled: [allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy](allure-docker-api-usage/send_results_security_jenkins_pipeline.groovy)
 
 #### Multi-instance Setup
-`Available from Allure Docker Service version 2.18.0`
 If you wish to use a setup with multiple instances, you will need to set `JWT_SECRET_KEY` env variables. Otherwise, requests may respond with `Invalid Token - Signature verification failed`.
 
 #### Add Custom URL Prefix
-`Available from Allure Docker Service version 2.13.5`
 
 Configure an url prefix if your deployment requires it (e.g. reverse proxy with nginx)
 ```sh
@@ -1245,57 +1204,31 @@ NOTE:
 - This feature is not supported when DEV_MODE is enabled.
 
 #### Optimize Storage
-`Available from Allure Docker Service version 2.13.7`
 
 `---EXPERIMENTAL FEATURE---`
 
-When Allure generates reports, commonly created these files per report:
-```sh
-projects
-   |-- default
-   |   |-- results
-   |   |-- reports
-   |   |   |-- latest
-   |   |   |   |-- data
-   |   |   |   |-- export
-   |   |   |   |-- history
-   |   |   |   |-- plugins
-   |   |   |   |-- widgets
-   |   |   |   |-- favicon.icon
-   |   |   |   |-- index.html
-   |   |   |   |-- app.js
-   |   |   |   |-- styles.css
-   |   |   |-- ..
-```
-The heaviest files are `app.js` & `styles.css`. They never changed their content.
-When you enable the option `OPTIMIZE_STORAGE` those files are not stored in your `reports` directory, but they are consumed from a common location inside the container.
+Allure Report 3 can be generated in two modes:
+- `ALLURE_REPORT_ENGINE=awesome` (default): single-file report.
+- `ALLURE_REPORT_ENGINE=generate`: classic multi-file report tree.
+
+The container keeps `OPTIMIZE_STORAGE` for compatibility. In Allure 3, gains are typically minimal with `awesome` (single-file), and may be more relevant only in specific `generate` setups where shared assets are intentionally managed.
 
 Docker Compose example:
 ```sh
     environment:
       OPTIMIZE_STORAGE: 1
 ```
-Using this feature, your storage consumption will be reduce drastically.
-
 NOTE:
-- This feature doesn't have a warranty to work with reports generated with different Allure native versions. For example, if any code is removed from `app.js` or `styles.css` (from a newer version of the native Allure application) that you need to render your reports generated with previous versions, your report couldn't be rendered, you will see a javascript error finding for a component that doesn't exist anymore.
+- With Allure Report 3 + `awesome` (single-file), expect limited or no storage savings from this option.
 
 
 #### Export Native Full Report
-`Available from Allure Docker Service version 2.13.1`
 
 You can export the native full report using the endpoint `GET /report/export` [Allure API](#allure-api).
 
-[![](resources/native-full-report.png)](resources/native-full-report.png)
-
-
-
 #### Customize Emailable Report
-`Available from Allure Docker Service version 2.12.1`
 
 You can render and export the emailable report using the endpoints `GET /emailable-report/render` and `GET ​/emailable-report​/export` [Allure API](#allure-api).
-
-[![](resources/emailable-report.png)](resources/emailable-report.png)
 
 ##### Override CSS
 By default this report template is using Bootstrap css. If you want to override the css, just you need to pass the enviroment variable `EMAILABLE_REPORT_CSS_CDN`. Docker Compose example:
@@ -1304,8 +1237,6 @@ By default this report template is using Bootstrap css. If you want to override 
     environment:
       EMAILABLE_REPORT_CSS_CDN: "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/sketchy/bootstrap.css"
 ```
-
-[![](resources/emailable-report-custom.png)](resources/emailable-report-custom.png)
 
 You can use all these themes: https://bootswatch.com/ or any other boostrap css like https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.css
 
@@ -1316,8 +1247,6 @@ If you want override the title of the Emailable Report, just you need to pass th
     environment:
       EMAILABLE_REPORT_TITLE: "My Title"
 ```
-
-[![](resources/emailable-report-title.png)](resources/emailable-report-title.png)
 
 ##### Override server link
 `Functionality Deprecated`
@@ -1332,9 +1261,6 @@ If you want the Emailable Report to redirect to your Allure server, just you nee
       SERVER_URL: "http://my-domain.com/allure-docker-service/latest-report"
 ```
 
-[![](resources/emailable-report-server-link.png)](resources/emailable-report-server-link.png)
-
-
 ##### Develop a new template
 If you want to develop a new template, create a local directory (`my-template` as example) with a file named `default.html`. In that file you can create your own html template, you can use as guide this example: [allure-docker-api/templates/default.html](allure-docker-api/templates/default.html) using [Jinja](https://jinja.palletsprojects.com/en/2.10.x/templates/) syntax. Don't rename your local template, always the file must be named `default.html`.
 
@@ -1348,38 +1274,13 @@ This variable will allow you to use `hot reloading`, you can update the content 
     - ${PWD}/my-template:/app/allure-docker-api/templates
 ```
 
-#### Allure Customized Plugins
-If you want to use your own Allure plugins you can mount your plugin directory
-```sh
-    environment:
-      ...
-    volumes:
-    - ${PWD}/my-plugin:/allure/plugins/my-plugin
-```
+#### Allure Report 3 extensions
+Allure Report 3 is distributed as the npm `allure` CLI. Use the [official Allure 3 documentation](https://allurereport.org/docs/) for report customization (including the Awesome plugin and configuration files).
 
-References:
-- https://docs.qameta.io/allure/#_allure_plugins_system
-
-#### Allure Options
-Some frameworks/adaptors don't support allure properties to set up links for `Tracker Management Systems` or `Issue/Bug Trackers`. In that case you need to set up `ALLURE_OPTS` environment variable:
-- For Allure1 (XML results)
-```sh
-    environment:
-      CHECK_RESULTS_EVERY_SECONDS: 1
-      ALLURE_OPTS: "-Dallure.tests.management.pattern=https://example.org/tms/%s -Dallure.issues.tracker.pattern=https://example.org/issue/%s"
-```
-- For Allure2 (JSON results). Generally it's not necessary to do this because the properties are configured it in the adaptor/framework and stored in `allure-results` directory. The properties format is different:
-```sh
-allure.link.mylink.pattern=https://example.org/mylink/{}
-allure.link.issue.pattern=https://example.org/issue/{}
-allure.link.tms.pattern=https://example.org/tms/{}
-```
-Reference:
-- https://docs.qameta.io/allure/#_test_management_and_bug_tracking_systems_integrations
-- https://www.swtestacademy.com/allure-testng/
-- https://docs.qameta.io/allure/#_configuration
-- https://docs.qameta.io/allure/#_config_samples
-- https://docs.qameta.io/allure/#_job_dsl_plugin
+#### Links (issues / TMS) nos resultados
+Configure patterns in your test framework’s Allure 3 integration or in Allure config consumed when generating the report. Typical `allure-results` metadata still uses property-style entries where your adaptor documents them; see:
+- https://allurereport.org/docs/
+- https://allurereport.org/docs/integrations/
 
 ## SUPPORT
 ### Gitter
@@ -1404,8 +1305,14 @@ docker-compose -f docker-compose-dev.yml up --build
 ```
 ### Build image
 ```sh
-docker build --no-cache -t allure-release -f docker/Dockerfile --build-arg ALLURE_RELEASE=2.38.1 .
+docker build --no-cache -t allure-release -f docker/Dockerfile \
+  --build-arg ALLURE_NPM_VERSION=3.3.1 \
+  --build-arg BUILD_VERSION=1.4.0 \
+  --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --build-arg BUILD_REF="$(git rev-parse --short HEAD 2>/dev/null || echo local)" \
+  .
 ```
+*(Sem `BUILD_*`, algumas labels ficam vazias; o CI de release define-as automaticamente.)*
 ### Run container
 ```sh
 docker run -d  -p 5050:5050 allure-release
@@ -1442,22 +1349,12 @@ docker ps -q -f status=exited | xargs docker rm
 ```sh
 docker images -f dangling=true | xargs docker rmi
 ```
-### Register tagged image (Example)
+### Run with pre-built image (example — Allure 3)
 ```sh
-docker login
-docker tag allure-release frankescobar/allure-docker-service:${PUBLIC_TAG}
-docker push frankescobar/allure-docker-service
+docker run -d -p 5050:5050 flaviordesouza/allure-docker-service
 ```
-### Register latest image (Example)
+### Run with pre-built image (tagged version — example)
 ```sh
-docker tag allure-release frankescobar/allure-docker-service:latest
-docker push frankescobar/allure-docker-service
+docker run -d -p 5050:5050 flaviordesouza/allure-docker-service:1.4.0
 ```
-### Download latest image registered (Example)
-```sh
-docker run -d  -p 5050:5050 frankescobar/allure-docker-service
-```
-### Download specific tagged image registered (Example)
-```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.38.1
-```
+*(Use `flaviordesouza/allure-docker-service` for Allure Report 3; `frankescobar/allure-docker-service` on Docker Hub is the legacy Allure 2 line.)*

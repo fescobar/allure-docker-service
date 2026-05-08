@@ -8,11 +8,12 @@ if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ] || [ "$KEEP_HI
     if echo $KEEP_HISTORY_LATEST | egrep -q '^[0-9]+$'; then
         KEEP_LATEST=$KEEP_HISTORY_LATEST
     fi
-    CURRENT_SIZE=$(ls -Ad $PROJECT_REPORTS_DIRECTORY/* | grep -wv $PROJECT_REPORTS_DIRECTORY/latest | grep -wv 0 | grep -v $EMAILABLE_REPORT_FILE_NAME | wc -l)
+    # Apenas diretórios com nome numérico (builds); ignorar latest, .html, etc.
+    CURRENT_SIZE=$(ls -1 "$PROJECT_REPORTS_DIRECTORY" 2>/dev/null | grep -E '^[0-9]+$' | wc -l)
 
     if [ "$CURRENT_SIZE" -gt "$KEEP_LATEST" ]; then
         SIZE_TO_REMOVE="$(($CURRENT_SIZE-$KEEP_LATEST))"
         echo "Keeping latest $KEEP_LATEST history reports for PROJECT_ID: $PROJECT_ID"
-        ls -tAd $PROJECT_REPORTS_DIRECTORY/* | grep -wv $PROJECT_REPORTS_DIRECTORY/latest | grep -wv 0 | grep -v $EMAILABLE_REPORT_FILE_NAME | tail -$SIZE_TO_REMOVE | xargs rm 2 -rf> /dev/null
+        ls -1 "$PROJECT_REPORTS_DIRECTORY" 2>/dev/null | grep -E '^[0-9]+$' | sort -n | head -n "$SIZE_TO_REMOVE" | while read -r n; do rm -rf "$PROJECT_REPORTS_DIRECTORY/$n"; done
     fi
 fi

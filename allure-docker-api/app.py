@@ -5,6 +5,7 @@ from subprocess import call
 import base64
 import datetime
 import glob
+import hashlib
 import io
 import json
 import os
@@ -115,12 +116,12 @@ PROTECTED_ENDPOINTS = [
         "endpoint": "generate_report_endpoint"
     },
     {
-        "method": "get",
+        "method": "delete",
         "path": "/clean-results",
         "endpoint": "clean_results_endpoint"
     },
     {
-        "method": "get",
+        "method": "delete",
         "path": "/clean-history",
         "endpoint": "clean_history_endpoint"
     },
@@ -145,10 +146,13 @@ ALLURE_VERSION = os.environ['ALLURE_VERSION']
 STATIC_CONTENT = os.environ['STATIC_CONTENT']
 PROJECTS_DIRECTORY = os.environ['STATIC_CONTENT_PROJECTS']
 EMAILABLE_REPORT_FILE_NAME = os.environ['EMAILABLE_REPORT_FILE_NAME']
+RESULTS_DIRECTORY = os.environ.get('RESULTS_DIRECTORY', '/app/allure-results')
 ORIGIN = 'api'
 SECURITY_SPECS_PATH = 'swagger/security_specs'
 
 REPORT_INDEX_FILE = 'index.html'
+REPORT_NAVIGATOR_TEMPLATE = 'report_navigator.html'
+REPORT_NAVIGATOR_FILE_NAME = 'report-navigator.html'
 DEFAULT_TEMPLATE = 'default.html'
 LANGUAGE_TEMPLATE = 'select_language.html'
 LANGUAGES = ["en", "ru", "zh", "de", "nl", "he", "br", "pl", "ja", "es", "kr", "fr", "az"]
@@ -156,6 +160,7 @@ GLOBAL_CSS = "https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstra
 EMAILABLE_REPORT_CSS = GLOBAL_CSS
 EMAILABLE_REPORT_TITLE = "Emailable Report"
 API_RESPONSE_LESS_VERBOSE = 0
+AUTO_GENERATE_REPORT_ON_SEND_RESULTS = True
 
 if "EMAILABLE_REPORT_CSS_CDN" in os.environ:
     EMAILABLE_REPORT_CSS = os.environ['EMAILABLE_REPORT_CSS_CDN']
@@ -196,8 +201,13 @@ if "TLS" in os.environ:
             URL_SCHEME = 'https'
             app.config['JWT_COOKIE_SECURE'] = True
             LOGGER.info('Enabling TLS=%s', IS_ITLS)
+        else:
+            app.config['JWT_COOKIE_SECURE'] = False
     except Exception as ex:
         LOGGER.error('Wrong env var value. Setting TLS=0 by default')
+        app.config['JWT_COOKIE_SECURE'] = False
+else:
+    app.config['JWT_COOKIE_SECURE'] = False
 
 if "URL_PREFIX" in os.environ:
     PREFIX = str(os.environ['URL_PREFIX'])
@@ -234,9 +244,15 @@ if "MAKE_VIEWER_ENDPOINTS_PUBLIC" in os.environ:
         LOGGER.error('Wrong env var value. Setting VIEWER_ENDPOINTS_PUBLIC=0 by default')
 
 if "JWT_SECRET_KEY" in os.environ:
-    app.config['JWT_SECRET_KEY'] = os.environ['JWT_SECRET_KEY']
+    _jwt_raw = os.environ['JWT_SECRET_KEY']
+    _jwt_bytes = _jwt_raw.encode('utf-8') if isinstance(_jwt_raw, str) else _jwt_raw
+    if len(_jwt_bytes) < 32:
+        app.config['JWT_SECRET_KEY'] = hashlib.sha256(_jwt_bytes).digest()
+    else:
+        app.config['JWT_SECRET_KEY'] = _jwt_raw
 else:
-    app.config['JWT_SECRET_KEY'] = os.urandom(16)
+    # PyJWT (HS256) warns if HMAC key is shorter than 32 bytes (RFC 7518).
+    app.config['JWT_SECRET_KEY'] = os.urandom(32)
 
 if "SECURITY_USER" in os.environ:
     SECURITY_USER_TMP = os.environ['SECURITY_USER']
@@ -292,6 +308,20 @@ if "SECURITY_ENABLED" in os.environ:
         LOGGER.error('Wrong env var value. Setting SECURITY_ENABLED=0 by default')
 else:
     LOGGER.info('Setting SECURITY_ENABLED=0 by default')
+
+if "AUTO_GENERATE_REPORT_ON_SEND_RESULTS" in os.environ:
+    try:
+        AUTO_GENERATE_REPORT_ON_SEND_RESULTS_TMP = int(
+            os.environ['AUTO_GENERATE_REPORT_ON_SEND_RESULTS'])
+        if AUTO_GENERATE_REPORT_ON_SEND_RESULTS_TMP in (1, 0):
+            AUTO_GENERATE_REPORT_ON_SEND_RESULTS = bool(
+                AUTO_GENERATE_REPORT_ON_SEND_RESULTS_TMP)
+            LOGGER.info('Overriding AUTO_GENERATE_REPORT_ON_SEND_RESULTS=%s',
+                        AUTO_GENERATE_REPORT_ON_SEND_RESULTS_TMP)
+        else:
+            LOGGER.error('Wrong env var value. Setting AUTO_GENERATE_REPORT_ON_SEND_RESULTS=1 by default')
+    except Exception as ex:
+        LOGGER.error('Wrong env var value. Setting AUTO_GENERATE_REPORT_ON_SEND_RESULTS=1 by default')
 
 # For development purposes
 if "ACCESS_TOKEN_EXPIRES_IN_SECONDS" in os.environ:
@@ -525,8 +555,14 @@ def user_loader_callback(jwt_header, jwt_data):
 ### end Security Section
 
 ### CORS section
+_ACCESS_LOG_SKIP_PATHS = frozenset(('/version', '/allure-docker-service/version'))
+
 @app.after_request
 def after_request_func(response):
+    if os.environ.get('ACCESS_LOG', '1').strip() not in ('0', 'false', 'no'):
+        path = request.path or ''
+        if path not in _ACCESS_LOG_SKIP_PATHS:
+            LOGGER.info('%s %s -> %s', request.method, path, response.status_code)
     origin = request.headers.get('Origin')
     if request.method == 'OPTIONS':
         response = make_response()
@@ -850,6 +886,35 @@ def latest_report_endpoint():
         resp.status_code = 400
         return resp
 
+@app.route("/report-navigator", strict_slashes=False)
+@app.route("/allure-docker-service/report-navigator", strict_slashes=False)
+@jwt_required
+def report_navigator_endpoint():
+    """Página com sidebar + iframe para navegar entre latest e histórico de reports."""
+    try:
+        project_id = resolve_project(request.args.get('project_id'))
+        if is_existent_project(project_id) is False:
+            body = {
+                'meta_data': {
+                    'message' : "project_id '{}' not found".format(project_id)
+                }
+            }
+            resp = jsonify(body)
+            resp.status_code = 404
+            return resp
+
+        entries = build_report_navigator_entries(project_id, relative_urls=False)
+        return render_report_navigator_html(project_id, entries, relative_urls=False)
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+        return resp
+
 @app.route("/send-results", methods=['POST'], strict_slashes=False)
 @app.route("/allure-docker-service/send-results", methods=['POST'], strict_slashes=False)
 @jwt_required
@@ -903,6 +968,20 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
         failed_files_count = len(failed_files)
         if failed_files_count > 0:
             raise Exception('Problems with files: {}'.format(failed_files))
+
+        # If watcher is disabled (CHECK_RESULTS_EVERY_SECONDS=NONE), generate on each upload.
+        check_results_every_seconds = os.getenv('CHECK_RESULTS_EVERY_SECONDS', '1').lower()
+        if AUTO_GENERATE_REPORT_ON_SEND_RESULTS and check_results_every_seconds == 'none':
+            check_process(KEEP_HISTORY_PROCESS, project_id)
+            check_process(GENERATE_REPORT_PROCESS, project_id)
+            exec_store_results_process = '1'
+            call([KEEP_HISTORY_PROCESS, project_id, ORIGIN])
+            subprocess.Popen([
+                GENERATE_REPORT_PROCESS, exec_store_results_process,
+                project_id, ORIGIN, 'Automatic Execution', '', ''
+            ], stdout=subprocess.PIPE).communicate()[0]
+            call([RENDER_EMAIL_REPORT_PROCESS, project_id, ORIGIN])
+            write_report_navigator_scaffold(project_id)
 
         if API_RESPONSE_LESS_VERBOSE != 1:
             files = os.listdir(results_project)
@@ -995,6 +1074,7 @@ def generate_report_endpoint():
             project_id, ORIGIN, execution_name, execution_from, execution_type],
                                     stdout=subprocess.PIPE).communicate()[0]
         call([RENDER_EMAIL_REPORT_PROCESS, project_id, ORIGIN])
+        write_report_navigator_scaffold(project_id)
 
         build_order = 'latest'
         for line in response.decode("utf-8").split("\n"):
@@ -1039,8 +1119,8 @@ def generate_report_endpoint():
 
     return resp
 
-@app.route("/clean-history", strict_slashes=False)
-@app.route("/allure-docker-service/clean-history", strict_slashes=False)
+@app.route("/clean-history", methods=['DELETE'], strict_slashes=False)
+@app.route("/allure-docker-service/clean-history", methods=['DELETE'], strict_slashes=False)
 @jwt_required
 def clean_history_endpoint():
     try:
@@ -1080,8 +1160,8 @@ def clean_history_endpoint():
 
     return resp
 
-@app.route("/clean-results", strict_slashes=False)
-@app.route("/allure-docker-service/clean-results", strict_slashes=False)
+@app.route("/clean-results", methods=['DELETE'], strict_slashes=False)
+@app.route("/allure-docker-service/clean-results", methods=['DELETE'], strict_slashes=False)
 @jwt_required
 def clean_results_endpoint():
     try:
@@ -1122,6 +1202,92 @@ def clean_results_endpoint():
 
     return resp
 
+def load_emailable_test_cases_from_result_files(project_path):
+    """Monta linhas do emailable a partir de *-result.json em results/ (Allure 2/3).
+
+    No Allure 3 Awesome, summary.json costuma trazer newTests vazio quando não há
+    testes “novos” frente ao histórico — o relatório HTML ainda lista tudo; o emailable
+    ficaria vazio sem este fallback.
+    """
+    results_dir = '{}/results'.format(project_path)
+    if not os.path.isdir(results_dir):
+        return []
+    pattern = os.path.join(results_dir, '*-result.json')
+    paths = glob.glob(pattern)
+    paths.sort(key=os.path.getmtime)
+    test_cases = []
+    for file_path in paths:
+        try:
+            with open(file_path, encoding='utf-8') as handle:
+                data = json.load(handle)
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        name = data.get('name') or data.get('fullName') or ''
+        status = (data.get('status') or 'unknown').lower()
+        if status not in ("passed", "failed", "broken", "skipped", "unknown"):
+            status = "unknown"
+        start = data.get('start')
+        stop = data.get('stop')
+        duration = 0
+        if isinstance(start, (int, float)) and isinstance(stop, (int, float)):
+            duration = max(0, int(stop - start))
+        details = data.get('statusDetails')
+        description = ''
+        if isinstance(details, dict):
+            description = details.get('message') or ''
+        test_cases.append({
+            "name": name,
+            "status": status,
+            "hidden": False,
+            "description": description,
+            "labels": data.get('labels') if isinstance(data.get('labels'), list) else [],
+            "time": {"duration": duration},
+        })
+    return test_cases
+
+
+def load_emailable_test_cases(project_path):
+    """Load test cases for emailable HTML: classic generate, raw results, ou summary Awesome."""
+    tcs_glob = "{}/reports/latest/data/test-cases/*.json".format(project_path)
+    files = glob.glob(tcs_glob)
+    files.sort(key=os.path.getmtime, reverse=True)
+    test_cases = []
+    for file_name in files:
+        with open(file_name, encoding='utf-8') as file:
+            test_case = json.loads(file.read())
+            if test_case.get("hidden") is False:
+                test_cases.append(test_case)
+    if test_cases:
+        return test_cases
+
+    test_cases = load_emailable_test_cases_from_result_files(project_path)
+    if test_cases:
+        return test_cases
+
+    summary_path = "{}/reports/latest/summary.json".format(project_path)
+    if not os.path.isfile(summary_path):
+        return []
+    with open(summary_path, encoding='utf-8') as f:
+        summary = json.load(f)
+    for t in summary.get("newTests") or []:
+        status = (t.get("status") or "unknown").lower()
+        if status not in ("passed", "failed", "broken", "skipped", "unknown"):
+            status = "unknown"
+        duration = t.get("duration")
+        if duration is None:
+            duration = 0
+        test_cases.append({
+            "name": t.get("name") or "",
+            "status": status,
+            "hidden": False,
+            "description": "",
+            "labels": [],
+            "time": {"duration": duration},
+        })
+    return test_cases
+
 @app.route("/emailable-report/render", strict_slashes=False)
 @app.route("/allure-docker-service/emailable-report/render", strict_slashes=False)
 @jwt_required
@@ -1141,19 +1307,7 @@ def emailable_report_render_endpoint():
         check_process(GENERATE_REPORT_PROCESS, project_id)
 
         project_path = get_project_path(project_id)
-        tcs_latest_report_project = "{}/reports/latest/data/test-cases/*.json".format(project_path)
-
-        files = glob.glob(tcs_latest_report_project)
-        files.sort(key=os.path.getmtime, reverse=True)
-        test_cases = []
-        for file_name in files:
-            with open(file_name) as file:
-                json_string = file.read()
-                LOGGER.debug("----TestCase-JSON----")
-                LOGGER.debug(json_string)
-                test_case = json.loads(json_string)
-                if test_case["hidden"] is False:
-                    test_cases.append(test_case)
+        test_cases = load_emailable_test_cases(project_path)
 
         server_url = url_for('latest_report_endpoint', project_id=project_id, _external=True)
 
@@ -1344,6 +1498,51 @@ def delete_project_endpoint(project_id):
         resp.status_code = 200
     return resp
 
+@app.route('/projects/storage', methods=['GET'], strict_slashes=False)
+@app.route("/allure-docker-service/projects/storage", methods=['GET'], strict_slashes=False)
+@jwt_required
+def get_projects_storage_endpoint():
+    try:
+        projects_dirs = os.listdir(PROJECTS_DIRECTORY)
+        projects = {}
+        total_bytes = 0
+        for name in projects_dirs:
+            dpath = '{}/{}'.format(PROJECTS_DIRECTORY, name)
+            if os.path.isdir(dpath) is False:
+                continue
+            payload = build_project_storage_payload(name)
+            projects[name] = {
+                'bytes_total': payload['bytes_total'],
+                'bytes_total_human': payload['bytes_total_human'],
+                'bytes_results': payload['bytes_results'],
+                'bytes_results_human': payload['bytes_results_human'],
+                'bytes_reports': payload['bytes_reports'],
+                'bytes_reports_human': payload['bytes_reports_human'],
+            }
+            total_bytes += payload['bytes_total']
+        body = {
+            'data': {
+                'total_bytes': total_bytes,
+                'total_human': bytes_to_human_readable(total_bytes),
+                'projects': projects,
+            },
+            'meta_data': {
+                'message': 'Disk usage successfully obtained'
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 200
+        return resp
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message': str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+        return resp
+
 @app.route('/projects/<project_id>', strict_slashes=False)
 @app.route("/allure-docker-service/projects/<project_id>", strict_slashes=False)
 @jwt_required
@@ -1359,32 +1558,14 @@ def get_project_endpoint(project_id):
             resp.status_code = 404
             return resp
 
-        project_reports_path = '{}/reports'.format(get_project_path(project_id))
-        reports_entity = []
-
-        for file in os.listdir(project_reports_path):
-            file_path = '{}/{}/index.html'.format(project_reports_path, file)
-            is_file = os.path.isfile(file_path)
-            if is_file is True:
-                report = url_for('get_reports_endpoint', project_id=project_id,
-                                 path='{}/index.html'.format(file), _external=True)
-                reports_entity.append([report, os.path.getmtime(file_path), file])
-
-        reports_entity.sort(key=lambda reports_entity: reports_entity[1], reverse=True)
+        ordered = list_project_report_dir_entries(project_id)
         reports = []
         reports_id = []
-        latest_report = None
-        for report_entity in reports_entity:
-            link = report_entity[0]
-            if report_entity[2].lower() != 'latest':
-                reports.append(link)
-                reports_id.append(report_entity[2])
-            else:
-                latest_report = link
-
-        if latest_report is not None:
-            reports.insert(0, latest_report)
-            reports_id.insert(0, 'latest')
+        for name in ordered:
+            report = url_for('get_reports_endpoint', project_id=project_id,
+                             path='{}/{}'.format(name, REPORT_INDEX_FILE), _external=True)
+            reports.append(report)
+            reports_id.append(name)
 
         body = {
             'data': {
@@ -1405,6 +1586,39 @@ def get_project_endpoint(project_id):
         body = {
             'meta_data': {
                 'message' : str(ex)
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 400
+        return resp
+
+@app.route('/projects/<project_id>/storage', methods=['GET'], strict_slashes=False)
+@app.route("/allure-docker-service/projects/<project_id>/storage", methods=['GET'], strict_slashes=False)
+@jwt_required
+def get_project_storage_endpoint(project_id):
+    try:
+        if is_existent_project(project_id) is False:
+            body = {
+                'meta_data': {
+                    'message': "project_id '{}' not found".format(project_id)
+                }
+            }
+            resp = jsonify(body)
+            resp.status_code = 404
+            return resp
+        body = {
+            'data': build_project_storage_payload(project_id),
+            'meta_data': {
+                'message': 'Disk usage successfully obtained'
+            }
+        }
+        resp = jsonify(body)
+        resp.status_code = 200
+        return resp
+    except Exception as ex:
+        body = {
+            'meta_data': {
+                'message': str(ex)
             }
         }
         resp = jsonify(body)
@@ -1477,10 +1691,50 @@ def get_projects_search_endpoint():
         resp.status_code = 400
         return resp
 
+def _redirect_report_navigator_canonical(project_id, path):
+    """Redireciona URLs erradas (ex.: .../latest/reports/report-navigator.html) para reports/report-navigator.html.
+
+    O relatório em latest/ usa frequentemente <base>; um link relativo 'reports/...' resolve
+    para .../reports/latest/reports/... em vez de .../reports/...
+    """
+    if not path:
+        return None
+    escaped = re.escape(REPORT_NAVIGATOR_FILE_NAME)
+    if re.match(r'^(latest|\d+)/reports/%s$' % escaped, path, re.IGNORECASE):
+        return redirect(
+            url_for('get_reports_endpoint', project_id=project_id,
+                    path=REPORT_NAVIGATOR_FILE_NAME, redirect='false', _external=True),
+            code=302)
+    if re.match(r'^(latest|\d+)/%s$' % escaped, path, re.IGNORECASE):
+        return redirect(
+            url_for('get_reports_endpoint', project_id=project_id,
+                    path=REPORT_NAVIGATOR_FILE_NAME, redirect='false', _external=True),
+            code=302)
+    return None
+
+
+def _redirect_reports_dir_to_index(project_id, path):
+    """Allure Report 3: index.html sets <base> from location; folder URLs without index.html break JS paths."""
+    if path != 'latest' and not (path and re.match(r'^\d+$', path)):
+        return None
+    idx = request.path.find('/projects/')
+    prefix = request.path[:idx] if idx > 0 else ''
+    target = '{}/projects/{}/reports/{}/index.html'.format(prefix, project_id, path)
+    if not target.startswith('/'):
+        target = '/' + target
+    return redirect(target, code=302)
+
+
 @app.route('/projects/<project_id>/reports/<path:path>')
 @app.route("/allure-docker-service/projects/<project_id>/reports/<path:path>")
 @jwt_required
 def get_reports_endpoint(project_id, path):
+    redir = _redirect_report_navigator_canonical(project_id, path)
+    if redir is not None:
+        return redir
+    redir = _redirect_reports_dir_to_index(project_id, path)
+    if redir is not None:
+        return redir
     try:
         project_path = '{}/reports/{}'.format(project_id, path)
         return send_from_directory(PROJECTS_DIRECTORY, project_path)
@@ -1629,6 +1883,146 @@ def get_projects_filtered_by_id(project_id, projects):
 def get_project_path(project_id):
     return '{}/{}'.format(PROJECTS_DIRECTORY, project_id)
 
+def list_project_report_dir_entries(project_id):
+    """Nomes de pastas em reports/ com index.html, ordem: latest primeiro, depois por mtime desc."""
+    project_reports_path = '{}/reports'.format(get_project_path(project_id))
+    if not os.path.isdir(project_reports_path):
+        return []
+    reports_entity = []
+    for name in os.listdir(project_reports_path):
+        file_path = os.path.join(project_reports_path, name, REPORT_INDEX_FILE)
+        if os.path.isfile(file_path):
+            reports_entity.append((name, os.path.getmtime(file_path)))
+    reports_entity.sort(key=lambda x: x[1], reverse=True)
+    rest = []
+    latest_name = None
+    for name, _mtime in reports_entity:
+        if name.lower() == 'latest':
+            latest_name = name
+        else:
+            rest.append(name)
+    if latest_name is not None:
+        return [latest_name] + rest
+    return [n for n, _ in reports_entity]
+
+def report_navigator_label(report_id):
+    if report_id.lower() == 'latest':
+        return 'Latest'
+    return 'Build {}'.format(report_id)
+
+def list_navigator_project_choices(current_project_id, relative_urls):
+    """Lista projetos com pasta em disco; href para o report-navigator de cada um."""
+    if not os.path.isdir(PROJECTS_DIRECTORY):
+        return []
+    names = [
+        n for n in os.listdir(PROJECTS_DIRECTORY)
+        if os.path.isdir(os.path.join(PROJECTS_DIRECTORY, n))
+    ]
+    names.sort(key=lambda x: (x != 'default', x.lower()))
+    out = []
+    for pid in names:
+        if relative_urls:
+            href = '../../{}/reports/{}'.format(pid, REPORT_NAVIGATOR_FILE_NAME)
+        else:
+            href = url_for(
+                'report_navigator_endpoint', project_id=pid, _external=True)
+        out.append({
+            'id': pid,
+            'href': href,
+            'current': pid == current_project_id,
+        })
+    return out
+
+def build_report_navigator_entries(project_id, relative_urls):
+    """Entradas para o template: iframe_src absoluto (API) ou relativo a reports/ (ficheiro estático)."""
+    entries = []
+    for name in list_project_report_dir_entries(project_id):
+        rel = '{}/{}'.format(name, REPORT_INDEX_FILE)
+        if relative_urls:
+            iframe_src = rel
+        else:
+            iframe_src = url_for(
+                'get_reports_endpoint', project_id=project_id,
+                path=rel, redirect='false', _external=True)
+        entries.append({
+            'report_id': name,
+            'label': report_navigator_label(name),
+            'iframe_src': iframe_src,
+        })
+    return entries
+
+def render_report_navigator_html(project_id, entries, relative_urls):
+    project_choices = list_navigator_project_choices(project_id, relative_urls)
+    return render_template(
+        REPORT_NAVIGATOR_TEMPLATE,
+        project_id=project_id,
+        entries=entries,
+        project_choices=project_choices,
+        css=GLOBAL_CSS,
+    )
+
+def write_report_navigator_scaffold(project_id):
+    """Gera static/projects/<id>/reports/report-navigator.html (URLs relativas para iframe)."""
+    try:
+        if is_existent_project(project_id) is False:
+            return
+        entries = build_report_navigator_entries(project_id, relative_urls=True)
+        html = render_report_navigator_html(project_id, entries, relative_urls=True)
+        out_path = os.path.join(
+            get_project_path(project_id), 'reports', REPORT_NAVIGATOR_FILE_NAME)
+        with open(out_path, 'w', encoding='utf-8') as file:
+            file.write(html)
+    except Exception as ex:
+        LOGGER.warning('write_report_navigator_scaffold: %s', str(ex))
+
+def directory_size_bytes(path):
+    """Soma o tamanho em bytes de todos os ficheiros sob `path` (recursivo)."""
+    total = 0
+    if not os.path.isdir(path):
+        return 0
+    for dirpath, _, filenames in os.walk(path):
+        for filename in filenames:
+            fp = os.path.join(dirpath, filename)
+            try:
+                if os.path.isfile(fp):
+                    total += os.path.getsize(fp)
+            except OSError:
+                pass
+    return total
+
+def bytes_to_human_readable(size_bytes):
+    """Converte bytes para string legível (B, KB, MB, GB, TB)."""
+    units = ['B', 'KB', 'MB', 'GB', 'TB']
+    value = float(size_bytes)
+    unit = units[0]
+    for current_unit in units:
+        unit = current_unit
+        if value < 1024.0 or current_unit == units[-1]:
+            break
+        value /= 1024.0
+    if unit == 'B':
+        return '{} {}'.format(int(value), unit)
+    return '{:.2f} {}'.format(value, unit)
+
+def build_project_storage_payload(project_id):
+    """Uso de disco do diretório do projeto, `results` e `reports`."""
+    base = get_project_path(project_id)
+    results_path = '{}/results'.format(base)
+    reports_path = '{}/reports'.format(base)
+    bytes_total = directory_size_bytes(base)
+    bytes_results = directory_size_bytes(results_path)
+    bytes_reports = directory_size_bytes(reports_path)
+    return {
+        'project_id': project_id,
+        'path': base,
+        'bytes_total': bytes_total,
+        'bytes_total_human': bytes_to_human_readable(bytes_total),
+        'bytes_results': bytes_results,
+        'bytes_results_human': bytes_to_human_readable(bytes_results),
+        'bytes_reports': bytes_reports,
+        'bytes_reports_human': bytes_to_human_readable(bytes_reports),
+    }
+
 def resolve_project(project_id_param):
     project_id = 'default'
     if project_id_param is not None:
@@ -1656,6 +2050,26 @@ def check_process(process_file, project_id):
 
     if proccount > 0:
         raise Exception("Processing files for project_id '{}'. Try later!".format(project_id))
+
+def ensure_default_project_bootstrap():
+    """Garante que o projeto default existe mesmo com volume vazio em /projects."""
+    default_project_id = 'default'
+    default_project_path = get_project_path(default_project_id)
+    default_reports_latest = '{}/reports/latest'.format(default_project_path)
+    default_results = '{}/results'.format(default_project_path)
+    try:
+        os.makedirs(default_reports_latest, exist_ok=True)
+        if os.path.lexists(default_results):
+            return
+
+        if os.path.isdir(RESULTS_DIRECTORY):
+            os.symlink(RESULTS_DIRECTORY, default_results)
+        else:
+            os.makedirs(default_results, exist_ok=True)
+    except Exception as ex:
+        LOGGER.error("Cannot bootstrap default project: %s", str(ex))
+
+ensure_default_project_bootstrap()
 
 if __name__ == '__main__':
     if DEV_MODE == 1:

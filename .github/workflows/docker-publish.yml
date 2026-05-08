@@ -1,86 +1,113 @@
+# Publicação multi-arquitetura (amd64 + arm64) no Docker Hub.
+#
+# Requisitos no GitHub (Settings → Secrets and variables → Actions):
+#   Utilizador (um dos seguintes — ordem de preferência):
+#     - Secret DOCKER_HUB_USERNAME  (recomendado), ou
+#     - Secret DOCKER_HUB_USER, ou
+#     - Variable DOCKER_HUB_USER  (aba "Variables", não "Secrets")
+#   Palavra-passe / token (um dos seguintes):
+#     - Secret DOCKER_HUB_TOKEN  (Access Token do Docker Hub — recomendado), ou
+#     - Secret DOCKER_HUB_PASS   (password da conta; menos recomendado)
+#   Criar token: hub.docker.com → Account Settings → Security → New Access Token
+#
+# Versões (não misturar):
+#   - Tag da imagem no Hub = release deste serviço/fork: tag Git vX.Y.Z → :X.Y.Z (ex.: v1.4.0 → flaviordesouza/...:1.4.0). É independente do npm allure.
+#   - ALLURE_NPM_VERSION (env abaixo) = versão do pacote npm `allure` dentro da imagem (ex.: 3.3.1); label allure.npm.version + GET /version.
+# Tags no registry:
+#   - Push de tag git v*: imagens <release>-amd64 / -arm64 + manifest <release> + latest (ou beta se "beta" no nome da tag)
+#   - Push na branch main (automático): release semver 1.0.<N> onde N = git rev-list --count no commit (histórico completo no checkout).
+#     Cada novo commit na main → novo N → nova tag no Hub; :latest segue sempre o último build da main.
+#     Evite tags Git v1.0.<N> que coincidam com esse N (colisão no Hub).
+#
+# Nota: linux/arm/v7 foi removido — imagens oficiais node:22-bookworm-slim não suportam armv7; o build falhava no QEMU.
+
 name: Allure Docker Service Workflow
 
 on:
   push:
     branches:
       - "*"
-
     tags:
       - v*
-
   pull_request:
 
 env:
-  DOCKER_IMAGE: frankescobar/allure-docker-service
-  ALLURE_RELEASE: 2.38.1
+  DOCKER_IMAGE: flaviordesouza/allure-docker-service
+  ALLURE_NPM_VERSION: 3.3.1
+  # Username: secrets primeiro (quem só criou "Secrets" não fica com vars vazias).
+  DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USERNAME || secrets.DOCKER_HUB_USER || vars.DOCKER_HUB_USER }}
+  DOCKER_HUB_PASS: ${{ secrets.DOCKER_HUB_TOKEN || secrets.DOCKER_HUB_PASS }}
 
 jobs:
   build_release:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        ARCH: [amd64, arm64, armv7]
+        ARCH: [amd64, arm64]
         include:
-        - ARCH: amd64
-          DOCKER_FILE: Dockerfile
-          DOCKER_PLATFORM: linux/amd64
-          JDK: eclipse-temurin:11-jre-noble
-
-        - ARCH: arm64
-          DOCKER_FILE: Dockerfile
-          DOCKER_PLATFORM: linux/arm64
-          JDK: eclipse-temurin:11-jre-noble
-
-        - ARCH: armv7
-          DOCKER_FILE: Dockerfile
-          DOCKER_PLATFORM: linux/arm/v7
-          JDK: eclipse-temurin:11-jre-noble
+          - ARCH: amd64
+            DOCKER_FILE: Dockerfile
+            DOCKER_PLATFORM: linux/amd64
+          - ARCH: arm64
+            DOCKER_FILE: Dockerfile
+            DOCKER_PLATFORM: linux/arm64
 
     if: github.event_name == 'push'
-    outputs:
-      build_version: ${{ steps.prepare.outputs.build_version }}
     steps:
       - name: Pulling code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Preparing
         id: prepare
         run: |
+          set -euo pipefail
           echo "DOCKER BUILD: Build Docker image."
-          echo "DOCKER BUILD: jdk -> ${{matrix.JDK}}."
-          echo "DOCKER BUILD: allure version -> ${ALLURE_RELEASE}."
-          echo "DOCKER BUILD: docker file - ${{matrix.DOCKER_FILE}}."       
+          echo "DOCKER BUILD: allure (npm) version -> ${ALLURE_NPM_VERSION}."
+          echo "DOCKER BUILD: docker file - ${{ matrix.DOCKER_FILE }}."
+          echo "DOCKER BUILD: platform - ${{ matrix.DOCKER_PLATFORM }}."
+
+          SHORT_SHA="${GITHUB_SHA:0:8}"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
           VERSION=na
-          TAGS="--tag ${DOCKER_IMAGE}:build --tag ${DOCKER_IMAGE}:build-${{matrix.ARCH}}"
+          TAGS="--tag ${DOCKER_IMAGE}:build --tag ${DOCKER_IMAGE}:build-${{ matrix.ARCH }}"
 
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-            if [[ $GITHUB_REF == *"beta"* ]]; then
-                TAGS="--tag ${DOCKER_IMAGE}:${VERSION} --tag ${DOCKER_IMAGE}:${VERSION}-${{matrix.ARCH}} --tag ${DOCKER_IMAGE}:beta --tag ${DOCKER_IMAGE}:build-${{matrix.ARCH}}"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            if [[ "${GITHUB_REF}" == *beta* ]]; then
+              TAGS="--tag ${DOCKER_IMAGE}:${VERSION} --tag ${DOCKER_IMAGE}:${VERSION}-${{ matrix.ARCH }} --tag ${DOCKER_IMAGE}:beta --tag ${DOCKER_IMAGE}:build-${{ matrix.ARCH }}"
             else
-                TAGS="--tag ${DOCKER_IMAGE}:${VERSION} --tag ${DOCKER_IMAGE}:${VERSION}-${{matrix.ARCH}} --tag ${DOCKER_IMAGE}:latest --tag ${DOCKER_IMAGE}:build-${{matrix.ARCH}}"
+              TAGS="--tag ${DOCKER_IMAGE}:${VERSION} --tag ${DOCKER_IMAGE}:${VERSION}-${{ matrix.ARCH }} --tag ${DOCKER_IMAGE}:latest --tag ${DOCKER_IMAGE}:build-${{ matrix.ARCH }}"
             fi
+          elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+            REL_COUNT="$(git rev-list --count "${GITHUB_SHA}")"
+            AUTO_REL="1.0.${REL_COUNT}"
+            VERSION="${AUTO_REL}"
+            echo "main_rel_ver=${AUTO_REL}" >> "$GITHUB_OUTPUT"
+            TAGS="--tag ${DOCKER_IMAGE}:build --tag ${DOCKER_IMAGE}:build-${{ matrix.ARCH }} \
+              --tag ${DOCKER_IMAGE}:${AUTO_REL}-${{ matrix.ARCH }} \
+              --tag ${DOCKER_IMAGE}:main-${{ matrix.ARCH }} \
+              --tag ${DOCKER_IMAGE}:sha-${SHORT_SHA}-${{ matrix.ARCH }}"
           fi
 
           DOCKER_ARGS_STRING="\
-            --build-arg JDK=${{matrix.JDK}} \
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
             --build-arg BUILD_VERSION=${VERSION} \
-            --build-arg BUILD_REF=${GITHUB_SHA::8} \
-            --build-arg ALLURE_RELEASE=${ALLURE_RELEASE} \
-            --platform ${{matrix.DOCKER_PLATFORM}} \
+            --build-arg BUILD_REF=${SHORT_SHA} \
+            --build-arg ALLURE_NPM_VERSION=${ALLURE_NPM_VERSION} \
+            --platform ${{ matrix.DOCKER_PLATFORM }} \
             ${TAGS} --file docker/Dockerfile ."
-            
-          echo "DOCKER BUILD: build version -> ${VERSION}."
-          echo "build_version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "docker_args=${DOCKER_ARGS_STRING}" >> $GITHUB_OUTPUT
 
+          echo "DOCKER BUILD: build version label -> ${VERSION}."
+          echo "docker_args=${DOCKER_ARGS_STRING}" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: all
+          platforms: linux/amd64,linux/arm64
 
       - name: Set up Docker Buildx
         id: buildx
@@ -92,78 +119,135 @@ jobs:
 
       - name: Docker Testing
         run: |
-          echo "DOCKER TEST: Test Docker image"
-          echo "DOCKER TEST: testing image -> ${DOCKER_IMAGE}:build-${{matrix.ARCH}}"
-
-          docker run --platform ${{matrix.DOCKER_PLATFORM}} -d --rm --name=testing-${{matrix.ARCH}} ${DOCKER_IMAGE}:build-${{matrix.ARCH}}
-          if [ $? -ne 0 ]; then
-            echo "DOCKER TEST: FAILED - Docker container testing failed to start."
+          set -euo pipefail
+          NAME="testing-${{ matrix.ARCH }}"
+          echo "DOCKER TEST: image -> ${DOCKER_IMAGE}:build-${{ matrix.ARCH }}"
+          docker run --platform ${{ matrix.DOCKER_PLATFORM }} -d --name="$NAME" "${DOCKER_IMAGE}:build-${{ matrix.ARCH }}"
+          sleep 12
+          STATUS=$(docker inspect -f '{{.State.Status}}' "$NAME")
+          docker logs "$NAME" 2>&1 | tail -30
+          if [[ "$STATUS" != "running" ]]; then
+            echo "DOCKER TEST: FAILED (status=$STATUS)"
             exit 1
-          else
-            echo "DOCKER TEST: PASSED - Docker container testing succeeded to start."
           fi
+          docker rm -f "$NAME"
+          echo "DOCKER TEST: PASSED"
 
       - name: DockerHub Login
-        if: success() && startsWith(github.ref, 'refs/tags/v')
-        env:
-          DOCKER_HUB_USER: ${{ vars.DOCKER_HUB_USER }}
-          DOCKER_HUB_PASS: ${{ secrets.DOCKER_HUB_PASS }}
+        if: success() && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
         run: |
+          set -euo pipefail
+          if [[ -z "${DOCKER_HUB_USER}" ]]; then
+            echo '::error::DOCKER_HUB_USER vazio. Cria um Secret DOCKER_HUB_USERNAME (ou DOCKER_HUB_USER) ou uma Variable DOCKER_HUB_USER em Repo → Settings → Secrets and variables → Actions.'
+            exit 1
+          fi
+          if [[ -z "${DOCKER_HUB_PASS}" ]]; then
+            echo '::error::Token/password vazio. Cria DOCKER_HUB_TOKEN (recomendado) ou DOCKER_HUB_PASS em Secrets.'
+            exit 1
+          fi
           echo "${DOCKER_HUB_PASS}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin
 
-      - name: Docker Publishing
+      - name: Docker Publishing (release tag)
         if: success() && startsWith(github.ref, 'refs/tags/v')
         run: |
-          echo "DOCKER PUSH: pushing - ${DOCKER_IMAGE}:${{ steps.prepare.outputs.build_version }}-${{matrix.ARCH}}"
-          docker push ${DOCKER_IMAGE}:${{ steps.prepare.outputs.build_version }}-${{matrix.ARCH}}
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "DOCKER PUSH: ${DOCKER_IMAGE}:${VERSION}-${{ matrix.ARCH }}"
+          docker push "${DOCKER_IMAGE}:${VERSION}-${{ matrix.ARCH }}"
+
+      - name: Docker Publishing (main branch)
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          S="${{ steps.prepare.outputs.short_sha }}"
+          R="${{ steps.prepare.outputs.main_rel_ver }}"
+          echo "DOCKER PUSH: ${DOCKER_IMAGE}:${R}-${{ matrix.ARCH }}, main-${{ matrix.ARCH }}, sha-${S}-${{ matrix.ARCH }}"
+          docker push "${DOCKER_IMAGE}:${R}-${{ matrix.ARCH }}"
+          docker push "${DOCKER_IMAGE}:main-${{ matrix.ARCH }}"
+          docker push "${DOCKER_IMAGE}:sha-${S}-${{ matrix.ARCH }}"
 
       - name: Docker Logout
-        if: success() && startsWith(github.ref, 'refs/tags/v')
+        if: success() && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
         run: |
-          docker logout
+          docker logout || true
 
   manifest_release:
     runs-on: ubuntu-latest
     needs: build_release
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
     steps:
+      - name: Pulling code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: DockerHub Login
-        if: success() && startsWith(github.ref, 'refs/tags/v')
-        env:
-          DOCKER_HUB_USER: ${{ vars.DOCKER_HUB_USER }}
-          DOCKER_HUB_PASS: ${{ secrets.DOCKER_HUB_PASS }}
         run: |
+          set -euo pipefail
+          if [[ -z "${DOCKER_HUB_USER}" ]]; then
+            echo '::error::DOCKER_HUB_USER vazio. Secret DOCKER_HUB_USERNAME ou DOCKER_HUB_USER, ou Variable DOCKER_HUB_USER.'
+            exit 1
+          fi
+          if [[ -z "${DOCKER_HUB_PASS}" ]]; then
+            echo '::error::Secret DOCKER_HUB_TOKEN ou DOCKER_HUB_PASS em falta.'
+            exit 1
+          fi
           echo "${DOCKER_HUB_PASS}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin
 
-      - name: Docker Publishing Manifest
-        if: success() && startsWith(github.ref, 'refs/tags/v')
+      - name: Docker Publishing Manifest (release tag)
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          BUILD_VERSION=${{ needs.build_release.outputs.build_version }}
-          docker manifest create ${DOCKER_IMAGE}:${BUILD_VERSION} \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-amd64 \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-armv7 \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64
+          set -euo pipefail
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          docker manifest create "${DOCKER_IMAGE}:${VERSION}" \
+            "${DOCKER_IMAGE}:${VERSION}-amd64" \
+            "${DOCKER_IMAGE}:${VERSION}-arm64"
+          docker manifest annotate "${DOCKER_IMAGE}:${VERSION}" "${DOCKER_IMAGE}:${VERSION}-arm64" --os=linux --arch=arm64 --variant=v8
+          docker manifest push "${DOCKER_IMAGE}:${VERSION}"
 
-          docker manifest annotate ${DOCKER_IMAGE}:${BUILD_VERSION} ${DOCKER_IMAGE}:${BUILD_VERSION}-armv7 --os=linux --arch=arm --variant=v7
-          docker manifest annotate ${DOCKER_IMAGE}:${BUILD_VERSION} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64 --os=linux --arch=arm64 --variant=v8
-
-          docker manifest push ${DOCKER_IMAGE}:${BUILD_VERSION}
-
-          TAG=beta
-          if [[ ${BUILD_VERSION} != *"beta"* ]]; then
-            TAG=latest
+          if [[ "${VERSION}" == *beta* ]]; then
+            ALIAS=beta
+          else
+            ALIAS=latest
           fi
+          docker manifest create "${DOCKER_IMAGE}:${ALIAS}" \
+            "${DOCKER_IMAGE}:${VERSION}-amd64" \
+            "${DOCKER_IMAGE}:${VERSION}-arm64"
+          docker manifest annotate "${DOCKER_IMAGE}:${ALIAS}" "${DOCKER_IMAGE}:${VERSION}-arm64" --os=linux --arch=arm64 --variant=v8
+          docker manifest push "${DOCKER_IMAGE}:${ALIAS}"
 
-          docker manifest create ${DOCKER_IMAGE}:${TAG} \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-amd64 \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-armv7 \
-              ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64
+      - name: Docker Publishing Manifest (main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          S="${GITHUB_SHA:0:8}"
+          REL_COUNT="$(git rev-list --count "${GITHUB_SHA}")"
+          R="1.0.${REL_COUNT}"
 
-          docker manifest annotate ${DOCKER_IMAGE}:${TAG} ${DOCKER_IMAGE}:${BUILD_VERSION}-armv7 --os=linux --arch=arm --variant=v7
-          docker manifest annotate ${DOCKER_IMAGE}:${TAG} ${DOCKER_IMAGE}:${BUILD_VERSION}-arm64 --os=linux --arch=arm64 --variant=v8
+          docker manifest create "${DOCKER_IMAGE}:${R}" \
+            "${DOCKER_IMAGE}:${R}-amd64" \
+            "${DOCKER_IMAGE}:${R}-arm64"
+          docker manifest annotate "${DOCKER_IMAGE}:${R}" "${DOCKER_IMAGE}:${R}-arm64" --os=linux --arch=arm64 --variant=v8
+          docker manifest push "${DOCKER_IMAGE}:${R}"
 
-          docker manifest push ${DOCKER_IMAGE}:${TAG}
+          docker manifest create "${DOCKER_IMAGE}:latest" \
+            "${DOCKER_IMAGE}:${R}-amd64" \
+            "${DOCKER_IMAGE}:${R}-arm64"
+          docker manifest annotate "${DOCKER_IMAGE}:latest" "${DOCKER_IMAGE}:${R}-arm64" --os=linux --arch=arm64 --variant=v8
+          docker manifest push "${DOCKER_IMAGE}:latest"
+
+          docker manifest create "${DOCKER_IMAGE}:main" \
+            "${DOCKER_IMAGE}:main-amd64" \
+            "${DOCKER_IMAGE}:main-arm64"
+          docker manifest annotate "${DOCKER_IMAGE}:main" "${DOCKER_IMAGE}:main-arm64" --os=linux --arch=arm64 --variant=v8
+          docker manifest push "${DOCKER_IMAGE}:main"
+
+          docker manifest create "${DOCKER_IMAGE}:sha-${S}" \
+            "${DOCKER_IMAGE}:sha-${S}-amd64" \
+            "${DOCKER_IMAGE}:sha-${S}-arm64"
+          docker manifest annotate "${DOCKER_IMAGE}:sha-${S}" "${DOCKER_IMAGE}:sha-${S}-arm64" --os=linux --arch=arm64 --variant=v8
+          docker manifest push "${DOCKER_IMAGE}:sha-${S}"
 
       - name: Docker Logout
-        if: success() && startsWith(github.ref, 'refs/tags/v')
+        if: always()
         run: |
-          docker logout
+          docker logout || true

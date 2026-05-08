@@ -1,34 +1,45 @@
 {
    "openapi":"3.0.0",
    "info":{
-      "description":"Interact with Allure Docker container",
-      "version":"1.0.0",
+      "description":"HTTP API do Allure Docker Service. Os relatórios HTML são gerados no servidor com **Allure Report 3** (pacote npm `allure`).\n\n**Base URL:** `{scheme}://{host}:{port}/allure-docker-service` — ex.: `http://localhost:5050/allure-docker-service` (porta do contentor) ou a porta mapeada no host (ex.: `7272` no compose).\n\n**Documentação interativa:** `GET /allure-docker-service/swagger` (ou `/swagger` na raiz).\n\n**Segurança (`SECURITY_ENABLED=1`):** `POST /allure-docker-service/login` com JSON `{\"username\": \"...\", \"password\": \"...\"}`; a resposta define cookies de sessão. Operações protegidas exigem CSRF: cabeçalho `X-CSRF-TOKEN` com o valor do cookie `csrf_access_token` (ou fluxo equivalente). Endpoints públicos incluem `GET /version` e `GET /swagger.json`.\n\n**Fluxo típico:** (1) `POST /projects` se precisar de projeto; (2) `POST /send-results` com ficheiros gerados pelo adaptador Allure (pasta `allure-results`); (3) `GET /generate-report?project_id=...`; (4) abrir relatório em `/projects/{id}/reports/...`.\n\n**Créditos:** fork mantido por Flavio Ramos (flavior.desouza@gmail.com, https://github.com/LFBRxD). Projeto original por Frank Escobar (fescobar.systems@gmail.com, https://github.com/fescobar/allure-docker-service).\n\nReferência Allure Report 3: https://allurereport.org/docs/",
+      "version":"3.0.0",
       "title":"Allure Docker Service API",
       "contact":{
-         "email":"fescobar.systems@gmail.com"
+         "name":"Flavio Ramos (mantenedor deste fork)",
+         "url":"https://github.com/LFBRxD/allure-docker-service",
+         "email":"flavior.desouza@gmail.com"
       },
       "license":{
-         "name":"MIT",
-         "url":"https://opensource.org/licenses/MIT"
+         "name":"Apache-2.0",
+         "url":"https://www.apache.org/licenses/LICENSE-2.0"
+      },
+      "externalDocs":{
+         "description":"Report navigator (HTML)",
+         "url":"/allure-docker-service/report-navigator"
       }
    },
    "servers":[
       {
-         "url":"/allure-docker-service"
+         "url":"/allure-docker-service",
+         "description":"Prefixo relativo ao host (use com Try it out no Swagger UI)"
+      },
+      {
+         "url":"http://127.0.0.1:5050/allure-docker-service",
+         "description":"Exemplo: API na porta 5050 do contentor"
       }
    ],
    "tags":[
       {
          "name":"Info",
-         "description":""
+         "description":"Versão, Swagger e especificação OpenAPI"
       },
       {
          "name":"Action",
-         "description":""
+         "description":"Enviar resultados, gerar relatório (Allure 3), limpar dados, relatório emailable"
       },
       {
          "name":"Project",
-         "description":""
+         "description":"CRUD de projetos e ficheiros estáticos do relatório"
       }
    ],
    "paths":{
@@ -37,7 +48,7 @@
             "tags":[
                "Info"
             ],
-            "summary":"Get Allure version (from version 2.12.1)",
+            "summary":"Versão do CLI Allure Report (npm `allure`)",
             "responses":{
                "200":{
                   "description":"OK",
@@ -59,7 +70,7 @@
             "tags":[
                "Info"
             ],
-            "summary":"Get Swagger API Doc",
+            "summary":"Interface Swagger UI",
             "responses":{
                "200":{
                   "description":"OK"
@@ -72,7 +83,7 @@
             "tags":[
                "Info"
             ],
-            "summary":"Get Swagger API Specification",
+            "summary":"Especificação OpenAPI (JSON)",
             "responses":{
                "200":{
                   "description":"OK"
@@ -85,7 +96,7 @@
             "tags":[
                "Action"
             ],
-            "summary":"Get Allure config (from version 2.13.5)",
+            "summary":"Obter configuração em tempo de execução (JWT se segurança ativa)",
             "responses":{
                "200":{
                   "description":"OK",
@@ -107,7 +118,7 @@
             "tags":[
                "Action"
             ],
-            "summary":"Get latest report (from version 2.13.3)",
+            "summary":"Redirecionar para o relatório HTML mais recente do projeto",
             "parameters":[
                {
                   "in":"query",
@@ -138,7 +149,7 @@
             "tags":[
                "Action"
             ],
-            "summary":"Send results files (from version 2.12.1)",
+            "summary":"Enviar ficheiros de resultados (JSON base64 ou multipart)",
             "consumes":[
                "application/json",
                "multipart/form-data"
@@ -222,7 +233,7 @@
             "tags":[
                "Action"
             ],
-            "summary":"Generate new report",
+            "summary":"Gerar relatório (executa Allure Report 3 sobre os resultados do projeto)",
             "parameters":[
                {
                   "in":"query",
@@ -276,11 +287,11 @@
          }
       },
       "/clean-results":{
-         "get":{
+         "delete":{
             "tags":[
                "Action"
             ],
-            "summary":"Clean Allure results (from version 2.12.1)",
+            "summary":"Limpar resultados armazenados do projeto",
             "parameters":[
                {
                   "in":"query",
@@ -313,11 +324,11 @@
          }
       },
       "/clean-history":{
-         "get":{
+         "delete":{
             "tags":[
                "Action"
             ],
-            "summary":"Clean Allure history & trends (from version 2.12.1)",
+            "summary":"Limpar histórico e tendências do projeto",
             "parameters":[
                {
                   "in":"query",
@@ -354,7 +365,7 @@
             "tags":[
                "Action"
             ],
-            "summary":"Render emailable Allure report (from version 2.12.1)",
+            "summary":"Renderizar relatório emailable (HTML)",
             "parameters":[
                {
                   "in":"query",
@@ -391,7 +402,7 @@
             "tags":[
                "Action"
             ],
-            "summary":"Export emailable Allure report (from version 2.12.1)",
+            "summary":"Exportar relatório emailable (download)",
             "parameters":[
                {
                   "in":"query",
@@ -428,7 +439,7 @@
             "tags":[
                "Action"
             ],
-            "summary":"Export Allure report (from version 2.13.1)",
+            "summary":"Exportar relatório completo (ZIP, saída Allure Report 3)",
             "parameters":[
                {
                   "in":"query",
@@ -465,7 +476,7 @@
             "tags":[
                "Project"
             ],
-            "summary":"Create a new project (from version 2.13.3)",
+            "summary":"Criar projeto",
             "consumes":[
                "application/json"
             ],
@@ -504,7 +515,7 @@
             "tags":[
                "Project"
             ],
-            "summary":"Get all projects (from version 2.13.3)",
+            "summary":"Listar projetos",
             "produces":[
                "application/json"
             ],
@@ -529,7 +540,7 @@
             "tags":[
                "Project"
             ],
-            "summary":"Delete an existent project (from version 2.13.3)",
+            "summary":"Eliminar projeto",
             "parameters":[
                {
                   "in":"path",
@@ -569,7 +580,7 @@
             "tags":[
                "Project"
             ],
-            "summary":"Get an existent project (from version 2.13.3)",
+            "summary":"Obter metadados do projeto",
             "parameters":[
                {
                   "in":"path",
@@ -611,7 +622,7 @@
             "tags":[
                "Project"
             ],
-            "summary":"Get reports (from version 2.13.3)",
+            "summary":"Servir ficheiros estáticos do relatório ou redirecionar",
             "parameters":[
                {
                   "in":"path",
@@ -670,10 +681,79 @@
             "tags":[
                "Project"
             ],
-            "summary":"Search projects (from version 2.13.5)",
+            "summary":"Pesquisar projeto por id",
             "parameters":[
                {
                   "in":"query",
+                  "name":"id",
+                  "value":"my-project-id",
+                  "schema":{
+                     "type":"string"
+                  },
+                  "required":"true"
+               }
+            ],
+            "produces":[
+               "application/json"
+            ],
+            "responses":{
+               "200":{
+                  "description":"OK",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "400":{
+                  "description":"BAD_REQUEST",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "404":{
+                  "description":"NOT_FOUND",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               }
+            }
+         }
+      },
+      "/projects/storage":{
+         "get":{
+            "tags":[
+               "Project"
+            ],
+            "summary":"Uso de disco (todos os projetos)",
+            "description":"Devolve `total_bytes` e `total_human`; por `project_id`, devolve `bytes_total`, `bytes_total_human`, `bytes_results`, `bytes_results_human`, `bytes_reports` e `bytes_reports_human`.",
+            "produces":[
+               "application/json"
+            ],
+            "responses":{
+               "200":{
+                  "description":"OK",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               },
+               "400":{
+                  "description":"BAD_REQUEST",
+                  "schema":{
+                     "$ref":"#/components/schemas/response"
+                  }
+               }
+            }
+         }
+      },
+      "/projects/{id}/storage":{
+         "get":{
+            "tags":[
+               "Project"
+            ],
+            "summary":"Uso de disco (um projeto)",
+            "description":"Devolve `path`, `bytes_total`, `bytes_total_human`, `bytes_results`, `bytes_results_human`, `bytes_reports` e `bytes_reports_human`.",
+            "parameters":[
+               {
+                  "in":"path",
                   "name":"id",
                   "value":"my-project-id",
                   "schema":{
