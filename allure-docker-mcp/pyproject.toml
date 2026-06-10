@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "allure-docker-mcp"
+version = "1.0.0"
+description = "Model Context Protocol (MCP) server for Allure Docker Service"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+keywords = ["allure", "mcp", "model-context-protocol", "testing", "reporting", "llm"]
+authors = [{ name = "allure-docker-service contributors" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "mcp[cli]>=1.2.0",
+    "httpx>=0.27.0",
+    "anyio>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "respx>=0.21.0",
+]
+
+[project.scripts]
+allure-docker-mcp = "allure_docker_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/fescobar/allure-docker-service"
+Repository = "https://github.com/fescobar/allure-docker-service"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["allure_docker_mcp*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
