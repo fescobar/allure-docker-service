@@ -1,0 +1,82 @@
+name: Allure MCP Docker
+
+# Builds the MCP server image (allure-docker-mcp/) and publishes it to Docker Hub.
+#
+#   - Pull requests touching the package -> build only (validation), never push.
+#   - Push to master/main (e.g. when this package is merged) -> publish :edge.
+#   - Release tags v*                                        -> publish <version> + :latest.
+#
+# Publishing reuses the repo's existing Docker Hub credentials and is guarded to
+# the upstream repository, so it never runs from a fork (which has no secrets).
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - "v*"
+  pull_request:
+    paths:
+      - "allure-docker-mcp/**"
+      - ".github/workflows/allure-mcp.yml"
+
+env:
+  MCP_DOCKER_IMAGE: frankescobar/allure-docker-mcp
+
+jobs:
+  mcp-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pulling code
+        uses: actions/checkout@v4
+
+      - name: Resolve tags, platforms and whether to publish
+        id: meta
+        run: |
+          PUSH=false
+          if [[ "${{ github.event_name }}" != "pull_request" && "${{ github.repository }}" == "fescobar/allure-docker-service" ]]; then
+            PUSH=true
+          fi
+
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            TAGS="${MCP_DOCKER_IMAGE}:${VERSION},${MCP_DOCKER_IMAGE}:latest"
+            PLATFORMS="linux/amd64,linux/arm64"
+          else
+            TAGS="${MCP_DOCKER_IMAGE}:edge"
+            # amd64 only off the default branch / PRs to keep these builds fast.
+            PLATFORMS="linux/amd64"
+          fi
+
+          {
+            echo "push=${PUSH}"
+            echo "tags=${TAGS}"
+            echo "platforms=${PLATFORMS}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved push=${PUSH} platforms=${PLATFORMS} tags=${TAGS}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Hub login
+        if: steps.meta.outputs.push == 'true'
+        env:
+          DOCKER_HUB_USER: ${{ vars.DOCKER_HUB_USER }}
+          DOCKER_HUB_PASS: ${{ secrets.DOCKER_HUB_PASS }}
+        run: echo "${DOCKER_HUB_PASS}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin
+
+      - name: Build (and publish on upstream push/tag)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./allure-docker-mcp
+          file: ./allure-docker-mcp/Dockerfile
+          platforms: ${{ steps.meta.outputs.platforms }}
+          push: ${{ steps.meta.outputs.push == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          provenance: false

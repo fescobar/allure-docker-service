@@ -106,6 +106,18 @@ allure-docker-mcp
 
 ### Docker
 
+A prebuilt image is published to Docker Hub as
+[`frankescobar/allure-docker-mcp`](https://hub.docker.com/r/frankescobar/allure-docker-mcp)
+(`:latest` for tagged releases, `:edge` from `master`):
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e ALLURE_ENDPOINT=http://host.docker.internal:5050 \
+  frankescobar/allure-docker-mcp
+```
+
+Or build it locally:
+
 ```bash
 docker build -t allure-docker-mcp ./allure-docker-mcp
 docker run --rm -p 8000:8000 \
