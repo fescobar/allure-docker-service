@@ -1,0 +1,150 @@
+global:
+  image:
+    registry: "docker.io"
+    imagePullSecrets: []
+
+  nameOverride: ""
+  fullnameOverride: ""
+
+  serviceAccount:
+    create: false
+    automount: false
+    annotations: {}
+    name: ""
+
+api:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: "frankescobar/allure-docker-service"
+    tag: ""
+    pullPolicy: IfNotPresent
+
+  podAnnotations: {}
+  podLabels: {}
+  podEnvs: []
+  podSecurityContext: {}
+  securityContext: {}
+
+  # Credentials are stored in a managed Secret (see api-secrets.yaml template).
+  # Leave a field empty to have Helm auto-generate a random 16-char value on
+  # first install; existing values are preserved on subsequent upgrades.
+  # Set existingSecret to skip Secret creation and reference your own instead.
+  security:
+    existingSecret: ""
+    user: ""
+    password: ""
+    viewerUser: ""
+    viewerPassword: ""
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: allure.localhost
+        paths:
+          - path: /allure-docker-service
+            pathType: ImplementationSpecific
+    tls: []
+
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        namespace: default
+        sectionName: http
+    hostnames:
+      - allure.localhost
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /api
+
+  resources: {}
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+
+  persistence:
+    enabled: false
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    storageClass: ""
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+ui:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: "frankescobar/allure-docker-service-ui"
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  podAnnotations: {}
+  podLabels: {}
+  podEnvs: []
+  podSecurityContext: {}
+  securityContext: {}
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: allure.localhost
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls: []
+
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        namespace: default
+        sectionName: http
+    hostnames:
+      - allure.localhost
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+  resources: {}
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
