@@ -73,7 +73,7 @@ app.config['JWT_COOKIE_CSRF_PROTECT'] = True
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = False
 
 DEV_MODE = 0
-HOST = '0.0.0.0'
+HOST = '*'
 PORT = os.environ['PORT']
 THREADS = 7
 URL_SCHEME = 'http'
