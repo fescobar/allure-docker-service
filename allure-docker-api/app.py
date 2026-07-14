@@ -13,6 +13,7 @@ import shutil
 import tempfile
 import subprocess
 import zipfile
+import tarfile
 import waitress
 from werkzeug.utils import secure_filename
 from flask import (
@@ -860,13 +861,15 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
 
         content_type = str(request.content_type)
         if content_type is None:
-            raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data'") #pylint: disable=line-too-long
+            raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data' or 'application/zip' or 'application/gzip'") #pylint: disable=line-too-long
 
         if (
                 content_type.startswith('application/json') is False and
+                content_type.startswith('application/zip') is False and
+                content_type.startswith('application/gzip') is False and
                 content_type.startswith('multipart/form-data') is False
             ):
-            raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data'") #pylint: disable=line-too-long
+            raise Exception("Header 'Content-Type' should start with 'application/json' or 'multipart/form-data' or 'application/zip' or 'application/gzip'") #pylint: disable=line-too-long
 
         project_id = resolve_project(request.args.get('project_id'))
         if is_existent_project(project_id) is False:
@@ -897,8 +900,17 @@ def send_results_endpoint(): #pylint: disable=too-many-branches
             send_json_results(results_project, validated_results, processed_files, failed_files)
 
         if content_type.startswith('multipart/form-data') is True:
-            validated_results = validate_files_array(request.files.getlist('files[]'))
-            send_files_results(results_project, validated_results, processed_files, failed_files)
+            if request.files.getlist('files[]'): 
+                validated_results = validate_files_array(request.files.getlist('files[]'))
+                send_files_results(results_project, validated_results, processed_files, failed_files)
+            elif request.files.get('zip'):
+                extract_zipped_file_to_result(results_project, request.files.get('zip'), processed_files, failed_files)
+
+        if content_type.startswith('application/zip') is True:
+            extract_raw_zip_to_result(results_project, request.stream, processed_files, failed_files)
+
+        if content_type.startswith('application/gzip') is True:
+            extract_raw_gzip_to_result(results_project, request.stream, processed_files, failed_files)
 
         failed_files_count = len(failed_files)
         if failed_files_count > 0:
@@ -1532,6 +1544,66 @@ def validate_json_results(results):
         validated_results.append(validated_result)
 
     return validated_results
+
+
+def extract_raw_gzip_to_result(results_project, stream, processed_files, failed_files):
+    archive = tempfile.NamedTemporaryFile(suffix='.tar.gz')
+    try:
+        write_stream_to_archive(archive, stream)
+
+        with tarfile.open(archive.name) as tar:
+            #TODO add explicit filter='data' after migration to python 3.12+
+            tar.extractall(results_project)
+
+        processed_files.append("allure-results.gzip")
+    except Exception as ex:
+        LOGGER.error("Error occurred during saving allure gzip archive '%s': %s", archive.name, str(ex))
+        failed_files.append("allure-results.gzip")
+    finally:
+        archive.close()
+
+
+def extract_raw_zip_to_result(results_project, stream, processed_files, failed_files):
+    archive = tempfile.NamedTemporaryFile(suffix='.zip')
+    try:
+        write_stream_to_archive(archive, stream)
+
+        with zipfile.ZipFile(archive, "r") as zip_ref:
+            zip_ref.extractall(results_project)
+
+        processed_files.append("allure-results.zip")
+    except Exception as ex:
+        LOGGER.error("Error occurred during saving allure zip archive '%s': %s", archive.name, str(ex))
+        failed_files.append("allure-results.zip")
+    finally:
+        archive.close()
+
+
+def write_stream_to_archive(archive, stream):
+    chunk_size = 4096
+    while True:
+        chunk = stream.read(chunk_size)
+        if len(chunk) == 0:
+            break
+        archive.write(chunk)
+        archive.flush()
+
+
+def extract_zipped_file_to_result(results_project, file, processed_files, failed_files):
+    filename = secure_filename(file.filename)
+    archive = tempfile.NamedTemporaryFile()
+    try:
+        file.save(archive)
+
+        with zipfile.ZipFile(archive, "r") as zip_ref:
+            zip_ref.extractall(results_project)
+
+        processed_files.append(filename)
+    except Exception as ex:
+        LOGGER.error("Error occurred during saving allure zip archive %s : %s", filename, str(ex))
+        failed_files.append(filename)
+    finally:
+        archive.close()
 
 def send_files_results(results_project, validated_results, processed_files, failed_files):
     for file in validated_results:

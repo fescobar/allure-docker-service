@@ -141,7 +141,9 @@
             "summary":"Send results files (from version 2.12.1)",
             "consumes":[
                "application/json",
-               "multipart/form-data"
+               "multipart/form-data",
+               "application/zip",
+               "application/gzip"
             ],
             "parameters":[
                {
@@ -188,6 +190,18 @@
                   "multipart/form-data":{
                      "schema":{
                         "$ref":"#/components/schemas/files"
+                     }
+                  },
+                  "application/zip": {
+                     "schema": {
+                        "type": "string",
+                        "format": "binary"
+                     }
+                  },
+                  "application/gzip": {
+                     "schema": {
+                        "type": "string",
+                        "format": "binary"
                      }
                   }
                }
@@ -773,13 +787,17 @@
          },
          "files":{
             "type":"object",
-            "properties":{
+            "properties": {
                "files[]":{
                   "type":"array",
                   "items":{
                      "type":"string",
                      "format":"binary"
                   }
+               },
+               "zip": {
+                  "type": "string",
+                  "format": "binary"
                }
             }
          }
