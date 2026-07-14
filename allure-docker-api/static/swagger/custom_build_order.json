@@ -1,0 +1,7 @@
+{
+  "in": "query",
+  "name": "custom_build_order",
+  "schema": {
+    "type": "string"
+  }
+}

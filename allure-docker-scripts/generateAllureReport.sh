@@ -8,6 +8,7 @@ ORIGIN=$3
 EXECUTION_NAME=$4
 EXECUTION_FROM=$5
 EXECUTION_TYPE=$6
+BUILD_ORDER=$7
 
 PROJECT_REPORTS=$STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports
 if [ "$(ls $PROJECT_REPORTS | wc -l)" != "0" ]; then
@@ -31,8 +32,10 @@ EXECUTOR_PATH=$RESULTS_DIRECTORY/$EXECUTOR_FILENAME
 
 echo "Creating $EXECUTOR_FILENAME for PROJECT_ID: $PROJECT_ID"
 if [[ "$LAST_REPORT_DIRECTORY" != "latest" ]]; then
-    BUILD_ORDER=$(($LAST_REPORT_DIRECTORY + 1))
-
+    if [ -z "$BUILD_ORDER" ]; then
+        BUILD_ORDER=$(($LAST_REPORT_DIRECTORY + 1))
+    fi
+    
     if [ -z "$EXECUTION_NAME" ]; then
         EXECUTION_NAME='Automatic Execution'
     fi
@@ -45,7 +48,7 @@ EXECUTOR_JSON=$(cat <<EOF
 {
     "reportName": "$PROJECT_ID",
     "buildName": "$PROJECT_ID #$BUILD_ORDER",
-    "buildOrder": "$BUILD_ORDER",
+    "buildOrder": "${BUILD_ORDER//.}",
     "name": "$EXECUTION_NAME",
     "reportUrl": "../$BUILD_ORDER/index.html",
     "buildUrl": "$EXECUTION_FROM",
