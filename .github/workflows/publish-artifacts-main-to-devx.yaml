@@ -1,0 +1,66 @@
+name: Publish artifacts to DevX
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  GAR_HOST: europe-west1-docker.pkg.dev
+  GCP_PROJECT: gowish-devx
+  IMAGE_REPOSITORY: qa-platform-images
+  IMAGE_NAME: allure-docker-service
+
+jobs:
+  publish-image:
+    runs-on: ubuntu-latest
+    name: "Publish Docker image"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud using WIF
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+          workload_identity_provider: projects/875197491882/locations/global/workloadIdentityPools/gowish-ci-pool/providers/github-provider
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker "$GAR_HOST"
+
+      - name: Build and publish image
+        id: publish
+        run: |
+          # Version comes from the OCI version label in the Dockerfile
+          version=$(sed -n 's/.*org\.opencontainers\.image\.version="\([^"]*\)".*/\1/p' Dockerfile | head -1)
+          version=${version:-latest}
+          image="$GAR_HOST/$GCP_PROJECT/$IMAGE_REPOSITORY/$IMAGE_NAME"
+
+          echo "Publishing $IMAGE_NAME v$version"
+
+          if gcloud artifacts docker images describe "$image:$version" >/dev/null 2>&1; then
+            echo "✅ Skipping $IMAGE_NAME (v$version already exists)"
+            echo "published=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Static OCI labels live in the Dockerfile; build-time ones are added here
+          docker build \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            -t "$image:$version" \
+            -f docker .
+
+          docker push "$image:$version"
+          echo "✅ Published $IMAGE_NAME v$version"
+          echo "published=true" >> $GITHUB_OUTPUT

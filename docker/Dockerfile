@@ -1,7 +1,7 @@
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
-ARG ALLURE_RELEASE=NONE
+ARG ALLURE_RELEASE=3.14.3
 ARG UID=1000
 ARG GID=1000
 ARG PYTHON_VERSION=3.13
@@ -33,7 +33,11 @@ ARG GID
 ARG PYTHON_VERSION=3.13
 ARG NODE_VERSION=20
 
-LABEL org.label-schema.build-date=${BUILD_DATE} \
+LABEL org.opencontainers.image.title="allure-docker-service" \
+    org.opencontainers.image.description="Allure 3 server keeping and showing the reports" \
+    org.opencontainers.image.version=3.14.3 \
+    org.opencontainers.image.source="https://github.com/dotcom-dev/allure-docker-service" \
+    org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.docker.dockerfile="docker/Dockerfile" \
     org.label-schema.license="MIT" \
     org.label-schema.name="Allure Framework" \
