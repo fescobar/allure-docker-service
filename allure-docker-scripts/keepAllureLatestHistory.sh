@@ -13,6 +13,6 @@ if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ] || [ "$KEEP_HI
     if [ "$CURRENT_SIZE" -gt "$KEEP_LATEST" ]; then
         SIZE_TO_REMOVE="$(($CURRENT_SIZE-$KEEP_LATEST))"
         echo "Keeping latest $KEEP_LATEST history reports for PROJECT_ID: $PROJECT_ID"
-        ls -tAd $PROJECT_REPORTS_DIRECTORY/* | grep -wv $PROJECT_REPORTS_DIRECTORY/latest | grep -wv 0 | grep -v $EMAILABLE_REPORT_FILE_NAME | tail -$SIZE_TO_REMOVE | xargs rm 2 -rf> /dev/null
+        ls -tAd $PROJECT_REPORTS_DIRECTORY/* | grep -wv $PROJECT_REPORTS_DIRECTORY/latest | grep -wv 0 | grep -v $EMAILABLE_REPORT_FILE_NAME | tail -$SIZE_TO_REMOVE | xargs rm -rf 2> /dev/null
     fi
 fi

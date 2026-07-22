@@ -236,7 +236,7 @@ if "MAKE_VIEWER_ENDPOINTS_PUBLIC" in os.environ:
 if "JWT_SECRET_KEY" in os.environ:
     app.config['JWT_SECRET_KEY'] = os.environ['JWT_SECRET_KEY']
 else:
-    app.config['JWT_SECRET_KEY'] = os.urandom(16)
+    app.config['JWT_SECRET_KEY'] = os.urandom(32)
 
 if "SECURITY_USER" in os.environ:
     SECURITY_USER_TMP = os.environ['SECURITY_USER']
@@ -1599,6 +1599,23 @@ def create_project(json_body):
 
     if not os.path.exists(results_project):
         os.makedirs(results_project)
+
+    # Create allurerc.json for Allure 3
+    allurerc_config = {
+        "name": "GoWish Tests",
+        "plugins": {
+            "awesome": {
+                "options": {
+                    "singleFile": False,
+                    "reportLanguage": "en"
+                }
+            }
+        },
+        "historyPath": "{}/history.jsonl".format(project_path)
+    }
+    allurerc_path = '{}/allurerc.json'.format(project_path)
+    with open(allurerc_path, 'w') as allurerc_file:
+        json.dump(allurerc_config, allurerc_file, indent=2)
 
     return project_id
 

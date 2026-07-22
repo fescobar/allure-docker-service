@@ -1,12 +1,11 @@
-ARG JDK=eclipse-temurin:11-jre-noble
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
 ARG ALLURE_RELEASE=NONE
-ARG ALLURE_REPO=https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline
 ARG UID=1000
 ARG GID=1000
 ARG PYTHON_VERSION=3.13
+ARG NODE_VERSION=20
 
 ######
 
@@ -14,8 +13,8 @@ FROM python:${PYTHON_VERSION}-alpine AS dev_stage
 RUN apk update
 RUN apk add build-base
 RUN pip install -U pylint
-RUN pip install --upgrade pip==25.2 setuptools==82.0.0 wheel==0.46.2 waitress==3.0.2 && \
-    pip install -Iv Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.33.0
+RUN pip install --upgrade pip==25.2 setuptools==80.9.0 wheel==0.45.1 waitress==3.0.2 && \
+    pip install -Iv Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.32.5
 
 ENV ROOT_DIR=/code
 RUN mkdir -p $ROOT_DIR
@@ -24,24 +23,23 @@ COPY allure-docker-api $ROOT_DIR/allure-docker-api
 RUN pylint --rcfile=allure-docker-api/.pylintrc allure-docker-api
 
 ######
-FROM --platform=$BUILDPLATFORM $JDK
-ARG JDK
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-bookworm-slim
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
 ARG ALLURE_RELEASE
-ARG ALLURE_REPO
 ARG UID
 ARG GID
 ARG PYTHON_VERSION=3.13
+ARG NODE_VERSION=20
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.docker.dockerfile="docker/Dockerfile" \
     org.label-schema.license="MIT" \
     org.label-schema.name="Allure Framework" \
     org.label-schema.version=${BUILD_VERSION} \
-    org.label-schema.description="Allure Framework is a flexible lightweight multi-language test report tool." \
-    org.label-schema.url="https://docs.qameta.io/allure/" \
+    org.label-schema.description="Allure 3 Framework is a flexible lightweight multi-language test report tool." \
+    org.label-schema.url="https://allurereport.org/" \
     org.label-schema.vcs-ref=${BUILD_REF} \
     org.label-schema.vcs-type="Git" \
     org.label-schema.vcs-url="https://github.com/fescobar/allure-docker-service" \
@@ -49,40 +47,31 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     authors="Frank Escobar <fescobar.systems@gmail.com>"
 
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
     apt-get install -y --no-install-recommends \
       tzdata \
       nano \
-      python${PYTHON_VERSION} \
-      unzip && \
-    ln -s `which python3` /usr/bin/python && \
-    apt-get purge python3-cryptography -y && \
-    apt-get autoremove -y && \
-    wget https://bootstrap.pypa.io/get-pip.py && \
-    sed -i "s/\"--force-reinstall\"/\"--force-reinstall\", \"--break-system-packages\"/g" get-pip.py && \
-    python${PYTHON_VERSION} get-pip.py && \
-    python${PYTHON_VERSION} -m pip config set global.break-system-packages true && \
-    python${PYTHON_VERSION} -m pip install setuptools==82.0.0 wheel==0.46.2 waitress==3.0.2 pipdeptree==2.29.0 cffi==2.0.0 cryptography==48.0.1 && \
-    python${PYTHON_VERSION} -m pip install --ignore-installed --upgrade Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.33.0 && \
-    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
-        unzip -q /tmp/allure-commandline.zip -d / && \
-        apt-get remove -y unzip && \
-        rm -rf /tmp/* && \
-        rm -rf /var/lib/apt/lists/* && \
-        chmod -R +x /allure-$ALLURE_RELEASE/bin && \
-        mkdir -p /app
+      curl \
+      procps \
+      python3 \
+      python3-pip \
+      python3-venv && \
+    ln -sf /usr/bin/python3 /usr/bin/python && \
+    python3 -m pip config set global.break-system-packages true && \
+    python3 -m pip install --break-system-packages setuptools==80.9.0 wheel==0.45.1 waitress==3.0.2 pipdeptree==2.29.0 && \
+    python3 -m pip install --break-system-packages --ignore-installed --upgrade Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.32.5 && \
+    npm install -g allure@${ALLURE_RELEASE} && \
+    rm -rf /tmp/* && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /app
 
-RUN usermod -l allure $(getent passwd ${UID} | cut -d: -f1)
-RUN mkdir -p /home/allure && \
+# Rename existing node user to allure (node image has node:node with UID/GID 1000)
+RUN usermod -l allure -d /home/allure -m node && \
+    groupmod -n allure node && \
+    mkdir -p /home/allure && \
     chown -R ${UID}:${GID} /home/allure
 
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV ROOT=/app
-ENV ALLURE_HOME=/allure-$ALLURE_RELEASE
-ENV ALLURE_HOME_SL=/allure
-ENV PATH=$PATH:$ALLURE_HOME/bin
 ENV ALLURE_RESOURCES=$ROOT/resources
 ENV RESULTS_DIRECTORY=$ROOT/allure-results
 ENV REPORT_DIRECTORY=$ROOT/allure-report
@@ -100,8 +89,6 @@ ENV EXECUTOR_FILENAME=executor.json
 
 RUN echo -n $(allure --version) > ${ALLURE_VERSION} && \
     echo "ALLURE_VERSION: "$(cat ${ALLURE_VERSION}) && \
-    mkdir $ALLURE_HOME_SL && \
-    ln -s $ALLURE_HOME/* $ALLURE_HOME_SL && \
     ln -s $STATIC_CONTENT_PROJECTS $ROOT/projects && \
     ln -s $DEFAULT_PROJECT_REPORTS $ROOT/default-reports
 
@@ -113,12 +100,8 @@ RUN chmod +x $ROOT/*.sh && \
     mkdir -p $DEFAULT_PROJECT_REPORTS/latest && \
     ln -sf $RESULTS_DIRECTORY $DEFAULT_PROJECT_RESULTS && \
     ln -sf $DEFAULT_PROJECT_REPORTS/latest $REPORT_DIRECTORY && \
-    allure generate -c -o /tmp/resources && \
     mkdir -p $ALLURE_RESOURCES && \
-    APP_FILE=$(find /tmp/resources -type f \( -name "app.js" -o -name "index.js" -o -name "*.js" \) | head -n 1) && \
-    CSS_FILE=$(find /tmp/resources -type f \( -name "styles.css" -o -name "index.css" -o -name "*.css" \) | head -n 1) && \
-    if [ -n "$APP_FILE" ]; then cp "$APP_FILE" $ALLURE_RESOURCES/app.js; else touch $ALLURE_RESOURCES/app.js; fi && \
-    if [ -n "$CSS_FILE" ]; then cp "$CSS_FILE" $ALLURE_RESOURCES/styles.css; else touch $ALLURE_RESOURCES/styles.css; fi
+    echo '{"name":"default","plugins":{"awesome":{"options":{"singleFile":false,"reportLanguage":"en"}}},"historyPath":"'$DEFAULT_PROJECT_ROOT'/history.jsonl"}' > $DEFAULT_PROJECT_ROOT/allurerc.json
 
 RUN chown -R ${UID}:${GID} $ROOT
 

@@ -63,10 +63,16 @@ else
 fi
 
 echo "Generating report for PROJECT_ID: $PROJECT_ID"
-allure generate --clean $RESULTS_DIRECTORY -o $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest
+rm -rf $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/*
+allure generate $RESULTS_DIRECTORY --output $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest --config $STATIC_CONTENT_PROJECTS/$PROJECT_ID/allurerc.json
 if [ "$OPTIMIZE_STORAGE" == "1" ] ; then
-    ln -sf $ALLURE_RESOURCES/app.js $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/app.js
-    ln -sf $ALLURE_RESOURCES/styles.css $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/styles.css
+    # Note: Allure 3 has different static asset structure
+    if [ -f $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/app.js ]; then
+        ln -sf $ALLURE_RESOURCES/app.js $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/app.js
+    fi
+    if [ -f $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/styles.css ]; then
+        ln -sf $ALLURE_RESOURCES/styles.css $STATIC_CONTENT_PROJECTS/$PROJECT_ID/reports/latest/styles.css
+    fi
 fi
 
 if [ "$KEEP_HISTORY" == "TRUE" ] || [ "$KEEP_HISTORY" == "true" ] || [ "$KEEP_HISTORY" == "1" ] ; then
