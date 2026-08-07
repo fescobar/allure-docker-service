@@ -1,4 +1,4 @@
-ARG JDK=eclipse-temurin:11-jre-noble
+ARG JDK=eclipse-temurin:11.0.29_7-jre-noble
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
@@ -10,7 +10,7 @@ ARG PYTHON_VERSION=3.13
 
 ######
 
-FROM python:${PYTHON_VERSION}-alpine AS dev_stage
+FROM python:${PYTHON_VERSION}.11-alpine3.23 AS dev_stage
 RUN apk update
 RUN apk add build-base
 RUN pip install -U pylint
