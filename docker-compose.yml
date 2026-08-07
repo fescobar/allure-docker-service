@@ -1,0 +1,27 @@
+version: '3'
+services:
+  allure:
+    container_name: allure
+    image: "frankescobar/allure-docker-service"
+    environment:
+      # 毎秒テスト結果を確認するかどうかの設定です
+      # マシンへの負担が大きいとのことなので今回はNONEにします
+      CHECK_RESULTS_EVERY_SECONDS: NONE
+      # テストの履歴を保存したいのでKEEP_HISTORYを有効化(TRUE)にします
+      KEEP_HISTORY: 1
+      # 直近25回分までを保存します
+      KEEP_HISTORY_LATEST: 25
+    ports:
+      - "5050:5050"
+    volumes:
+      - ${PWD}/allure-results:/app/allure-results
+      - ${PWD}/allure-reports:/app/default-reports
+
+  allure-ui:
+    container_name: allure-ui
+    image: "frankescobar/allure-docker-service-ui"
+    environment:
+      ALLURE_DOCKER_PUBLIC_API_URL: "http://localhost:5050"
+      ALLURE_DOCKER_PUBLIC_API_URL_PREFIX: ""
+    ports:
+      - "5252:5252"
