@@ -1,21 +1,19 @@
-ARG JDK=eclipse-temurin:11-jre-noble
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
-ARG ALLURE_RELEASE=NONE
+ARG ALLURE_RELEASE=2.44.0
 ARG ALLURE_REPO=https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline
 ARG UID=1000
 ARG GID=1000
-ARG PYTHON_VERSION=3.13
 
 ######
 
-FROM python:${PYTHON_VERSION}-alpine AS dev_stage
-RUN apk update
-RUN apk add build-base
-RUN pip install -U pylint
-RUN pip install --upgrade pip==25.2 setuptools==82.0.0 wheel==0.46.2 waitress==3.0.2 && \
-    pip install -Iv Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.33.0
+FROM python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d AS dev_stage
+RUN apk update && apk upgrade && \
+    apk add --no-cache build-base
+RUN pip install --no-cache-dir -U pylint
+RUN pip install --no-cache-dir --upgrade pip==26.2.1 setuptools==83.0.0 wheel==0.46.2 waitress==3.0.2 && \
+    pip install --no-cache-dir -Iv Flask==3.1.3 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.33.0
 
 ENV ROOT_DIR=/code
 RUN mkdir -p $ROOT_DIR
@@ -24,16 +22,14 @@ COPY allure-docker-api $ROOT_DIR/allure-docker-api
 RUN pylint --rcfile=allure-docker-api/.pylintrc allure-docker-api
 
 ######
-FROM --platform=$BUILDPLATFORM $JDK
-ARG JDK
+FROM python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
 ARG BUILD_DATE
 ARG BUILD_VERSION
 ARG BUILD_REF
-ARG ALLURE_RELEASE
-ARG ALLURE_REPO
-ARG UID
-ARG GID
-ARG PYTHON_VERSION=3.13
+ARG ALLURE_RELEASE=2.44.0
+ARG ALLURE_REPO=https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline
+ARG UID=1000
+ARG GID=1000
 
 LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.docker.dockerfile="docker/Dockerfile" \
@@ -45,40 +41,42 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.vcs-ref=${BUILD_REF} \
     org.label-schema.vcs-type="Git" \
     org.label-schema.vcs-url="https://github.com/fescobar/allure-docker-service" \
-    org.label-schema.arch=${BUILDPLATFORM} \
     authors="Frank Escobar <fescobar.systems@gmail.com>"
 
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+      bash \
+      curl \
       tzdata \
-      nano \
-      python${PYTHON_VERSION} \
+      shadow \
+      ca-certificates \
+      openjdk11-jre-headless \
       unzip && \
-    ln -s `which python3` /usr/bin/python && \
-    apt-get purge python3-cryptography -y && \
-    apt-get autoremove -y && \
-    wget https://bootstrap.pypa.io/get-pip.py && \
-    sed -i "s/\"--force-reinstall\"/\"--force-reinstall\", \"--break-system-packages\"/g" get-pip.py && \
-    python${PYTHON_VERSION} get-pip.py && \
-    python${PYTHON_VERSION} -m pip config set global.break-system-packages true && \
-    python${PYTHON_VERSION} -m pip install setuptools==82.0.0 wheel==0.46.2 waitress==3.0.2 pipdeptree==2.29.0 cffi==2.0.0 cryptography==48.0.1 && \
-    python${PYTHON_VERSION} -m pip install --ignore-installed --upgrade Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.33.0 && \
-    curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
-        unzip -q /tmp/allure-commandline.zip -d / && \
-        apt-get remove -y unzip && \
-        rm -rf /tmp/* && \
-        rm -rf /var/lib/apt/lists/* && \
-        chmod -R +x /allure-$ALLURE_RELEASE/bin && \
-        mkdir -p /app
+    ln -sf /bin/mktemp /usr/bin/tempfile && \
+    ln -sf $(which python3) /usr/bin/python && \
+    ln -sf $(which python3) /usr/bin/python3 && \
+    pip install --no-cache-dir --upgrade pip==26.2.1 setuptools==83.0.0 wheel==0.46.2 waitress==3.0.2 pipdeptree==2.29.0 cffi==2.0.0 cryptography==50.0.0 && \
+    pip install --no-cache-dir --ignore-installed --upgrade Flask==3.1.3 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.33.0 && \
+    curl -fsSL ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -o /tmp/allure-commandline.zip && \
+    unzip -q /tmp/allure-commandline.zip -d / && \
+    curl -fsSL https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.22.1/jackson-databind-2.22.1.jar -o /tmp/jackson-databind-2.22.1.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/jsoup/jsoup/1.23.1/jsoup-1.23.1.jar -o /tmp/jsoup-1.23.1.jar && \
+    find /allure-${ALLURE_RELEASE} -name "jackson-databind-*.jar" -exec cp /tmp/jackson-databind-2.22.1.jar {} \; && \
+    find /allure-${ALLURE_RELEASE} -name "jsoup-*.jar" -exec cp /tmp/jsoup-1.23.1.jar {} \; && \
+    apk del unzip && \
+    rm -rf /tmp/* /var/cache/apk/* /root/.cache /usr/local/lib/python3.13/site-packages/pip/_vendor/bom.cdx.json && \
+    chmod -R +x /allure-$ALLURE_RELEASE/bin && \
+    mkdir -p /app
 
-RUN usermod -l allure $(getent passwd ${UID} | cut -d: -f1)
-RUN mkdir -p /home/allure && \
+RUN if getent passwd ${UID} >/dev/null 2>&1; then \
+      usermod -l allure $(getent passwd ${UID} | cut -d: -f1); \
+    else \
+      useradd -u ${UID} -U -d /home/allure -s /bin/bash allure; \
+    fi && \
+    mkdir -p /home/allure && \
     chown -R ${UID}:${GID} /home/allure
 
-ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV PYTHON_VERSION=""
 ENV ROOT=/app
 ENV ALLURE_HOME=/allure-$ALLURE_RELEASE
 ENV ALLURE_HOME_SL=/allure
