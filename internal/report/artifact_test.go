@@ -48,6 +48,13 @@ func requireAllureCLI(t *testing.T) string {
 	return path
 }
 
+// testStepName is written into every fixture result and asserted on by the
+// browser test. It has to be a step rather than the test's own name: the name
+// is printed in the tree on the left as well, so finding it proves only that
+// the report rendered something, while a step is shown by the test's page and
+// nowhere else.
+const testStepName = "the step only an opened test shows"
+
 // writeRealResult drops one result file the real CLI will accept into the
 // project's results dir. The minimal shape the rest of the suite uses is
 // enough for a fake CLI but not for Allure, which needs a uuid, a status and a
@@ -64,8 +71,17 @@ func writeRealResult(t *testing.T, baseDir, projectID string, n int) {
 		"status": "passed",
 		"stage": "finished",
 		"start": 1700000000000,
-		"stop": 1700000000250
-	}`, uuid, n, n, n)
+		"stop": 1700000000250,
+		"steps": [
+			{
+				"name": %q,
+				"status": "passed",
+				"stage": "finished",
+				"start": 1700000000000,
+				"stop": 1700000000100
+			}
+		]
+	}`, uuid, n, n, n, testStepName)
 
 	path := filepath.Join(projects.ResultsDir(baseDir, projectID), uuid+"-result.json")
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
@@ -80,19 +96,16 @@ type foundURL struct {
 	url  string
 }
 
-// buildReportWithHistory generates the project twice with the real CLI and
-// returns every url the finished report and the project's history carry.
-//
-// The second build is the point: the first one has nothing to look back on, so
-// its report holds no history entries and no trend, and none of the urls this
-// is about exist yet.
-func buildReportWithHistory(t *testing.T) []foundURL {
+// generateTwice builds a project's report twice with the real CLI and returns
+// the projects dir and the project's id. Callers get a report that has history
+// behind it, which is the only kind that exercises the urls at all.
+func generateTwice(t *testing.T) (dir, projectID string) {
 	t.Helper()
 
 	allure := requireAllureCLI(t)
 
-	dir := t.TempDir()
-	const projectID = "demo"
+	dir = t.TempDir()
+	projectID = "demo"
 	if err := projects.CreateDir(dir, projectID); err != nil {
 		t.Fatalf("CreateDir(%q) = %v", projectID, err)
 	}
@@ -106,6 +119,19 @@ func buildReportWithHistory(t *testing.T) []foundURL {
 			t.Fatalf("Generate (build %d) = %v, want nil", build, err)
 		}
 	}
+	return dir, projectID
+}
+
+// buildReportWithHistory generates the project twice with the real CLI and
+// returns every url the finished report and the project's history carry.
+//
+// The second build is the point: the first one has nothing to look back on, so
+// its report holds no history entries and no trend, and none of the urls this
+// is about exist yet.
+func buildReportWithHistory(t *testing.T) []foundURL {
+	t.Helper()
+
+	dir, projectID := generateTwice(t)
 
 	var found []foundURL
 	collect := func(path string) {
