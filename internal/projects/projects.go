@@ -23,6 +23,16 @@ var (
 	// ErrProjectExists is returned by CreateDir when the project directory
 	// already exists.
 	ErrProjectExists = errors.New("project already exists")
+
+	// ErrNoHistory is returned by SeedHistory when the source project has no
+	// history to copy. It does not mean the call failed: the target's history
+	// is cleared either way, so what SeedHistory promises still holds. What it
+	// tells the caller is that a build seeded from this source would have
+	// nothing to compare itself against - every test would come out as new,
+	// and a check built on that comparison would pass by finding nothing
+	// rather than by finding nothing wrong. Whether that is fatal is the
+	// caller's decision, not this package's.
+	ErrNoHistory = errors.New("source project has no history")
 )
 
 const (
@@ -202,6 +212,76 @@ func HistoryFile(baseDir, projectID string) string {
 func NumberedReportDir(baseDir, projectID string, n int) string {
 	path := filepath.Join(ReportsDir(baseDir, projectID), fmt.Sprintf("%d", n))
 	return path
+}
+
+// SeedHistory replaces projectID's trend history with fromProjectID's, so that
+// the next build of projectID is measured against the source project's past
+// runs instead of its own. The file is copied byte for byte; nothing in it is
+// rewritten or merged.
+//
+// It is meant to be called before every build of the target, not once when the
+// target is created. A target that keeps the history of its own previous build
+// compares each run against the run before it - and a test that fails in two
+// consecutive runs is then a change in neither of them, which is exactly the
+// comparison seeding exists to avoid.
+//
+// What the call promises is that projectID's history ends up identical to
+// fromProjectID's, the empty case included: a source with no history leaves the
+// target with none and returns ErrNoHistory. That is not a failed copy, and the
+// removal happens first for that reason - returning early would leave the
+// target holding a history the source does not have.
+//
+// The new history is staged beside its destination and renamed over it, the
+// same way Generate publishes a report. A reader - a build staging the history
+// for the Allure CLI - then sees either the whole old file or the whole new
+// one, never a half-written one, which the CLI rejects outright. The staging
+// file lives in the project's own directory rather than in TmpRoot because
+// rename does not cross filesystems.
+//
+// Both IDs are validated here rather than taken on trust: this package owns the
+// on-disk layout, so it cannot leave that check to whoever happens to call it
+// today. A target project that does not exist is reported as-is (wrapping
+// fs.ErrNotExist), the same convention ClearResults follows, and is checked up
+// front rather than left to surface from the copy - without that check the
+// empty-source path would answer ErrNoHistory for a project that is not there
+// at all.
+func SeedHistory(baseDir, projectID, fromProjectID string) error {
+	if err := ValidateProjectID(fromProjectID); err != nil {
+		return fmt.Errorf("invalid source project ID: %w", err)
+	}
+	if err := ValidateProjectID(projectID); err != nil {
+		return fmt.Errorf("invalid project ID: %w", err)
+	}
+
+	if _, err := os.Stat(ProjectDir(baseDir, projectID)); err != nil {
+		return err
+	}
+
+	pathHistorySrc := HistoryFile(baseDir, fromProjectID)
+	pathHistoryDst := HistoryFile(baseDir, projectID)
+	tmp := pathHistoryDst + ".seed"
+	data, err := os.ReadFile(pathHistorySrc)
+	if errors.Is(err, fs.ErrNotExist) {
+		err = os.Remove(pathHistoryDst)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("removing history: %w", err)
+		}
+		return ErrNoHistory
+	}
+	if err != nil {
+		return fmt.Errorf("reading history file: %w", err)
+	}
+
+	err = os.WriteFile(tmp, data, 0o644)
+	defer func() { _ = os.Remove(tmp) }()
+	if err != nil {
+		return fmt.Errorf("write history: %w", err)
+	}
+
+	if err := os.Rename(tmp, pathHistoryDst); err != nil {
+		return fmt.Errorf("rename history file: %w", err)
+	}
+	return nil
 }
 
 // ClearHistory resets everything that gives a project's report its trend

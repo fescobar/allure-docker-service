@@ -587,3 +587,204 @@ func TestCleanTmp(t *testing.T) {
 		}
 	})
 }
+
+func TestSeedHistory(t *testing.T) {
+	// seedProject creates a project and, when content is not empty, gives it a
+	// history file holding exactly that. An empty string means the project
+	// exists but has never been built, which is the state the empty-source
+	// branch is about.
+	seedProject := func(t *testing.T, base, id, content string) {
+		t.Helper()
+		if err := CreateDir(base, id); err != nil {
+			t.Fatalf("setup: %v", err)
+		}
+		if content == "" {
+			return
+		}
+		if err := os.WriteFile(HistoryFile(base, id), []byte(content), 0644); err != nil {
+			t.Fatalf("setup: %v", err)
+		}
+	}
+
+	// stagingFile is the scratch name SeedHistory writes through. Nothing
+	// cleans it up later - Generate only clears TmpRoot - so a leftover is a
+	// leak that lives for the life of the volume.
+	stagingFile := func(base, id string) string {
+		return HistoryFile(base, id) + ".seed"
+	}
+
+	t.Run("copies the source history over the target's own", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "src", "{\"run\":1}\n{\"run\":2}\n")
+		seedProject(t, base, "dst", "{\"stale\":true}\n")
+
+		if err := SeedHistory(base, "dst", "src"); err != nil {
+			t.Fatalf("SeedHistory returned unexpected error: %v", err)
+		}
+
+		got, err := os.ReadFile(HistoryFile(base, "dst"))
+		if err != nil {
+			t.Fatalf("reading the seeded history: %v", err)
+		}
+		want := "{\"run\":1}\n{\"run\":2}\n"
+		if string(got) != want {
+			t.Errorf("seeded history = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("leaves the source history untouched", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "src", "{\"run\":1}\n")
+		seedProject(t, base, "dst", "")
+
+		if err := SeedHistory(base, "dst", "src"); err != nil {
+			t.Fatalf("SeedHistory returned unexpected error: %v", err)
+		}
+
+		got, err := os.ReadFile(HistoryFile(base, "src"))
+		if err != nil {
+			t.Fatalf("reading the source history: %v", err)
+		}
+		if string(got) != "{\"run\":1}\n" {
+			t.Errorf("source history = %q, want it unchanged", got)
+		}
+	})
+
+	t.Run("target with no history of its own is seeded", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "src", "{\"run\":1}\n")
+		seedProject(t, base, "dst", "")
+
+		if err := SeedHistory(base, "dst", "src"); err != nil {
+			t.Fatalf("SeedHistory returned unexpected error: %v", err)
+		}
+
+		if _, err := os.Stat(HistoryFile(base, "dst")); err != nil {
+			t.Errorf("target has no history after seeding: %v", err)
+		}
+	})
+
+	// The empty-source case is the one the postcondition is easiest to get
+	// wrong in: returning early on "nothing to copy" leaves the target holding
+	// a history the source does not have, and the next build then compares the
+	// target against its own previous run - the very comparison seeding is
+	// there to replace.
+	t.Run("source without history clears the target and reports ErrNoHistory", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "src", "")
+		seedProject(t, base, "dst", "{\"stale\":true}\n")
+
+		err := SeedHistory(base, "dst", "src")
+		if !errors.Is(err, ErrNoHistory) {
+			t.Fatalf("SeedHistory error = %v, want ErrNoHistory", err)
+		}
+
+		if _, err := os.Stat(HistoryFile(base, "dst")); !errors.Is(err, os.ErrNotExist) {
+			t.Errorf("target history survived an empty source (stat err = %v)", err)
+		}
+	})
+
+	t.Run("neither project has history and it still reports ErrNoHistory", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "src", "")
+		seedProject(t, base, "dst", "")
+
+		err := SeedHistory(base, "dst", "src")
+		if !errors.Is(err, ErrNoHistory) {
+			t.Fatalf("SeedHistory error = %v, want ErrNoHistory", err)
+		}
+	})
+
+	// A missing target must not be answered with ErrNoHistory: that error
+	// sends the caller looking at the source project, which is fine, while the
+	// real fault is a target that does not exist at all.
+	t.Run("missing target project reports fs.ErrNotExist, not ErrNoHistory", func(t *testing.T) {
+		base := t.TempDir()
+
+		for _, sourceHistory := range []string{"{\"run\":1}\n", ""} {
+			srcID := fmt.Sprintf("src-%d", len(sourceHistory))
+			seedProject(t, base, srcID, sourceHistory)
+
+			err := SeedHistory(base, "nosuch", srcID)
+			if !errors.Is(err, os.ErrNotExist) {
+				t.Errorf("source history %q: error = %v, want it to wrap fs.ErrNotExist",
+					sourceHistory, err)
+			}
+			if errors.Is(err, ErrNoHistory) {
+				t.Errorf("source history %q: error = %v, want the missing target reported instead",
+					sourceHistory, err)
+			}
+		}
+	})
+
+	t.Run("missing source project reports ErrNoHistory", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "dst", "")
+
+		err := SeedHistory(base, "dst", "nosuch")
+		if !errors.Is(err, ErrNoHistory) {
+			t.Fatalf("SeedHistory error = %v, want ErrNoHistory", err)
+		}
+	})
+
+	t.Run("leaves no staging file behind", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "src", "{\"run\":1}\n")
+		seedProject(t, base, "dst", "")
+
+		if err := SeedHistory(base, "dst", "src"); err != nil {
+			t.Fatalf("SeedHistory returned unexpected error: %v", err)
+		}
+
+		if _, err := os.Stat(stagingFile(base, "dst")); !errors.Is(err, os.ErrNotExist) {
+			t.Errorf("staging file was left behind (stat err = %v)", err)
+		}
+	})
+
+	// Both IDs reach filepath.Join, so an unvalidated one climbs out of
+	// baseDir. The target is the dangerous half - it is written to and
+	// removed - but a source that escapes reads a file it has no business
+	// reading, so both are checked.
+	t.Run("rejects invalid IDs without touching the filesystem", func(t *testing.T) {
+		tests := []struct {
+			name         string
+			target, from string
+		}{
+			{"target escapes", "../evil", "src"},
+			{"source escapes", "dst", "../evil"},
+			{"target empty", "", "src"},
+			{"source empty", "dst", ""},
+			{"target uppercase", "DST", "src"},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				base := t.TempDir()
+				outside := filepath.Join(base, "..", "evil")
+				seedProject(t, base, "src", "{\"run\":1}\n")
+				seedProject(t, base, "dst", "{\"stale\":true}\n")
+
+				err := SeedHistory(base, tt.target, tt.from)
+				if err == nil {
+					t.Fatalf("SeedHistory(%q, %q) = nil, want a validation error",
+						tt.target, tt.from)
+				}
+				if errors.Is(err, ErrNoHistory) {
+					t.Errorf("error = %v, want a validation error rather than ErrNoHistory", err)
+				}
+
+				if _, err := os.Stat(outside); !errors.Is(err, os.ErrNotExist) {
+					t.Errorf("something was written outside baseDir at %q (stat err = %v)",
+						outside, err)
+				}
+				got, err := os.ReadFile(HistoryFile(base, "dst"))
+				if err != nil {
+					t.Fatalf("reading the target history: %v", err)
+				}
+				if string(got) != "{\"stale\":true}\n" {
+					t.Errorf("target history = %q, want it untouched by a rejected call", got)
+				}
+			})
+		}
+	})
+}
