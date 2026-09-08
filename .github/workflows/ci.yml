@@ -33,6 +33,18 @@ jobs:
             exit 1
           fi
 
+      - name: Install the Allure CLI
+        run: |
+          version=$(sed -n 's/^ARG ALLURE_VERSION=//p' docker/Dockerfile)
+          test -n "$version"
+          npm i -g "allure@$version"
+
+      - name: Assert the report toolchain is present
+        run: |
+          for bin in node allure google-chrome-stable; do
+            command -v "$bin" || { echo "missing: $bin"; exit 1; }
+          done
+
       - run: go test -race ./...
 
   image:
