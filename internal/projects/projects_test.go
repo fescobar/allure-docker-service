@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -606,11 +607,23 @@ func TestSeedHistory(t *testing.T) {
 		}
 	}
 
-	// stagingFile is the scratch name SeedHistory writes through. Nothing
-	// cleans it up later - Generate only clears TmpRoot - so a leftover is a
-	// leak that lives for the life of the volume.
-	stagingFile := func(base, id string) string {
-		return HistoryFile(base, id) + ".seed"
+	// projectFiles lists the names directly under a project directory.
+	// SeedHistory stages through a scratch file beside the destination, and
+	// nothing cleans that up later - Generate only clears TmpRoot - so a
+	// leftover is a leak that lives for the life of the volume. Comparing
+	// listings catches one under any name; asserting on the scratch name
+	// itself would only catch the name this test already guessed.
+	projectFiles := func(t *testing.T, base, id string) []string {
+		t.Helper()
+		entries, err := os.ReadDir(ProjectDir(base, id))
+		if err != nil {
+			t.Fatalf("failed to read project dir: %v", err)
+		}
+		names := make([]string, 0, len(entries))
+		for _, entry := range entries {
+			names = append(names, entry.Name())
+		}
+		return names
 	}
 
 	t.Run("copies the source history over the target's own", func(t *testing.T) {
@@ -732,12 +745,47 @@ func TestSeedHistory(t *testing.T) {
 		seedProject(t, base, "src", "{\"run\":1}\n")
 		seedProject(t, base, "dst", "")
 
+		before := projectFiles(t, base, "dst")
+
 		if err := SeedHistory(base, "dst", "src"); err != nil {
 			t.Fatalf("SeedHistory returned unexpected error: %v", err)
 		}
 
-		if _, err := os.Stat(stagingFile(base, "dst")); !errors.Is(err, os.ErrNotExist) {
-			t.Errorf("staging file was left behind (stat err = %v)", err)
+		want := append(slices.Clone(before), "history.jsonl")
+		slices.Sort(want)
+		got := projectFiles(t, base, "dst")
+		slices.Sort(got)
+		if !slices.Equal(got, want) {
+			t.Errorf("project directory holds %v, want %v", got, want)
+		}
+	})
+
+	// The deferred cleanup only earns its keep when the rename fails: on the
+	// happy path the rename moves the staging file away by itself. A
+	// directory sitting where the history file belongs is the cheapest way
+	// to make rename(2) refuse.
+	t.Run("leaves no staging file behind when the rename fails", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "src", "{\"run\":1}\n")
+		seedProject(t, base, "dst", "")
+
+		blocker := HistoryFile(base, "dst")
+		if err := os.MkdirAll(filepath.Join(blocker, "occupied"), 0o755); err != nil {
+			t.Fatalf("failed to block the destination: %v", err)
+		}
+
+		before := projectFiles(t, base, "dst")
+
+		if err := SeedHistory(base, "dst", "src"); err == nil {
+			t.Fatal("SeedHistory returned nil, want the rename to fail")
+		}
+
+		want := slices.Clone(before)
+		slices.Sort(want)
+		got := projectFiles(t, base, "dst")
+		slices.Sort(got)
+		if !slices.Equal(got, want) {
+			t.Errorf("project directory holds %v, want %v", got, want)
 		}
 	})
 
