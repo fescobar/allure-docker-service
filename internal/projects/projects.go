@@ -252,6 +252,9 @@ func SeedHistory(baseDir, projectID, fromProjectID string) error {
 	if err := ValidateProjectID(projectID); err != nil {
 		return fmt.Errorf("invalid project ID: %w", err)
 	}
+	if projectID == fromProjectID {
+		return fmt.Errorf("project ID (%s) and source project ID (%s) must be different", projectID, fromProjectID)
+	}
 
 	if _, err := os.Stat(ProjectDir(baseDir, projectID)); err != nil {
 		return err
