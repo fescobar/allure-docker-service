@@ -657,6 +657,12 @@ func TestSeedHistory(t *testing.T) {
 		}
 	})
 
+	// A body that will not decode leaves FromProjectID empty, which the ID
+	// check below would reject with a 400 of its own - so the status alone
+	// cannot tell whether the decode was even looked at. The message can, and
+	// it is also what the client is told went wrong. Asserting on the whole
+	// body catches the missing return too: without it the second 400 appends
+	// its own message underneath the first.
 	t.Run("rejects a malformed body", func(t *testing.T) {
 		s, _ := newTestServer(t, "master", "mr-1")
 
@@ -665,6 +671,9 @@ func TestSeedHistory(t *testing.T) {
 
 			if w.Code != http.StatusBadRequest {
 				t.Errorf("body %q: status = %d, want %d (body: %s)", body, w.Code, http.StatusBadRequest, w.Body)
+			}
+			if got := w.Body.String(); got != "invalid request body\n" {
+				t.Errorf("body %q: answered %q, want the decode error alone", body, got)
 			}
 		}
 	})
@@ -751,21 +760,25 @@ func TestSeedHistory(t *testing.T) {
 		}
 	})
 
-	// Nothing the client sends should reach it: a path on disk names the
-	// service's own layout, and the text of a syscall error names its
-	// filesystem.
-	t.Run("keeps disk paths out of every error body", func(t *testing.T) {
-		s, dir := newTestServer(t, "mr-1")
+	// The cause of a 500 is an os error naming a path on disk, which is the
+	// service's own layout and none of the client's business. It goes to the
+	// log; the client gets the same fixed sentence every other 500 gets.
+	t.Run("keeps the cause of a 500 out of the response", func(t *testing.T) {
+		s, dir := newTestServer(t, "master", "mr-1")
+		writeHistory(t, dir, "master", history)
+		// A directory where the history file belongs makes rename(2) refuse,
+		// which is neither of the two sentinels and so lands on the 500.
+		if err := os.MkdirAll(filepath.Join(projects.HistoryFile(dir, "mr-1"), "occupied"), 0755); err != nil {
+			t.Fatalf("setup: %v", err)
+		}
 
-		for _, body := range []string{
-			`{"from_project_id":"nosuch"}`,
-			`{"from_project_id":"../outside"}`,
-		} {
-			w := seedRequest(s, "mr-1", body)
+		w := seedRequest(s, "mr-1", `{"from_project_id":"master"}`)
 
-			if strings.Contains(w.Body.String(), dir) {
-				t.Errorf("body %q leaked the projects root: %s", body, w.Body)
-			}
+		if w.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want %d (body: %s)", w.Code, http.StatusInternalServerError, w.Body)
+		}
+		if got := w.Body.String(); got != msgInternalError+"\n" {
+			t.Errorf("500 answered %q, want %q - the cause belongs in the log", got, msgInternalError)
 		}
 	})
 }

@@ -46,6 +46,7 @@ func TestRoutes(t *testing.T) {
 
 		{name: "unknown path", method: http.MethodGet, target: "/nope", wantStatus: http.StatusNotFound},
 		{name: "wrong method on projects", method: http.MethodPut, target: "/projects", wantStatus: http.StatusMethodNotAllowed},
+		{name: "wrong method on seed history", method: http.MethodGet, target: "/projects/demo/history/seed", wantStatus: http.StatusMethodNotAllowed},
 	}
 
 	for _, tt := range tests {
