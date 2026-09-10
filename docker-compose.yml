@@ -1,6 +1,6 @@
 services:
   allure-service:
-    image: ghcr.io/y-krenta/allure3-docker-service-go:0.1.0
+    image: ghcr.io/y-krenta/allure3-docker-service-go:0.2.0
     restart: unless-stopped
     # docker stop allows 10 seconds before SIGKILL by default. Raised to 30 so
     # the service's own shutdownTimeout (25s) fits inside it: uploads and
@@ -20,8 +20,7 @@ services:
       # The port is open to the network: CI runners on other machines have to
       # reach the service. It authenticates nobody, so deploy it only on a
       # trusted internal network - whoever reaches the port can write and
-      # delete. Outside access arrives in 0.1 along with built-in
-      # authentication.
+      # delete. Outside access arrives along with built-in authentication.
       - "${ALLURE_SERVICE_PORT:-5050}:5050"
     volumes:
       # The whole storage root under a single mount: publishing a report means

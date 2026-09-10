@@ -6,7 +6,7 @@ This is a **fork** of [`fescobar/allure-docker-service`](https://github.com/fesc
 
 Each release ships one pinned version of the Allure 3 CLI, and the service's own version is independent of it. The release notes name the Allure version that release was built with; a running instance reports both at [`GET /version`](#info-endpoints), and the pin itself is the `ALLURE_VERSION` build arg in [`docker/Dockerfile`](docker/Dockerfile).
 
-> ⚠️ **No authentication.** Everything documented below works, but the service authenticates nobody: whoever can reach the port can upload results and delete projects. Deploy it **only inside a trusted internal network**. Built-in auth is planned for 0.1 — see [Not implemented yet](#not-implemented-yet).
+> ⚠️ **No authentication.** Everything documented below works, but the service authenticates nobody: whoever can reach the port can upload results and delete projects. Deploy it **only inside a trusted internal network**. Built-in auth is planned — see [Not implemented yet](#not-implemented-yet).
 
 Table of contents
 =================
@@ -195,6 +195,7 @@ Base URL in the examples is `http://localhost:5050`. There is no `/allure-docker
 | `POST` | `/projects/{id}/generation` | Start a report build (async) |
 | `GET` | `/projects/{id}/generation` | State of the last build |
 | `POST` | `/projects/{id}/history/clean` | Reset trends and rebuild |
+| `POST` | `/projects/{id}/history/seed` | Replace history with another project's |
 | `GET` | `/projects/{id}/latest-report` | Redirect to the published report |
 | `GET` | `/projects/{id}/reports/{path...}` | Serve report files |
 | `GET` | `/projects/{id}/report/export` | Download the report as a zip |
@@ -211,7 +212,7 @@ curl -s http://localhost:5050/config
 # {"keep_history":true,"keep_history_latest":60,"check_results_every_seconds":0}
 
 curl -s http://localhost:5050/version
-# {"allure_version":"3.16.0","service_version":"0.1.0"}
+# {"allure_version":"3.16.0","service_version":"0.2.0"}
 ```
 
 `/config` reports the subset of settings that actually influence behaviour. `/version` answers with both versions that describe a running container: `allure_version` is asked of the CLI itself (`allure --version`) at startup rather than read from a build-time file, and `service_version` is stamped into the binary when the image is built — a source build reports `dev`.
@@ -303,6 +304,21 @@ curl -i -X POST http://localhost:5050/projects/default/history/clean
 # 202 Accepted
 ```
 
+Replace a project's history with a copy of another project's — the baseline a merge-request build is measured against:
+
+```sh
+curl -i -X POST http://localhost:5050/projects/repo-mr-7/history/seed \
+  -H 'Content-Type: application/json' \
+  -d '{"from_project_id":"repo-master"}'
+# 204 No Content
+```
+
+This exists for one job: telling apart a test that broke *here* from one that was already broken. Allure marks a result `regressed` only by comparing it against the project's own history, and a project created for a merge request has none — every test in its first build comes out `new`, and a gate reading that comparison passes because there was nothing to compare with, not because nothing broke. Seeding from the mainline project supplies the missing side.
+
+Call it **before every run**, not once when the project is created. Otherwise the second run's baseline is the merge request's own first run: a test red in both never changed status, gets no `transition` at all, and slips through. Re-seeding keeps the project's history equal to "the baseline's history plus this run" — the cost being that the merge request's report shows the mainline's trend rather than its own, which for a merge request is the more useful of the two.
+
+Two answers to expect: `409` when the source project has no history yet (nobody has run tests in it), and `400` when source and target are the same project — a project seeded from itself measures every build against its own previous one, which is the comparison seeding replaces. Both project ids are validated; `from_project_id` arrives in the request body and reaches `filepath.Join` exactly like the one in the path.
+
 ### Report endpoints
 
 ```sh
@@ -373,7 +389,7 @@ Bars of past runs are **clickable**: a click opens that run (`reports/{N}/`) in 
 - links only exist for runs built by a service version that has the plugin; older history lines have no address and their bars stay inert;
 - `KEEP_HISTORY_LATEST` trims archives and history together, so a link disappears along with its trend point rather than rotting into a 404.
 
-`POST /projects/{id}/history/clean` starts the history over.
+`POST /projects/{id}/history/clean` starts the history over, and `POST /projects/{id}/history/seed` replaces it with another project's.
 
 ## Opening the report
 
@@ -452,7 +468,7 @@ The service is a single stateless process plus a data directory, so it deploys l
 
 Parsed or planned, but with no behaviour behind them today:
 
-- **Authentication** (`SECURITY_ENABLED`, JWT login/refresh/logout, admin & viewer roles) — planned for 0.1. Until then, keep the service on a trusted network.
+- **Authentication** (`SECURITY_ENABLED`, JWT login/refresh/logout, admin & viewer roles) — planned, with no release committed to it yet. Until then, keep the service on a trusted network.
 - **TLS** (`TLS`) — setting it refuses to start; terminate TLS at a reverse proxy for now.
 - **`OPTIMIZE_STORAGE`** — parsed, ignored; planned for a later release. Setting it logs a warning at startup.
 - **`DEV_MODE`** — parsed, ignored. Setting it logs a warning at startup.
