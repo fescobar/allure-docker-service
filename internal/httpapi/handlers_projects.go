@@ -32,6 +32,12 @@ type projectBuildsResponse struct {
 	Builds []string `json:"builds"`
 }
 
+// seedHistoryRequest is the JSON body expected by seedHistory: the project
+// whose history is copied over the target's own.
+type seedHistoryRequest struct {
+	FromProjectID string `json:"from_project_id"`
+}
+
 // createProject handles POST /projects. Body: createProjectRequest. On
 // success responds 201 with no body. Responds 400 for an invalid body or a
 // project_id that fails projects.ValidateProjectID, 409 if the project
@@ -268,4 +274,55 @@ func (s *Server) clearResults(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// seedHistory handles POST /projects/{id}/history/seed. Body:
+// seedHistoryRequest. It replaces the project's history with a copy of
+// another project's, which is what gives a merge-request project the
+// baseline its regressions are measured against.
+//
+// The source ID arrives in the body rather than the path, so it gets its own
+// projects.ValidateProjectID call here: both IDs reach filepath.Join, and the
+// error the package returns for a bad one carries no sentinel to tell an
+// invalid ID from a broken disk once it is back here.
+//
+// Responds 204 on success, 400 for an invalid body, either ID, or a source
+// equal to the target, 404 if the target project does not exist, and 409 if
+// the source has no history to
+// copy - the request is well formed and the copy did happen, but a build
+// seeded from an empty source has nothing to compare against, and a caller
+// that treated that as success would be gating on a comparison that never
+// took place.
+func (s *Server) seedHistory(w http.ResponseWriter, r *http.Request) {
+	var req seedHistoryRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	id, ok := requireProjectID(w, r)
+	if !ok {
+		return
+	}
+	if err := projects.ValidateProjectID(req.FromProjectID); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := projects.SeedHistory(s.projectsDir, id, req.FromProjectID)
+	switch {
+	case errors.Is(err, projects.ErrNoHistory):
+		http.Error(w, "source project has no history: run a build in it first", http.StatusConflict)
+	case errors.Is(err, fs.ErrNotExist):
+		http.Error(w, "project not found", http.StatusNotFound)
+	case errors.Is(err, projects.ErrCopyToSelf):
+		http.Error(w, "source and target project must differ", http.StatusBadRequest)
+
+	case err != nil:
+		slog.Error("failed to seed history", "err", err, "project_id", id)
+		http.Error(w, msgInternalError, http.StatusInternalServerError)
+
+	default:
+		w.WriteHeader(http.StatusNoContent)
+	}
+
 }

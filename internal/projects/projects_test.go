@@ -760,6 +760,27 @@ func TestSeedHistory(t *testing.T) {
 		}
 	})
 
+	// Seeding a project from itself would succeed and change nothing, so the
+	// refusal is about the arrangement, not the file: a project measured
+	// against its own previous build is exactly what seeding replaces.
+	t.Run("refuses to seed a project from itself", func(t *testing.T) {
+		base := t.TempDir()
+		seedProject(t, base, "dst", "{\"own\":true}\n")
+
+		err := SeedHistory(base, "dst", "dst")
+
+		if !errors.Is(err, ErrCopyToSelf) {
+			t.Fatalf("SeedHistory returned %v, want ErrCopyToSelf", err)
+		}
+		got, readErr := os.ReadFile(HistoryFile(base, "dst"))
+		if readErr != nil {
+			t.Fatalf("the refusal touched the history file: %v", readErr)
+		}
+		if string(got) != "{\"own\":true}\n" {
+			t.Errorf("history = %q, want it untouched", got)
+		}
+	})
+
 	// The deferred cleanup only earns its keep when the rename fails: on the
 	// happy path the rename moves the staging file away by itself. A
 	// directory sitting where the history file belongs is the cheapest way

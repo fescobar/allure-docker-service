@@ -33,6 +33,15 @@ var (
 	// rather than by finding nothing wrong. Whether that is fatal is the
 	// caller's decision, not this package's.
 	ErrNoHistory = errors.New("source project has no history")
+
+	// ErrCopyToSelf is returned by SeedHistory when the target and the source
+	// are the same project. Copying a history file onto itself would succeed
+	// and change nothing, so this is not about protecting the file: it is
+	// about what the caller asked for. A project seeded from itself measures
+	// its next build against its own previous one, which is the comparison
+	// seeding exists to replace - and a gate reading that comparison would
+	// call an already-failing test unchanged rather than broken.
+	ErrCopyToSelf = errors.New("cannot copy: source and destination are the same")
 )
 
 const (
@@ -245,6 +254,9 @@ func NumberedReportDir(baseDir, projectID string, n int) string {
 // front rather than left to surface from the copy - without that check the
 // empty-source path would answer ErrNoHistory for a project that is not there
 // at all.
+//
+// Seeding a project from itself is refused with ErrCopyToSelf. The copy would
+// be harmless, but the arrangement it produces is not: see that error.
 func SeedHistory(baseDir, projectID, fromProjectID string) error {
 	if err := ValidateProjectID(fromProjectID); err != nil {
 		return fmt.Errorf("invalid source project ID: %w", err)
@@ -253,7 +265,7 @@ func SeedHistory(baseDir, projectID, fromProjectID string) error {
 		return fmt.Errorf("invalid project ID: %w", err)
 	}
 	if projectID == fromProjectID {
-		return fmt.Errorf("project ID (%s) and source project ID (%s) must be different", projectID, fromProjectID)
+		return ErrCopyToSelf
 	}
 
 	if _, err := os.Stat(ProjectDir(baseDir, projectID)); err != nil {
