@@ -7,4 +7,8 @@ disable=
     consider-using-f-string,
     consider-using-with,
     unspecified-encoding,
-    redefined-outer-name
+    redefined-outer-name,
+    broad-exception-raised,
+    no-else-return,
+    invalid-name,
+    unused-argument

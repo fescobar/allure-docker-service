@@ -14,13 +14,14 @@ FROM python:${PYTHON_VERSION}-alpine AS dev_stage
 RUN apk update
 RUN apk add build-base
 RUN pip install -U pylint
-RUN pip install --upgrade pip==25.2 setuptools==82.0.0 wheel==0.46.2 waitress==3.0.2 && \
-    pip install -Iv Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.33.0
+RUN pip install --upgrade pip==26.3 setuptools==84.2.1 wheel==0.48.0 waitress==3.0.2 && \
+    pip install -Iv Flask==3.1.3 Flask-JWT-Extended==4.7.4 flask-swagger-ui==5.36.0 requests==2.34.2
 
 ENV ROOT_DIR=/code
 RUN mkdir -p $ROOT_DIR
 WORKDIR $ROOT_DIR
 COPY allure-docker-api $ROOT_DIR/allure-docker-api
+RUN python -m unittest discover -s allure-docker-api -v
 RUN pylint --rcfile=allure-docker-api/.pylintrc allure-docker-api
 
 ######
@@ -64,8 +65,8 @@ RUN apt-get update && \
     sed -i "s/\"--force-reinstall\"/\"--force-reinstall\", \"--break-system-packages\"/g" get-pip.py && \
     python${PYTHON_VERSION} get-pip.py && \
     python${PYTHON_VERSION} -m pip config set global.break-system-packages true && \
-    python${PYTHON_VERSION} -m pip install setuptools==82.0.0 wheel==0.46.2 waitress==3.0.2 pipdeptree==2.29.0 cffi==2.0.0 cryptography==48.0.1 && \
-    python${PYTHON_VERSION} -m pip install --ignore-installed --upgrade Flask==3.1.2 Flask-JWT-Extended==4.7.1 flask-swagger-ui==4.11.1 requests==2.33.0 && \
+    python${PYTHON_VERSION} -m pip install setuptools==84.2.1 wheel==0.48.0 waitress==3.0.2 pipdeptree==4.2.16 cffi==2.1.1 cryptography==50.0.2 && \
+    python${PYTHON_VERSION} -m pip install --ignore-installed --upgrade Flask==3.1.3 Flask-JWT-Extended==4.7.4 flask-swagger-ui==5.36.0 requests==2.34.2 && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
         apt-get remove -y unzip && \
@@ -106,7 +107,7 @@ RUN echo -n $(allure --version) > ${ALLURE_VERSION} && \
     ln -s $DEFAULT_PROJECT_REPORTS $ROOT/default-reports
 
 WORKDIR $ROOT
-COPY --chown=${UID}:${GID} allure-docker-api $ROOT/allure-docker-api
+COPY --from=dev_stage --chown=${UID}:${GID} /code/allure-docker-api $ROOT/allure-docker-api
 COPY --chown=${UID}:${GID} allure-docker-scripts $ROOT/
 RUN chmod +x $ROOT/*.sh && \
     mkdir $RESULTS_DIRECTORY && \

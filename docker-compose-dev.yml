@@ -9,8 +9,8 @@ services:
       context: ../allure-docker-service
       dockerfile: docker/Dockerfile
       args:
-        ALLURE_RELEASE: 2.44.0
-        BUILD_VERSION: 2.44.0
+        ALLURE_RELEASE: 2.46.2
+        BUILD_VERSION: 2.46.2
         JDK: eclipse-temurin:11-jre-noble
     environment:
       DEV_MODE: 0
@@ -27,6 +27,7 @@ services:
       OPTIMIZE_STORAGE: 0
       API_RESPONSE_LESS_VERBOSE: 0
       TLS: 0
+      CORS_ALLOWED_ORIGINS: "http://localhost:7474"
     ports:
       - "${ALLURE_DOCKER_SERVICE_API_PORT}:5050"
     volumes:

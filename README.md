@@ -110,9 +110,9 @@ The following table shows the provided Manifest Lists.
 
 | **Tag**                                | **allure-docker-service Base Image**            |
 |----------------------------------------|-------------------------------------------------|
-| latest, 2.44.0                         | frankescobar/allure-docker-service:2.44.0-amd64 |
-|                                        | frankescobar/allure-docker-service:2.44.0-armv7 |
-|                                        | frankescobar/allure-docker-service:2.44.0-arm64 |
+| latest, 2.46.2                         | frankescobar/allure-docker-service:2.46.2-amd64 |
+|                                        | frankescobar/allure-docker-service:2.46.2-armv7 |
+|                                        | frankescobar/allure-docker-service:2.46.2-arm64 |
 
 ## USAGE
 ### Generate Allure Results
@@ -731,7 +731,7 @@ You can switch the version container using `frankescobar/allure-docker-service:$
 Docker Compose example:
 ```sh
   allure:
-    image: "frankescobar/allure-docker-service:2.44.0"
+    image: "frankescobar/allure-docker-service:2.46.2"
 ```
 or using latest version:
 
@@ -1194,6 +1194,18 @@ Docker Compose example:
 Note:
 - With `MAKE_VIEWER_ENDPOINTS_PUBLIC` enabled, your `viewer` user (if you have someone defined) won't have effect.
 
+##### CORS Allowed Origins (Cross-Origin UI)
+By default, cross-origin credentialed requests are disabled (no `Access-Control-Allow-Origin` or `Access-Control-Allow-Credentials` headers are returned), and authentication cookies use `SameSite=Lax`.
+If you host `allure-docker-service-ui` (or another browser client) on a different origin (different scheme, domain, or port), configure `CORS_ALLOWED_ORIGINS` with a comma-separated list of allowed origins:
+```sh
+    environment:
+      CORS_ALLOWED_ORIGINS: "http://localhost:7474,https://allure-ui.example.com"
+```
+Note:
+- Wildcard `*` is ignored when cookie credentials are enabled.
+- Same-origin deployments (e.g. Swagger UI or API + UI behind a reverse proxy on the same origin) do not need `CORS_ALLOWED_ORIGINS`.
+- You can optionally override the cookie `SameSite` policy with `JWT_COOKIE_SAMESITE` (`Lax` by default, `Strict`, or `None` when `TLS: 1` is enabled).
+
 ##### Scripts
 - Bash script with security enabled: [allure-docker-api-usage/send_results_security.sh](allure-docker-api-usage/send_results_security.sh)
 ```sh
@@ -1404,7 +1416,7 @@ docker-compose -f docker-compose-dev.yml up --build
 ```
 ### Build image
 ```sh
-docker build --no-cache -t allure-release -f docker/Dockerfile --build-arg ALLURE_RELEASE=2.44.0 .
+docker build --no-cache -t allure-release -f docker/Dockerfile --build-arg ALLURE_RELEASE=2.46.2 .
 ```
 ### Run container
 ```sh
@@ -1459,5 +1471,5 @@ docker run -d  -p 5050:5050 frankescobar/allure-docker-service
 ```
 ### Download specific tagged image registered (Example)
 ```sh
-docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.44.0
+docker run -d -p 5050:5050 frankescobar/allure-docker-service:2.46.2
 ```

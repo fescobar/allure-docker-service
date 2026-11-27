@@ -70,7 +70,10 @@ app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True
+app.config['JWT_COOKIE_SAMESITE'] = 'Lax'
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = False
+
+CORS_ALLOWED_ORIGINS = set()
 
 DEV_MODE = 0
 HOST = '0.0.0.0'
@@ -198,6 +201,39 @@ if "TLS" in os.environ:
             LOGGER.info('Enabling TLS=%s', IS_ITLS)
     except Exception as ex:
         LOGGER.error('Wrong env var value. Setting TLS=0 by default')
+
+def parse_cors_allowed_origins(raw_origins):
+    """Parse a comma-separated CORS_ALLOWED_ORIGINS string into a normalized set."""
+    origins = set()
+    if not raw_origins:
+        return origins
+    for entry in raw_origins.split(','):
+        normalized = entry.strip().rstrip('/')
+        if not normalized:
+            continue
+        if normalized == '*':
+            LOGGER.warning("Ignoring '*' in CORS_ALLOWED_ORIGINS when credentials are enabled")
+            continue
+        origins.add(normalized)
+    return origins
+
+if "CORS_ALLOWED_ORIGINS" in os.environ:
+    CORS_ALLOWED_ORIGINS = parse_cors_allowed_origins(os.environ['CORS_ALLOWED_ORIGINS'])
+    if CORS_ALLOWED_ORIGINS:
+        LOGGER.info('Setting CORS_ALLOWED_ORIGINS=%s', sorted(CORS_ALLOWED_ORIGINS))
+    else:
+        LOGGER.info('CORS_ALLOWED_ORIGINS is empty; cross-origin credentialed reads are disabled')
+
+if "JWT_COOKIE_SAMESITE" in os.environ:
+    SAMESITE_TMP = os.environ['JWT_COOKIE_SAMESITE'].strip().capitalize()
+    if SAMESITE_TMP in ('Lax', 'Strict', 'None'):
+        if SAMESITE_TMP == 'None' and not app.config.get('JWT_COOKIE_SECURE', False):
+            LOGGER.error('JWT_COOKIE_SAMESITE=None requires TLS=1. Keeping Lax by default')
+        else:
+            app.config['JWT_COOKIE_SAMESITE'] = SAMESITE_TMP
+            LOGGER.info('Overriding JWT_COOKIE_SAMESITE=%s', SAMESITE_TMP)
+    else:
+        LOGGER.error('Wrong env var value. Setting JWT_COOKIE_SAMESITE=Lax by default')
 
 if "URL_PREFIX" in os.environ:
     PREFIX = str(os.environ['URL_PREFIX'])
@@ -525,22 +561,27 @@ def user_loader_callback(jwt_header, jwt_data):
 ### end Security Section
 
 ### CORS section
+def _is_allowed_origin(origin):
+    return bool(origin and origin.rstrip('/') in CORS_ALLOWED_ORIGINS)
+
 @app.after_request
 def after_request_func(response):
     origin = request.headers.get('Origin')
+    allowed = _is_allowed_origin(origin)
     if request.method == 'OPTIONS':
         response = make_response()
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Headers', 'x-csrf-token')
-        response.headers.add('Access-Control-Allow-Methods',
-                             'GET, POST, OPTIONS, PUT, PATCH, DELETE')
-        if origin:
+        if allowed:
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+            response.headers.add('Access-Control-Allow-Headers', 'x-csrf-token')
+            response.headers.add('Access-Control-Allow-Methods',
+                                 'GET, POST, OPTIONS, PUT, PATCH, DELETE')
             response.headers.add('Access-Control-Allow-Origin', origin)
-    else:
+            response.headers.add('Vary', 'Origin')
+    elif allowed:
         response.headers.add('Access-Control-Allow-Credentials', 'true')
-        if origin:
-            response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Vary', 'Origin')
 
     return response
 ### end CORS section
