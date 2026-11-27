@@ -50,7 +50,8 @@ LABEL org.label-schema.build-date=${BUILD_DATE} \
     authors="Frank Escobar <fescobar.systems@gmail.com>"
 
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -58,18 +59,21 @@ RUN apt-get update && \
       nano \
       python${PYTHON_VERSION} \
       unzip && \
-    ln -s `which python3` /usr/bin/python && \
-    apt-get purge python3-cryptography -y && \
-    apt-get autoremove -y && \
+    ln -sf /usr/bin/python${PYTHON_VERSION} /usr/bin/python && \
+    apt-get purge -y software-properties-common python3-cryptography && \
+    apt-get autoremove --purge -y && \
     wget https://bootstrap.pypa.io/get-pip.py && \
     sed -i "s/\"--force-reinstall\"/\"--force-reinstall\", \"--break-system-packages\"/g" get-pip.py && \
     python${PYTHON_VERSION} get-pip.py && \
     python${PYTHON_VERSION} -m pip config set global.break-system-packages true && \
     python${PYTHON_VERSION} -m pip install setuptools==84.2.1 wheel==0.48.0 waitress==3.0.2 pipdeptree==4.2.16 cffi==2.1.1 cryptography==50.0.2 && \
     python${PYTHON_VERSION} -m pip install --ignore-installed --upgrade Flask==3.1.3 Flask-JWT-Extended==4.7.4 flask-swagger-ui==5.36.0 requests==2.34.2 && \
+    python${PYTHON_VERSION} -m pip uninstall -y pip setuptools wheel && \
+    rm -f get-pip.py && \
+    rm -rf /root/.cache /root/.config/pip && \
     curl ${ALLURE_REPO}/${ALLURE_RELEASE}/allure-commandline-${ALLURE_RELEASE}.zip -L -o /tmp/allure-commandline.zip && \
         unzip -q /tmp/allure-commandline.zip -d / && \
-        apt-get remove -y unzip && \
+        apt-get purge -y unzip && \
         rm -rf /tmp/* && \
         rm -rf /var/lib/apt/lists/* && \
         chmod -R +x /allure-$ALLURE_RELEASE/bin && \
